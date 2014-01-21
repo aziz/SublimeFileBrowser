@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Browse</string>
+	<key>settings</key>
+	<array>
+		<dict>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#d9dee5</string>
+				<key>foreground</key>
+				<string>#222222</string>
+				<key>caret</key>
+				<string>#367cc0</string>
+				<key>gutter</key>
+				<string>#d9dee5</string>
+
+				<key>invisibles</key>
+				<string>#88222233</string>
+				<key>lineHighlight</key>
+				<string>#367cc033</string>
+
+				<key>selection</key>
+				<string>#22222233</string>
+				<key>selectionBorder</key>
+				<string>#22222233</string>
+				<key>inactiveSelection</key>
+				<string>#22222219</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>File/Dir Symbols</string>
+			<key>scope</key>
+			<string>punctuation.definition.directory.symbol.dired, punctuation.definition.file.symbol.dired, dired.item.parent_dir</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#7c8692</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Dir Slash</string>
+			<key>scope</key>
+			<string>punctuation.definition.directory.slash.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#919aa388</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Dir Name</string>
+			<key>scope</key>
+			<string>string.name.directory.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Header</string>
+			<key>scope</key>
+			<string>header.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#707e8b</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Header punctuations</string>
+			<key>scope</key>
+			<string>header.dired punctuation.definition.separator.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#6f798733</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Header Rename Mode Title</string>
+			<key>scope</key>
+			<string>header.dired punctuation.definition.rename_mode</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#E99023</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Marked</string>
+			<key>scope</key>
+			<string>dired.marked</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#FFFFFF</string>
+				<key>background</key>
+				<string>#4b96d6</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help</string>
+			<key>scope</key>
+			<string>help.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#f5f7f8</string>
+				<key>foreground</key>
+				<string>#687481</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help punctuations</string>
+			<key>scope</key>
+			<string>punctuations.help.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#6f798766</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help shortcut punctuations</string>
+			<key>scope</key>
+			<string>punctuations.shortcut.help.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#68748166</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help shortcut</string>
+			<key>scope</key>
+			<string>key.shortcut.help.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+				<key>foreground</key>
+				<string>#000000</string>
+			</dict>
+		</dict>
+
+	</array>
+	<key>uuid</key>
+	<string>07379361-ce49-4e6c-a03f-26378a7a2131</string>
+</dict>
+</plist>
+

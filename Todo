@@ -1,0 +1,55 @@
+
+# TODO
+☐ set status bar after rename/move/delete
+☐ make icons customizable
+☐ normal copy & cut & paste
+☐ normal finder selection
+☐ add unix find
+☐ add unix grep
+☐ change sorting (file type, last edit)
+☐ expand directory inline
+
+# Done
+✔ backspace to go up
+✔ add ui elements
+✔ add scope to ui elements to be stylabe
+✔ open file correctly
+✔ can not open the last folder (fileregion)
+✔ can not enter on .. anymore
+✔ color of toggles
+✔ set window name
+✔ folders on top
+✔ remember previous view cursor position (update goto)
+✔ error on last line
+✔ fix selection colors
+✔ bring back help
+✔ toggle all selet parent ..
+✔ empty folder bug can not go to parent
+✔ scroll line to view when going back if it's out of view
+✔ show incremental find panel with / 
+✔ delete (multiple) bug
+✔ move
+✔ rename
+✔ disable enter in rename mode
+✔ make ui unditable during rename
+✔ removing / brakes the ui
+✔ p and n missbehave
+✔ completions window
+✔ mark only filename not ui
+✔ hide help based on settings
+✔ dired immediate
+✔ add dired immediate command to command panel
+✔ page up and page down set the cursor to the limits
+✔ quick view integration
+✔ open current dir in finder
+✔ when going to exterems scroll the view
+✔ root issue
+✔ hide cs and tmlang
+✔ unmark should not be u
+✔ up and down with j/k
+✔ update help for new commands \ space w super+up/down
+✔ help should have a shortcut (show help in a new buffer?)
+✔ rename shortcuts in help
+✔ disable mouse drag and drop
+✔ show that we're in Edit mode when renaming, even if help is hidden
+✔ comming back from rename put the cursor at the previous position

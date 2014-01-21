@@ -1,0 +1,4 @@
+[
+    { "caption": "Browse Mode...", "command": "dired" },
+    { "caption": "Browse Mode: Current file or project", "command": "dired", "args": { "immediate": true } }
+]

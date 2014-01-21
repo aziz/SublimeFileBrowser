@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>name</key>
+    <string>dired</string>
+    <key>scopeName</key>
+    <string>text.dired</string>
+    <key>uuid</key>
+    <string>638375b8-3509-4d37-a8d8-afad7a95b428</string>
+    <key>fileTypes</key>
+    <array>
+        <string>dired</string>
+    </array>
+    <key>patterns</key>
+    <array>
+
+      <dict>
+          <key>match</key>
+          <string>^(▸ )(\S.*?)(\\|/)?$</string>
+          <key>name</key>
+          <string>dired.item.directory</string>
+          <key>captures</key>
+          <dict>
+              <key>1</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.directory.symbol.dired</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                  <key>name</key>
+                  <string>string.name.directory.dired</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.directory.slash.dired</string>
+              </dict>
+          </dict>
+      </dict>
+
+      <dict>
+          <key>match</key>
+          <string>^(≡ )(\S.*)$</string>
+          <key>name</key>
+          <string>dired.item.file</string>
+          <key>captures</key>
+          <dict>
+              <key>1</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.file.symbol.dired</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                  <key>name</key>
+                  <string>string.name.file.dired</string>
+              </dict>
+          </dict>
+      </dict>
+
+      <dict>
+          <key>match</key>
+          <string>^⠤$</string>
+          <key>name</key>
+          <string>dired.item.parent_dir</string>
+      </dict>
+
+      <dict>
+          <key>begin</key>
+          <string>(\S(.+)?$)</string>
+          <key>end</key>
+          <string>^(—+)(\[RENAME MODE\]){0,1}(—+)\n</string>
+          <key>name</key>
+          <string>header.dired</string>
+          <key>endCaptures</key>
+          <dict>
+              <key>1</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.separator.dired</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.rename_mode.dired</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.separator.dired</string>
+              </dict>
+          </dict>
+      </dict>
+
+    </array>
+</dict>
+</plist>
