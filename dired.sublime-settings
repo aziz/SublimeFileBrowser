@@ -1,6 +1,6 @@
 {
   "dired_reuse_view": true,
-  "color_scheme": "Packages/SublimeBrowse/dired.hidden-tmTheme",
+  "color_scheme": "Packages/FileBrowser/dired.hidden-tmTheme",
   "line_numbers": false,
   "margin": 0,
   "word_wrap": false,

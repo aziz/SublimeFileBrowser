@@ -163,7 +163,7 @@ class DiredCompleteCommand(WindowCommand):
         if not ctx.completion_view:
             ctx.completion_view = self.window.new_file()
             ctx.completion_view.set_scratch(True)
-            ctx.completion_view.set_syntax_file('Packages/SublimeBrowse/dired.hidden-tmLanguage')
+            ctx.completion_view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
             ctx.completion_view.settings().set("gutter", False)
             ctx.completion_view.set_name('*completions*')
         ctx.completion_view.run_command('dired_show_completions', { "completions": completions })

@@ -122,7 +122,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
 
         self.view.erase(edit, Region(0, self.view.size()))
         self.view.insert(edit, 0, '\n'.join(text))
-        self.view.set_syntax_file('Packages/SublimeBrowse/dired.hidden-tmLanguage')
+        self.view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
         self.view.settings().set('dired_count', len(f))
 
         if marked:
@@ -493,7 +493,7 @@ class DiredHelpCommand(TextCommand):
         view = self.view.window().new_file()
         view.set_name("Browse: shortcuts")
         view.set_scratch(True)
-        view.settings().set('color_scheme','Packages/SublimeBrowse/dired.hidden-tmTheme')
+        view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
         view.settings().set('line_numbers',False)
         view.run_command('dired_show_help')
         self.view.window().focus_view(view)
