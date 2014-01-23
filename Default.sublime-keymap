@@ -149,7 +149,7 @@
     "command": "dired_rename_commit",
     "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": true },
+        { "key": "setting.dired_rename_mode", "operand": true }
     ]
   },
   {
@@ -157,7 +157,7 @@
     "command": "dired_rename_cancel",
     "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": true },
+        { "key": "setting.dired_rename_mode", "operand": true }
     ]
   },
   {
