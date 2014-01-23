@@ -476,6 +476,8 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
     """
     def run(self, edit):
         files = self.get_marked() or self.get_selected()
+        if "⠤" in files:
+            files.remove("⠤")
         cmd = ["qlmanage", "-p"]
         for filename in files:
             fqn = join(self.path, filename)
