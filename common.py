@@ -1,7 +1,19 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import re
 import sublime
 from sublime import Region
+
+ST3 = int(sublime.version()) >= 3000
+ECODING = 'UTF-8'
+
+if ST3:
+    MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
+else:
+    MARK_OPTIONS = 0
+    import locale
+
 
 RE_FILE = re.compile(r'^([^\\// ].*)$')
 
@@ -18,7 +30,7 @@ class DiredBaseCommand:
         return self.view.settings().get('dired_path')
 
     def _remove_ui(self, str):
-        return str.replace("▸ ", "").replace("≡ ", "")
+        return str.replace("▸ ".decode(ECODING), "").replace("≡ ".decode(ECODING), "")
 
     def filecount(self):
         """
@@ -129,7 +141,10 @@ class DiredBaseCommand:
         # We can't update regions for a key, only replace, so we need to record the existing
         # marks.
         previous = self.view.get_regions('marked')
-        marked = { self._remove_ui(RE_FILE.match(self.view.substr(r)).group(1)): r for r in previous }
+        marked = {}
+        for r in previous:
+            item = self._remove_ui(RE_FILE.match(self.view.substr(r)).group(1))
+            marked[item] = r
 
         for region in regions:
             for line in self.view.lines(region):
@@ -144,14 +159,14 @@ class DiredBaseCommand:
                         newmark = mark
 
                     if newmark:
-                        line.a = line.a + 2 # do not mark UI elements
-                        marked[filename] = line
+                        name_region = Region(line.a + 2, line.b) # do not mark UI elements
+                        marked[filename] = name_region
                     else:
                         marked.pop(filename, None)
 
         if marked:
             r = sorted(list(marked.values()), key=lambda region: region.a)
-            self.view.add_regions('marked', r, 'dired.marked', '', sublime.DRAW_NO_OUTLINE)
+            self.view.add_regions('marked', r, 'dired.marked', '', MARK_OPTIONS)
         else:
             self.view.erase_regions('marked')
 
@@ -164,5 +179,5 @@ class DiredBaseCommand:
         region = regions[0]
         start = region.begin()
         self.view.erase(edit, region)
-        new_text = "——[RENAME MODE]——" + "—"*(region.size()-17)
+        new_text = "——[RENAME MODE]——".decode(ECODING) + ("—".decode(ECODING))*(region.size()-17)
         self.view.insert(edit, start, new_text)

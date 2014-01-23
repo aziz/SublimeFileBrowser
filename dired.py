@@ -1,12 +1,27 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
 import os, shutil, tempfile, subprocess
 from os.path import basename, dirname, isdir, exists, join, isabs, normpath, normcase
-from .common import RE_FILE, DiredBaseCommand
-from . import prompt
-from .show import show
+
+ST3 = int(sublime.version()) >= 3000
+ECODING = 'UTF-8'
+
+if ST3:
+    from .common import RE_FILE, DiredBaseCommand
+    from . import prompt
+    from .show import show
+    MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
+else:
+    import locale
+    from common import RE_FILE, DiredBaseCommand
+    import prompt
+    from show import show
+    MARK_OPTIONS = 0
+
 
 # Each dired view stores its path in its local settings as 'dired_path'.
 
@@ -73,7 +88,8 @@ class DiredCommand(WindowCommand):
             return dirname(path)
 
         # Use the first project folder if there is one.
-        data = self.window.project_data()
+        if ST3:
+            data = self.window.project_data()
         if data and 'folders' in data:
             folders = data['folders']
             if folders:
@@ -93,7 +109,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             Optional filename to put the cursor on.
         """
 
-        self.view.set_status("𝌆", " 𝌆 [h: Help] ")
+        if ST3:
+            self.view.set_status("__FileBrowser__", " 𝌆 [h: Help] ")
+        else:
+            self.view.set_status("__FileBrowser__", " [h: Help] ")
 
         path = self.path
         names = os.listdir(path)
@@ -102,20 +121,20 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         # generating dirs list first
         for name in names:
             if isdir(join(path, name)):
-                name = "▸ " + name + os.sep
+                name = "▸ ".decode(ECODING) + name + os.sep
                 f.append(name)
 
         # generating files list
         for name in names:
             if not isdir(join(path, name)):
-                name = "≡ " + name
+                name = "≡ ".decode(ECODING) + name
                 f.append(name)
 
         marked = set(self.get_marked())
 
         text = [ path ]
-        text.append(len(path)*'—')
-        text.append('⠤')
+        text.append(len(path)*('—'.decode(ECODING)))
+        text.append('⠤'.decode(ECODING))
         text.extend(f)
 
         self.view.set_read_only(False)
@@ -132,9 +151,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             for line in self.view.lines(self.fileregion()):
                 filename = self._remove_ui(RE_FILE.match(self.view.substr(line)).group(1))
                 if filename in marked:
-                    line.a = line.a + 2 # do not mark UI elements
-                    regions.append(line)
-            self.view.add_regions('marked', regions, 'dired.marked', '', sublime.DRAW_NO_OUTLINE)
+                    name_region = Region(line.a + 2, line.b) # do not mark UI elements
+                    regions.append(name_region)
+            self.view.add_regions('marked', regions, 'dired.marked', '', MARK_OPTIONS)
         else:
             self.view.erase_regions('marked')
 
@@ -145,9 +164,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             pt = self.fileregion(with_parent_link=True).a
             if goto:
                 if isdir(join(path, goto)) and not goto.endswith(os.sep):
-                    goto = "▸ " + goto + os.sep
+                    goto = "▸ ".decode(ECODING) + goto + os.sep
                 else:
-                    goto = "≡ " + goto
+                    goto = "≡ ".decode(ECODING) + goto
                 try:
                     line = f.index(goto) + 3
                     pt = self.view.text_point(line, 2)
@@ -179,7 +198,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 fqn = join(path, filenames[0])
                 show(self.view.window(), fqn, view_id=self.view.id())
                 return
-            elif len(filenames) == 1 and filenames[0] == "⠤":
+            elif len(filenames) == 1 and filenames[0] == "⠤".decode(ECODING):
                 self.view.window().run_command("dired_up")
                 return
 
@@ -295,9 +314,9 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
         if files:
             # Yes, I know this is English.  Not sure how Sublime is translating.
             if len(files) == 1:
-                msg = "Delete {}?".format(files[0])
+                msg = "Delete {0}?".format(files[0])
             else:
-                msg = "Delete {} items?".format(len(files))
+                msg = "Delete {0} items?".format(len(files))
             if sublime.ok_cancel_dialog(msg):
                 for filename in files:
                     fqn = join(self.path, filename)
@@ -350,12 +369,16 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
             self.view.set_read_only(False)
 
             self.set_ui_in_rename_mode(edit)
-            self.view.set_status("𝌆", " 𝌆 [super+enter: Apply changes] [escape: Discard changes] ")
+
+            if ST3:
+                self.view.set_status("𝌆", " 𝌆 [super+enter: Apply changes] [escape: Discard changes] ")
+            else:
+                self.view.set_status("__FileBrowser__", " [super+enter: Apply changes] [escape: Discard changes] ")
 
             # Mark the original filename lines so we can make sure they are in the same
             # place.
             r = self.fileregion()
-            self.view.add_regions('rename', [ r ], '', '', sublime.DRAW_NO_OUTLINE)
+            self.view.add_regions('rename', [ r ], '', '', MARK_OPTIONS)
 
 
 class DiredRenameCancelCommand(TextCommand, DiredBaseCommand):
@@ -410,7 +433,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
                     diffs.append((tmp, a))
                     a = tmp
 
-                print('dired rename: {} --> {}'.format(b, a))
+                print('dired rename: {0} --> {1}'.format(b, a))
                 os.rename(join(self.path, b), join(self.path, a))
                 existing.remove(b)
                 existing.add(a)
@@ -471,21 +494,50 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
 class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
         items = []
-        executable_path = sublime.executable_path()
-
-        if sublime.platform() == 'osx':
-            app_path = executable_path[:executable_path.rfind(".app/")+5]
-            executable_path = app_path+"Contents/SharedSupport/bin/subl"
-
-        items.append(executable_path)
-        items.append("-n")
         files = self.get_marked() or self.get_selected()
+        
+        if ST3: # sublime.executable_path() is not available in ST2
+            executable_path = sublime.executable_path()
+            if sublime.platform() == 'osx':
+                app_path = executable_path[:executable_path.rfind(".app/")+5]
+                executable_path = app_path+"Contents/SharedSupport/bin/subl"
+            items.append(executable_path)
+            items.append("-n")
+            
+            for filename in files:
+                fqn = join(self.path, filename)
+                items.append(fqn)
 
-        for filename in files:
-            fqn = join(self.path, filename)
-            items.append(fqn)
+            subprocess.Popen(items, cwd=self.path)
 
-        subprocess.Popen(items, cwd=self.path)
+        else: # ST2
+            items.append("-n")
+            for filename in files:
+                fqn = join(self.path, filename)
+                items.append(fqn)
+
+            if sublime.platform() == 'osx':
+               try:
+                   subprocess.Popen(['subl'] + items, cwd=self.path)
+               except:
+                   try:
+                       subprocess.Popen(['sublime'] + items, cwd=self.path)
+                   except:
+                       subprocess.Popen(['/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl'] + items, cwd=self.path)
+            elif sublime.platform() == 'windows':
+               try:
+                   subprocess.Popen(['subl'] + items, cwd=self.path, shell=True)
+               except:
+                   try:
+                       subprocess.Popen(['sublime'] + items, cwd=self.path, shell=True)
+                   except:
+                       subprocess.Popen(['sublime_text.exe'] + items, cwd=self.path, shell=True)
+            else:
+               try:
+                   subprocess.Popen(['subl'] + items, cwd=self.path)
+               except:
+                   subprocess.Popen(['sublime'] + items, cwd=self.path)
+
 
 
 class DiredHelpCommand(TextCommand):
@@ -496,7 +548,7 @@ class DiredHelpCommand(TextCommand):
         view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
         view.settings().set('line_numbers',False)
         view.run_command('dired_show_help')
-        self.view.window().focus_view(view)
+        sublime.active_window().focus_view(view)
 
 
 class DiredShowHelpCommand(TextCommand):

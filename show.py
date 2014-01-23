@@ -1,7 +1,19 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import os
+import sublime
 from os.path import basename
-from .common import first
+
+ST3 = int(sublime.version()) >= 3000
+ECODING = 'UTF-8'
+
+if ST3:
+    from .common import first
+else:
+    from common import first
+    import locale
+
 
 def show(window, path, view_id=None, ignore_existing=False, goto=None):
     """
@@ -28,7 +40,13 @@ def show(window, path, view_id=None, ignore_existing=False, goto=None):
         view_name = os.sep
     else:
         view_name = basename(path.rstrip(os.sep))
-    view.set_name("𝌆 " + view_name)
+    
+    if ST3:
+        name = "𝌆 {0}".format(view_name)
+    else: 
+        name = view_name
+        
+    view.set_name(name)
     view.settings().set('dired_path', path)
     view.settings().set('dired_rename_mode', False)
     window.focus_view(view)

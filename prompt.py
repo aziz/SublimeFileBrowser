@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 # Internal-only commands for dealing with the directory prompt.  Due to Sublime Text's quirky
 # design we need to re-issue commands over and over during a single prompt.
