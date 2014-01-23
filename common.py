@@ -30,7 +30,10 @@ class DiredBaseCommand:
         return self.view.settings().get('dired_path')
 
     def _remove_ui(self, str):
-        return str.replace("▸ ".decode(ECODING), "").replace("≡ ".decode(ECODING), "")
+        try:
+            return str.replace("▸ ".decode(ECODING), "").replace("≡ ".decode(ECODING), "")
+        except:
+            return str.replace("▸ ", "").replace("≡ ", "")
 
     def filecount(self):
         """
@@ -154,7 +157,7 @@ class DiredBaseCommand:
 
                     if mark not in (True, False):
                         newmark = mark(filename in marked, filename)
-                        assert newmark in (True, False), 'Invalid mark: {}'.format(newmark)
+                        assert newmark in (True, False), 'Invalid mark: {0}'.format(newmark)
                     else:
                         newmark = mark
 
@@ -179,5 +182,8 @@ class DiredBaseCommand:
         region = regions[0]
         start = region.begin()
         self.view.erase(edit, region)
-        new_text = "——[RENAME MODE]——".decode(ECODING) + ("—".decode(ECODING))*(region.size()-17)
+        try:
+            new_text = "——[RENAME MODE]——".decode(ECODING) + ("—".decode(ECODING))*(region.size()-17)
+        except:
+            new_text = "——[RENAME MODE]——" + "—"*(region.size()-17)
         self.view.insert(edit, start, new_text)

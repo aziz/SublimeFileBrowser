@@ -1,5 +1,5 @@
 
-# TODO
+# TODO:
 ☐ set status bar after rename/move/delete
 ☐ make icons customizable
 ☐ normal copy & cut & paste
@@ -9,7 +9,7 @@
 ☐ change sorting (file type, last edit)
 ☐ expand directory inline
 
-# Done
+# Done:
 ✔ backspace to go up
 ✔ add ui elements
 ✔ add scope to ui elements to be stylabe
@@ -26,7 +26,7 @@
 ✔ toggle all selet parent ..
 ✔ empty folder bug can not go to parent
 ✔ scroll line to view when going back if it's out of view
-✔ show incremental find panel with / 
+✔ show incremental find panel with /
 ✔ delete (multiple) bug
 ✔ move
 ✔ rename

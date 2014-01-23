@@ -15,12 +15,14 @@ if ST3:
     from . import prompt
     from .show import show
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
+    PARENT_SYM = "⠤"
 else:
     import locale
     from common import RE_FILE, DiredBaseCommand
     import prompt
     from show import show
     MARK_OPTIONS = 0
+    PARENT_SYM = "⠤".decode(ECODING)
 
 
 # Each dired view stores its path in its local settings as 'dired_path'.
@@ -121,20 +123,29 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         # generating dirs list first
         for name in names:
             if isdir(join(path, name)):
-                name = "▸ ".decode(ECODING) + name + os.sep
+                try:
+                    name = "▸ ".decode(ECODING) + name + os.sep
+                except:
+                    name = "▸ " + name + os.sep
                 f.append(name)
 
         # generating files list
         for name in names:
             if not isdir(join(path, name)):
-                name = "≡ ".decode(ECODING) + name
+                try:
+                    name = "≡ ".decode(ECODING) + name
+                except:
+                    name = "≡ " + name
                 f.append(name)
 
         marked = set(self.get_marked())
 
         text = [ path ]
-        text.append(len(path)*('—'.decode(ECODING)))
-        text.append('⠤'.decode(ECODING))
+        try:
+            text.append(len(path)*('—'.decode(ECODING)))
+        except:
+            text.append(len(path)*('—'))
+        text.append(PARENT_SYM)
         text.extend(f)
 
         self.view.set_read_only(False)
@@ -164,9 +175,15 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             pt = self.fileregion(with_parent_link=True).a
             if goto:
                 if isdir(join(path, goto)) and not goto.endswith(os.sep):
-                    goto = "▸ ".decode(ECODING) + goto + os.sep
+                    try:
+                        goto = "▸ ".decode(ECODING) + goto + os.sep
+                    except:
+                        goto = "▸ " + goto + os.sep
                 else:
-                    goto = "≡ ".decode(ECODING) + goto
+                    try:
+                        goto = "≡ ".decode(ECODING) + goto
+                    except:
+                        goto = "≡ " + goto
                 try:
                     line = f.index(goto) + 3
                     pt = self.view.text_point(line, 2)
@@ -198,7 +215,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 fqn = join(path, filenames[0])
                 show(self.view.window(), fqn, view_id=self.view.id())
                 return
-            elif len(filenames) == 1 and filenames[0] == "⠤".decode(ECODING):
+            elif len(filenames) == 1 and filenames[0] == PARENT_SYM:
                 self.view.window().run_command("dired_up")
                 return
 
@@ -232,7 +249,7 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
 
         fqn = join(self.path, value)
         if exists(fqn):
-            sublime.error_message('{} already exists'.format(fqn))
+            sublime.error_message('{0} already exists'.format(fqn))
             return
 
         if which == 'directory':
@@ -346,7 +363,7 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
         if not isabs(path):
             path = join(self.path, path)
         if not isdir(path):
-            sublime.error_message('Not a valid directory: {}'.format(path))
+            sublime.error_message('Not a valid directory: {0}'.format(path))
             return
 
         # Move all items into the target directory.  If the target directory was also selected,
@@ -371,7 +388,7 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
             self.set_ui_in_rename_mode(edit)
 
             if ST3:
-                self.view.set_status("𝌆", " 𝌆 [super+enter: Apply changes] [escape: Discard changes] ")
+                self.view.set_status("__FileBrowser__", " 𝌆 [super+enter: Apply changes] [escape: Discard changes] ")
             else:
                 self.view.set_status("__FileBrowser__", " [super+enter: Apply changes] [escape: Discard changes] ")
 
@@ -497,7 +514,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
         items = []
         files = self.get_marked() or self.get_selected()
-        
+
         if ST3: # sublime.executable_path() is not available in ST2
             executable_path = sublime.executable_path()
             if sublime.platform() == 'osx':
@@ -505,7 +522,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                 executable_path = app_path+"Contents/SharedSupport/bin/subl"
             items.append(executable_path)
             items.append("-n")
-            
+
             for filename in files:
                 fqn = join(self.path, filename)
                 items.append(fqn)

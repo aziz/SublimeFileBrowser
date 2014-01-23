@@ -1,13 +1,11 @@
 # FileBrowser for SublimeText
 Ditch sidebar and browse your files in a normal tab with keyboard, like a pro!
 
-**Currently only tested on SublimeText 3, support for SublimeText 2 should come soon.**
-
 ![SublimeFileBrowser Screenshot](http://f.cl.ly/items/173X3t2B1g3V2F051t2S/Screen%20Shot%202014-01-21%20at%2014.22.47.png)
 
 ## Installation
 You can install via [Sublime Package Control](http://wbond.net/sublime_packages/package_control)  
-Or you can clone this repo into your Sublime Text 3/Packages folder and rename the folder to `FileBrowser`
+Or you can clone this repo into your Sublime Text Packages folder and rename the folder to `FileBrowser`
 
 ## Commands and Keybindings
 This plugin does not add any keybindings for opening a new tab in "Browse mode". Although, the commands to do that are available in *command pallete* but I recommend binding <kbd>F1</kbd> to open the current file folder in "Browse mode" with this peice of code (that you can add it to your `Key Bindings - User` file):
