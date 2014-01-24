@@ -1,7 +1,10 @@
 # FileBrowser for SublimeText
 Ditch sidebar and browse your files in a normal tab with keyboard, like a pro!
 
-![SublimeFileBrowser Screenshot](http://f.cl.ly/items/173X3t2B1g3V2F051t2S/Screen%20Shot%202014-01-21%20at%2014.22.47.png)
+![SublimeFileBrowser Screenshot](http://cl.ly/image/152u1c3J3U45/Screen%20Shot%202014-01-24%20at%2011.30.34.png)
+
+You can also use it as a sidebar that you can put on right or left side
+![SublimeFileBrowser Screenshot2](http://cl.ly/image/0Z2U062k3l3p/Screen%20Shot%202014-01-24%20at%2011.26.53.png)
 
 ## Installation
 You can install via [Sublime Package Control](http://wbond.net/sublime_packages/package_control)  
