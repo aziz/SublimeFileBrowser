@@ -72,7 +72,14 @@ After you are done with editing press <kbd>super+enter</kbd> to commit your chan
 ### Open in new window
 Selecting a couple of files and/or directories (either by marking them or using the noraml multiple cursor feature of sublime) and pressing <kbd>w</kbd> will open them in a new SublimeText window. 
 
+## Changing color scheme
+If you don't like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User folder, change colors and create a file called `dired.sublime-settings` in you User folder and paste the code below:
 
+``` json
+{
+  "color_scheme": "Path to your custom color scheme file. e.g. Packages/User/custom_dired.hidden-tmTheme",
+}
+```
 
 ## Credit
 This is a fork of the awesome [dired plugin](https://github.com/mkleehammer/dired) by [Michael Kleehammer](https://github.com/mkleehammer)
