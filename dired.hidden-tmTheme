@@ -170,6 +170,18 @@
 			</dict>
 		</dict>
 
+		<dict>
+			<key>name</key>
+			<string>Error</string>
+			<key>scope</key>
+			<string>string.error.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#aa0000</string>
+			</dict>
+		</dict>
+
 	</array>
 	<key>uuid</key>
 	<string>07379361-ce49-4e6c-a03f-26378a7a2131</string>

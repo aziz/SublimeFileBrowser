@@ -119,7 +119,19 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.set_status("__FileBrowser__", " [h: Help] ")
 
         path = self.path
-        names = os.listdir(path)
+        try:
+            names = os.listdir(path)
+        except WindowsError as e:
+            self.view.run_command("dired_up")
+            self.view.set_read_only(False)
+            self.view.insert(edit, self.view.line(self.view.sel()[0]).b,
+                             '\t<%s>' % str(e).split(':')[0]
+                             .replace('[Error 5] ', 'Access denied'))
+            self.view.set_read_only(True)
+        else:
+            self.continue_refreshing(edit, path, names, goto)
+
+    def continue_refreshing(self, edit, path, names, goto=None):
         f = []
 
         # generating dirs list first
@@ -223,10 +235,11 @@ class DiredSelect(TextCommand, DiredBaseCommand):
 
         for filename in filenames:
             fqn = join(path, filename)
-            if isdir(fqn):
-                show(self.view.window(), fqn, ignore_existing=new_view)
-            else:
-                self.view.window().open_file(fqn)
+            if '<' not in fqn: # ignore 'item <error>'
+                if isdir(fqn):
+                    show(self.view.window(), fqn, ignore_existing=new_view)
+                else:
+                    self.view.window().open_file(fqn)
 
 
 class DiredCreateCommand(TextCommand, DiredBaseCommand):

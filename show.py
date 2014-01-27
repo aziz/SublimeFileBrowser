@@ -40,12 +40,12 @@ def show(window, path, view_id=None, ignore_existing=False, goto=None):
         view_name = os.sep
     else:
         view_name = basename(path.rstrip(os.sep))
-    
+
     if ST3:
         name = "𝌆 {0}".format(view_name)
-    else: 
+    else:
         name = view_name
-        
+
     view.set_name(name)
     view.settings().set('dired_path', path)
     view.settings().set('dired_rename_mode', False)

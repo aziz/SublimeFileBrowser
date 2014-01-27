@@ -17,7 +17,7 @@
 
       <dict>
           <key>match</key>
-          <string>^(▸ )(\S.*?)(\\|/)?$</string>
+          <string>^(▸ )([^\\/]*)(\\|/)?(.*)?$</string>
           <key>name</key>
           <string>dired.item.directory</string>
           <key>captures</key>
@@ -37,6 +37,11 @@
                   <key>name</key>
                   <string>punctuation.definition.directory.slash.dired</string>
               </dict>
+              <key>4</key>
+                  <dict>
+                      <key>name</key>
+                      <string>string.error.dired</string>
+                  </dict>
           </dict>
       </dict>
 
