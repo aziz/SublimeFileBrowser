@@ -30,32 +30,34 @@ else:
 COMMANDS_HELP = """\
 
 Browse Shortcuts:
-+--------------------------+-------------+
-| Command                  | Shortcut    |
-|--------------------------+-------------|
-| Help page                | h           |
-| Toggle mark              | m           |
-| Toggle all marks         | t           |
-| Unmark all               | u           |
-| Mark by extension        | *           |
-| Rename                   | R           |
-| Move                     | M           |
-| Delete                   | D           |
-| Create directory         | cd          |
-| Create file              | cf          |
-| Open file/view directory | enter/o     |
-| Open in Finder/Explorer  | \           |
-| Open in new window       | w           |
-| Go to parent directory   | backspace   |
-| Go to directory          | g           |
-| Go to first              | super+up    |
-| Go to last               | super+down  |
-| Move to previous         | k/up        |
-| Move to next             | j/down      |
-| Jump to                  | /           |
-| Refresh view             | r           |
-| Quicklook for Mac        | space       |
-+--------------------------+-------------+
++---------------------------+-------------+
+| Command                   | Shortcut    |
+|---------------------------+-------------|
+| Help page                 | h           |
+| Toggle mark               | m           |
+| Toggle mark and move down | shift+down  |
+| Toggle mark and move up   | shift+up    |
+| Toggle all marks          | t           |
+| Unmark all                | u           |
+| Mark by extension         | *           |
+| Rename                    | R           |
+| Move                      | M           |
+| Delete                    | D           |
+| Create directory          | cd          |
+| Create file               | cf          |
+| Open file/view directory  | enter/o     |
+| Open in Finder/Explorer   | \           |
+| Open in new window        | w           |
+| Go to parent directory    | backspace   |
+| Go to directory           | g           |
+| Go to first               | super+up    |
+| Go to last                | super+down  |
+| Move to previous          | k/up        |
+| Move to next              | j/down      |
+| Jump to                   | /           |
+| Refresh view              | r           |
+| Quicklook for Mac         | space       |
++---------------------------+-------------+
 
 In Rename Mode:
 +--------------------------+-------------+
@@ -298,7 +300,7 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
     If there is no selection and mark is '*', the cursor is moved to the next line so
     successive files can be marked by repeating the mark key binding (e.g. 'm').
     """
-    def run(self, edit, mark=True, markall=False):
+    def run(self, edit, mark=True, markall=False, forward=True):
         assert mark in (True, False, 'toggle')
 
         filergn = self.fileregion()
@@ -322,7 +324,7 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
         # If there is no selection, move the cursor forward so the user can keep pressing 'm'
         # to mark successive files.
         if not markall and len(self.view.sel()) == 1 and self.view.sel()[0].empty():
-            self.move(True)
+            self.move(forward)
 
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):

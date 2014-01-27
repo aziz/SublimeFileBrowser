@@ -87,6 +87,24 @@
       ]
   },
   {
+      "keys": ["shift+down"],
+      "command": "dired_mark",
+      "args": { "mark": "toggle" },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["shift+up"],
+      "command": "dired_mark",
+      "args": { "mark": "toggle", "forward": false },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
       "keys": ["u"],
       "command": "dired_mark",
       "args": { "mark": false, "markall": true },

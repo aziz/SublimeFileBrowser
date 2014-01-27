@@ -33,6 +33,8 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | :--------------------------- | :---------------------------------- |
 | Help page                    | <kbd>h</kbd>                        |
 | Toggle mark                  | <kbd>m</kbd>                        |
+| Toggle mark and move down    | <kbd>shift+down</kbd>               |
+| Toggle mark and move up      | <kbd>shift+up</kbd>                 |
 | Toggle all marks             | <kbd>t</kbd>                        |
 | Unmark all                   | <kbd>u</kbd>                        |
 | Mark by extension            | <kbd>*</kbd>                        |
