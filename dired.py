@@ -159,7 +159,8 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             text.append(len(path)*('—'.decode(ECODING)))
         except:
             text.append(len(path)*('—'))
-        text.append(PARENT_SYM)
+        if not f or self.view.settings().get("show_parent"):
+            text.append(PARENT_SYM)
         text.extend(f)
 
         self.view.set_read_only(False)
@@ -199,7 +200,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                     except:
                         goto = "≡ " + goto
                 try:
-                    line = f.index(goto) + 3
+                    line = f.index(goto) + (3 if self.view.settings().get("show_parent") else 2)
                     pt = self.view.text_point(line, 2)
                 except ValueError:
                     pass
@@ -403,9 +404,9 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
             self.set_ui_in_rename_mode(edit)
 
             if ST3:
-                self.view.set_status("__FileBrowser__", " 𝌆 [super+enter: Apply changes] [escape: Discard changes] ")
+                self.view.set_status("__FileBrowser__", " 𝌆 [enter: Apply changes] [escape: Discard changes] ")
             else:
-                self.view.set_status("__FileBrowser__", " [super+enter: Apply changes] [escape: Discard changes] ")
+                self.view.set_status("__FileBrowser__", " [enter: Apply changes] [escape: Discard changes] ")
 
             # Mark the original filename lines so we can make sure they are in the same
             # place.
