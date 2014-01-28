@@ -29,38 +29,38 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 
 ### Shortcuts
 
-| Command                      | Shortcut                            |
-| :--------------------------- | :---------------------------------- |
-| Help page                    | <kbd>h</kbd>                        |
-| Toggle mark                  | <kbd>m</kbd>                        |
-| Toggle mark and move down    | <kbd>shift+down</kbd>               |
-| Toggle mark and move up      | <kbd>shift+up</kbd>                 |
-| Toggle all marks             | <kbd>t</kbd>                        |
-| Unmark all                   | <kbd>u</kbd>                        |
-| Mark by extension            | <kbd>*</kbd>                        |
-| Rename                       | <kbd>R</kbd>                        |
-| Move                         | <kbd>M</kbd>                        |
-| Delete                       | <kbd>D</kbd>                        |
-| Create directory             | <kbd>cd</kbd>                       |
-| Create file                  | <kbd>cf</kbd>                       |
-| Open file/view directory     | <kbd>enter</kbd> or <kbd>o</kbd>    |
-| Open in Finder/File Explorer | <kbd>\\</kbd>                       |
-| Open in new window           | <kbd>w</kbd>                        |
-| Go to parent directory       | <kbd>backspace</kbd>                |
-| Go to directory              | <kbd>g</kbd>                        |
-| Go to first                  | <kbd>super+up</kbd>                 |
-| Go to last                   | <kbd>super+down</kbd>               |
-| Move to previous             | <kbd>k</kbd> or <kbd>up</kbd>       |
-| Move to next                 | <kbd>j</kbd> or <kbd>down</kbd>     |
-| Jump to                      | <kbd>/</kbd>                        |
-| Refresh view                 | <kbd>r</kbd>                        |
-| Quicklook for Mac            | <kbd>space</kbd>                    |
+| Command                      | Shortcut                               |
+| :--------------------------- | :--------------------------------------|
+| Help page                    | <kbd>h</kbd>                           |
+| Toggle mark                  | <kbd>m</kbd>                           |
+| Toggle mark and move down    | <kbd>shift+↓</kbd>                     |
+| Toggle mark and move up      | <kbd>shift+↑</kbd>                     |
+| Toggle all marks             | <kbd>t</kbd>                           |
+| Unmark all                   | <kbd>u</kbd>                           |
+| Mark by extension            | <kbd>\*</kbd>                          |
+| Rename                       | <kbd>R</kbd>                           |
+| Move                         | <kbd>M</kbd>                           |
+| Delete                       | <kbd>D</kbd>                           |
+| Create directory             | <kbd>cd</kbd>                          |
+| Create file                  | <kbd>cf</kbd>                          |
+| Open file/view directory     | <kbd>enter</kbd> or <kbd>o</kbd>       |
+| Open in Finder/File Explorer | <kbd>\\</kbd>                          |
+| Open in new window           | <kbd>w</kbd>                           |
+| Go to parent directory       | <kbd>backspace</kbd>                   |
+| Go to directory              | <kbd>g</kbd>                           |
+| Go to first                  | <kbd>⌘+↑</kbd> or <kbd>ctrl+home</kbd> |
+| Go to last                   | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>  |
+| Move to previous             | <kbd>k</kbd> or <kbd>↑</kbd>           |
+| Move to next                 | <kbd>j</kbd> or <kbd>↓</kbd>           |
+| Jump to                      | <kbd>/</kbd>                           |
+| Refresh view                 | <kbd>r</kbd>                           |
+| Quicklook for Mac            | <kbd>space</kbd>                       |
 
 In **Rename Mode**:
 
 | Command          | Shortcut               |
 | :--------------- | :--------------------- |
-| Apply changes    | <kbd>super+enter</kbd> |
+| Apply changes    | <kbd>enter</kbd>       |
 | Discard changes  | <kbd>escape</kbd>      |
 
 ### Selecting Files and Directories

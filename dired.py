@@ -30,40 +30,40 @@ else:
 COMMANDS_HELP = """\
 
 Browse Shortcuts:
-+---------------------------+-------------+
-| Command                   | Shortcut    |
-|---------------------------+-------------|
-| Help page                 | h           |
-| Toggle mark               | m           |
-| Toggle mark and move down | shift+down  |
-| Toggle mark and move up   | shift+up    |
-| Toggle all marks          | t           |
-| Unmark all                | u           |
-| Mark by extension         | *           |
-| Rename                    | R           |
-| Move                      | M           |
-| Delete                    | D           |
-| Create directory          | cd          |
-| Create file               | cf          |
-| Open file/view directory  | enter/o     |
-| Open in Finder/Explorer   | \           |
-| Open in new window        | w           |
-| Go to parent directory    | backspace   |
-| Go to directory           | g           |
-| Go to first               | super+up    |
-| Go to last                | super+down  |
-| Move to previous          | k/up        |
-| Move to next              | j/down      |
-| Jump to                   | /           |
-| Refresh view              | r           |
-| Quicklook for Mac         | space       |
-+---------------------------+-------------+
++---------------------------+------------------------+
+| Command                   | Shortcut               |
+|---------------------------+------------------------|
+| Help page                 | h                      |
+| Toggle mark               | m                      |
+| Toggle mark and move down | shift+down             |
+| Toggle mark and move up   | shift+up               |
+| Toggle all marks          | t                      |
+| Unmark all                | u                      |
+| Mark by extension         | *                      |
+| Rename                    | R                      |
+| Move                      | M                      |
+| Delete                    | D                      |
+| Create directory          | cd                     |
+| Create file               | cf                     |
+| Open file/view directory  | enter/o                |
+| Open in Finder/Explorer   | \                      |
+| Open in new window        | w                      |
+| Go to parent directory    | backspace              |
+| Go to directory           | g                      |
+| Go to first               | super+up / ctrl+home   |
+| Go to last                | super+down / ctrl+end  |
+| Move to previous          | k/up                   |
+| Move to next              | j/down                 |
+| Jump to                   | /                      |
+| Refresh view              | r                      |
+| Quicklook for Mac         | space                  |
++---------------------------+------------------------+
 
 In Rename Mode:
 +--------------------------+-------------+
 | Command                  | Shortcut    |
 |--------------------------|-------------|
-| Apply changes            | super+enter |
+| Apply changes            | enter       |
 | Discard changes          | escape      |
 +--------------------------+-------------+
 """
