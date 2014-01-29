@@ -63,8 +63,9 @@ In **Rename Mode**:
 | Apply changes    | <kbd>enter</kbd>       |
 | Discard changes  | <kbd>escape</kbd>      |
 
+
 ### Selecting Files and Directories
-You can select files and/or directories by marking them with <kbd>m</kbd> or just use the sublime multiple cursor feature and extend your cursor to the line that has those files/directories
+You can select files and/or directories by marking them with <kbd>m</kbd>, or <kbd>Shift+up/down</kbd> or just use the sublime multiple cursor feature and extend your cursor to the line that has those files/directories
 
 ### Rename Mode
 The rename command puts the view into **rename mode**. The view is made editable so files can be renamed directly in the view using all of your Sublime Text tools: multiple cursors, search and replace, etc.
@@ -73,6 +74,15 @@ After you are done with editing press <kbd>super+enter</kbd> to commit your chan
 
 ### Open in new window
 Selecting a couple of files and/or directories (either by marking them or using the noraml multiple cursor feature of sublime) and pressing <kbd>w</kbd> will open them in a new SublimeText window. 
+
+### Customizing UI
+If you don't like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace` to go to parent directory) you can do it in your user syntax specific settings file. create a file called `dired.sublime-settings` in you User folder and paste the code below:
+
+``` json
+{
+  "dired_show_parent": false,
+}
+```
 
 ## Changing color scheme
 If you don't like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User folder, change colors and create a file called `dired.sublime-settings` in you User folder and paste the code below:

@@ -1,6 +1,6 @@
 {
   "dired_reuse_view": true,
-  "show_parent": true, // double dot as first element of each folder
+  "dired_show_parent": true, // double dot as first element of each folder
   "color_scheme": "Packages/FileBrowser/dired.hidden-tmTheme",
   "line_numbers": false,
   "margin": 0,

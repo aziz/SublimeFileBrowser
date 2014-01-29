@@ -71,6 +71,9 @@ In Rename Mode:
 def reuse_view():
     return sublime.load_settings('dired.sublime-settings').get('dired_reuse_view', False)
 
+def show_parent():
+    return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
+
 class DiredCommand(WindowCommand):
     """
     Prompt for a directory to display and display it.
@@ -112,6 +115,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         goto
             Optional filename to put the cursor on.
         """
+        print(self.view.settings())
 
         if ST3:
             self.view.set_status("__FileBrowser__", " 𝌆 [h: Help] ")
@@ -159,7 +163,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             text.append(len(path)*('—'.decode(ECODING)))
         except:
             text.append(len(path)*('—'))
-        if not f or self.view.settings().get("show_parent"):
+        if not f or show_parent():
             text.append(PARENT_SYM)
         text.extend(f)
 
@@ -200,7 +204,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                     except:
                         goto = "≡ " + goto
                 try:
-                    line = f.index(goto) + (3 if self.view.settings().get("show_parent") else 2)
+                    line = f.index(goto) + (3 if show_parent() else 2)
                     pt = self.view.text_point(line, 2)
                 except ValueError:
                     pass
