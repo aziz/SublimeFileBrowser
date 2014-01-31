@@ -139,6 +139,14 @@
       ]
   },
   {
+      "keys": ["s"],
+      "command": "dired_delete", "args": {"trash": true},
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
       "keys": ["M"],
       "command": "dired_move",
       "context": [

@@ -79,6 +79,8 @@ class DiredBaseCommand:
         self.view.sel().clear()
         self.view.sel().add(Region(line.a, line.a))
 
+    def show_parent(self):
+        return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
 
     def fileregion(self, with_parent_link=False):
         """
@@ -89,7 +91,10 @@ class DiredBaseCommand:
         if with_parent_link:
             return Region(self.view.text_point(2, 0), self.view.text_point(count+3, 0))
         else:
-            return Region(self.view.text_point(3, 0), self.view.text_point(count+3, 0))
+            if self.show_parent():
+                return Region(self.view.text_point(3, 0), self.view.text_point(count+3, 0))
+            else:
+                return Region(self.view.text_point(2, 0), self.view.text_point(count+2, 0))
 
 
     def get_all(self):

@@ -41,6 +41,7 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | Rename                       | <kbd>R</kbd>                           |
 | Move                         | <kbd>M</kbd>                           |
 | Delete                       | <kbd>D</kbd>                           |
+| Send to trash                | <kbd>s</kbd>                           |
 | Create directory             | <kbd>cd</kbd>                          |
 | Create file                  | <kbd>cf</kbd>                          |
 | Open file/view directory     | <kbd>enter</kbd> or <kbd>o</kbd>       |

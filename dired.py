@@ -4,7 +4,7 @@
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
-import os, shutil, tempfile, subprocess
+import os, shutil, tempfile, subprocess, send2trash
 from os.path import basename, dirname, isdir, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
@@ -43,6 +43,7 @@ Browse Shortcuts:
 | Rename                    | R                      |
 | Move                      | M                      |
 | Delete                    | D                      |
+| Send to trash             | s                      |
 | Create directory          | cd                     |
 | Create file               | cf                     |
 | Open file/view directory  | enter/o                |
@@ -70,9 +71,6 @@ In Rename Mode:
 
 def reuse_view():
     return sublime.load_settings('dired.sublime-settings').get('dired_reuse_view', False)
-
-def show_parent():
-    return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
 
 class DiredCommand(WindowCommand):
     """
@@ -163,7 +161,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             text.append(len(path)*('—'.decode(ECODING)))
         except:
             text.append(len(path)*('—'))
-        if not f or show_parent():
+        if not f or self.show_parent():
             text.append(PARENT_SYM)
         text.extend(f)
 
@@ -204,7 +202,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                     except:
                         goto = "≡ " + goto
                 try:
-                    line = f.index(goto) + (3 if show_parent() else 2)
+                    line = f.index(goto) + (3 if self.show_parent() else 2)
                     pt = self.view.text_point(line, 2)
                 except ValueError:
                     pass
@@ -346,7 +344,7 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit):
+    def run(self, edit, trash=False):
         files = self.get_marked() or self.get_selected()
         if files:
             # Yes, I know this is English.  Not sure how Sublime is translating.
@@ -354,10 +352,12 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                 msg = "Delete {0}?".format(files[0])
             else:
                 msg = "Delete {0} items?".format(len(files))
-            if sublime.ok_cancel_dialog(msg):
+            if trash or sublime.ok_cancel_dialog(msg):
                 for filename in files:
                     fqn = join(self.path, filename)
-                    if isdir(fqn):
+                    if trash:
+                        send2trash.send2trash(fqn)
+                    elif isdir(fqn):
                         shutil.rmtree(fqn)
                     else:
                         os.remove(fqn)
