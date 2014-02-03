@@ -4,7 +4,11 @@
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
-import os, re, shutil, tempfile, subprocess, send2trash
+import os, re, shutil, tempfile, subprocess
+try:
+    import send2trash
+except ImportError:
+    send2trash = None
 from os.path import basename, dirname, isdir, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
@@ -366,7 +370,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
             if trash or sublime.ok_cancel_dialog(msg):
                 for filename in files:
                     fqn = join(self.path, filename)
-                    if trash:
+                    if trash and send2trash:
                         send2trash.send2trash(fqn)
                     elif isdir(fqn):
                         shutil.rmtree(fqn)
