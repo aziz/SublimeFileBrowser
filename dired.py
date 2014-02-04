@@ -5,10 +5,6 @@ import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
 import os, re, shutil, tempfile, subprocess
-try:
-    import send2trash
-except ImportError:
-    send2trash = None
 from os.path import basename, dirname, isdir, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
@@ -20,6 +16,10 @@ if ST3:
     from .show import show
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
     PARENT_SYM = "⠤"
+    try:
+        import Default.send2trash as send2trash
+    except ImportError:
+        send2trash = None
 else:
     import locale
     from common import RE_FILE, DiredBaseCommand
@@ -27,6 +27,10 @@ else:
     from show import show
     MARK_OPTIONS = 0
     PARENT_SYM = "⠤".decode(ECODING)
+    try:
+        import send2trash
+    except ImportError:
+        send2trash = None
 
 
 # Each dired view stores its path in its local settings as 'dired_path'.
@@ -76,14 +80,14 @@ In Rename Mode:
 def reuse_view():
     return sublime.load_settings('dired.sublime-settings').get('dired_reuse_view', False)
 
-def sort_nicely(l): 
+def sort_nicely(l):
     """ Sort the given list in the way that humans expect.
-    
+
     Source: http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
     """
-       
-    convert = lambda text: int(text) if text.isdigit() else text.lower() 
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)] 
+
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     l.sort(key=alphanum_key)
 
 class DiredCommand(WindowCommand):
@@ -367,6 +371,9 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                 msg = "Delete {0}?".format(files[0])
             else:
                 msg = "Delete {0} items?".format(len(files))
+            if trash and not send2trash:
+                msg = "Cannot send to trash.\nPermanently " + msg[0].lower() + msg[1:]
+                trash = False
             if trash or sublime.ok_cancel_dialog(msg):
                 for filename in files:
                     fqn = join(self.path, filename)
