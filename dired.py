@@ -4,7 +4,11 @@
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
-import os, shutil, tempfile, subprocess, send2trash
+import os, re, shutil, tempfile, subprocess
+try:
+    import send2trash
+except ImportError:
+    send2trash = None
 from os.path import basename, dirname, isdir, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
@@ -72,6 +76,16 @@ In Rename Mode:
 def reuse_view():
     return sublime.load_settings('dired.sublime-settings').get('dired_reuse_view', False)
 
+def sort_nicely(l): 
+    """ Sort the given list in the way that humans expect.
+    
+    Source: http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
+    """
+       
+    convert = lambda text: int(text) if text.isdigit() else text.lower() 
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)] 
+    l.sort(key=alphanum_key)
+
 class DiredCommand(WindowCommand):
     """
     Prompt for a directory to display and display it.
@@ -123,6 +137,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         path = self.path
         try:
             names = os.listdir(path)
+            sort_nicely(names)
         except WindowsError as e:
             self.view.run_command("dired_up")
             self.view.set_read_only(False)
@@ -355,7 +370,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
             if trash or sublime.ok_cancel_dialog(msg):
                 for filename in files:
                     fqn = join(self.path, filename)
-                    if trash:
+                    if trash and send2trash:
                         send2trash.send2trash(fqn)
                     elif isdir(fqn):
                         shutil.rmtree(fqn)
