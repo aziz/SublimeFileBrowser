@@ -78,6 +78,7 @@ class DiredBaseCommand:
         line = self.view.line(pt)
         self.view.sel().clear()
         self.view.sel().add(Region(line.a, line.a))
+        self.view.show(pt, False)
 
     def show_parent(self):
         return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
