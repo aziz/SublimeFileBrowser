@@ -298,20 +298,13 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredMarkExtensionCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit, ext=None):
+    def run(self, edit):
         filergn = self.fileregion()
         if filergn.empty():
             return
-
-        if ext is None:
-            # This is the first time we've been called, so ask for the extension.
-            self.view.window().show_input_panel('Extension:', '', self.on_done, None, None)
-        else:
-            # We have already asked for the extension but had to re-run the command to get an
-            # edit object.  (Sublime's command design really sucks.)
-            def _markfunc(oldmark, filename):
-                return filename.endswith(ext) and True or oldmark
-            self._mark(mark=_markfunc, regions=self.fileregion())
+        ext = self.view.substr(self.view.line(self.view.sel()[0].a)).split('.')[-1]
+        pv = self.view.window().show_input_panel('Extension:', ext, self.on_done, None, None)
+        pv.run_command("select_all")
 
     def on_done(self, ext):
         ext = ext.strip()
@@ -319,7 +312,9 @@ class DiredMarkExtensionCommand(TextCommand, DiredBaseCommand):
             return
         if not ext.startswith('.'):
             ext = '.' + ext
-        self.view.run_command('dired_mark_extension', { 'ext': ext })
+        def _markfunc(oldmark, filename):
+            return filename.endswith(ext) and True or oldmark
+        self._mark(mark=_markfunc, regions=self.fileregion())
 
 
 class DiredMarkCommand(TextCommand, DiredBaseCommand):
