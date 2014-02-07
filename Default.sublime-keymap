@@ -228,8 +228,16 @@
     ]
   },
   {
-    "keys": ["h"],
+    "keys": ["?"],
     "command": "dired_help",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["h"],
+    "command": "dired_toggle_hidden_files",
     "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }

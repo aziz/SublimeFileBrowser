@@ -31,7 +31,7 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 
 | Command                      | Shortcut                               |
 | :--------------------------- | :--------------------------------------|
-| Help page                    | <kbd>h</kbd>                           |
+| Help page                    | <kbd>?</kbd>                           |
 | Toggle mark                  | <kbd>m</kbd>                           |
 | Toggle mark and move down    | <kbd>shift+↓</kbd>                     |
 | Toggle mark and move up      | <kbd>shift+↑</kbd>                     |
@@ -55,6 +55,7 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | Move to next                 | <kbd>j</kbd> or <kbd>↓</kbd>           |
 | Jump to                      | <kbd>/</kbd>                           |
 | Refresh view                 | <kbd>r</kbd>                           |
+| Toggle hidden files          | <kbd>h</kbd>                           |
 | Quicklook for Mac            | <kbd>space</kbd>                       |
 
 In **Rename Mode**:
