@@ -1,0 +1,14 @@
+• Files can be sent to trash (recycle bin) by pressing s.
+  Note, this action is executed without confirmation.
+
+• Natural sorting for filenames containing numbers, just as your Explorer/Finder.
+
+• Fix scrolling issue with j/k keys.
+
+• ‘Mark by extension’ command suggests the extension of file under cursor.
+
+• Pressing h you can hide dotfiles, help is availible by ? key.
+
+• Ability to create duplicate of file or folder — it is disabled by default
+  (please, look at commented lines in ‘Default.sublime-keymap’ if you need this
+  functionality).
