@@ -41,7 +41,7 @@ Browse Shortcuts:
 +---------------------------+------------------------+
 | Command                   | Shortcut               |
 |---------------------------+------------------------|
-| Help page                 | h                      |
+| Help page                 | ?                      |
 | Toggle mark               | m                      |
 | Toggle mark and move down | shift+down             |
 | Toggle mark and move up   | shift+up               |
@@ -65,6 +65,7 @@ Browse Shortcuts:
 | Move to next              | j/down                 |
 | Jump to                   | /                      |
 | Refresh view              | r                      |
+| Toggle hidden files       | h                      |
 | Quicklook for Mac         | space                  |
 +---------------------------+------------------------+
 
@@ -89,6 +90,12 @@ def sort_nicely(l):
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     l.sort(key=alphanum_key)
+
+def without_hidden(names):
+    """
+    Returns list of names without hidden directories and files
+    """
+    return [name for name in names if not name.startswith('.')]
 
 class DiredCommand(WindowCommand):
     """
@@ -134,13 +141,24 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         print(self.view.settings())
 
         if ST3:
-            self.view.set_status("__FileBrowser__", " 𝌆 [h: Help] ")
+            status = " 𝌆 [?: Help] "
         else:
-            self.view.set_status("__FileBrowser__", " [h: Help] ")
+            status = " [?: Help] "
+
+        show_hidden = self.view.settings().get('dired_show_hidden_files', True)
+
+        if show_hidden:
+            status += 'Hidden: ON'
+        else:
+            status += 'Hidden: OFF'
+
+        self.view.set_status("__FileBrowser__", status)
 
         path = self.path
         try:
             names = os.listdir(path)
+            if not show_hidden:
+                names = without_hidden(names)
             sort_nicely(names)
         except WindowsError as e:
             self.view.run_command("dired_up")
@@ -615,3 +633,8 @@ class DiredShowHelpCommand(TextCommand):
         self.view.set_read_only(True)
 
 
+class DiredToggleHiddenFilesCommand(TextCommand):
+    def run(self, edit):
+        show = self.view.settings().get('dired_show_hidden_files', True)
+        self.view.settings().set('dired_show_hidden_files', not show)
+        self.view.run_command('dired_refresh')
