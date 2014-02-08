@@ -14,15 +14,21 @@ map_window_to_ctx = {}
 # Map from window id that is displaying a prompt to its prompt context object.
 
 
-def start(msg, window, path, callback):
+def start(msg, window, path, callback, rename=False):
     """
     Starts the prompting process.
     """
-    if not(path.endswith(os.sep) or path == os.sep):
+    if rename:
+        fqn, cfp, cursor = rename
+        rename = True
+    elif not(path.endswith(os.sep) or path == os.sep):
         path += os.sep
     path = expanduser(path)
     map_window_to_ctx[window.id()] = PromptContext(msg, path, callback)
-    window.run_command('dired_prompt')
+    if rename:
+        window.run_command('dired_prompt', {"rename": rename, "fqn": fqn, "cfp": cfp, "cursor": cursor})
+    else:
+        window.run_command('dired_prompt')
 
 
 class PromptContext:
@@ -47,17 +53,29 @@ class DiredPromptCommand(WindowCommand):
 
     A prompt context must already be registered in map_window_to_ctx when this is executed.
     """
-    def run(self):
+    def run(self, **kwargs):
+        if kwargs:
+            self.rename, self.fqn, self.cfp, self.cursor = kwargs["rename"], kwargs["fqn"], kwargs["cfp"], kwargs["cursor"]
+        else:
+            self.rename = False
         ctx = map_window_to_ctx[self.window.id()]
-        self.window.show_input_panel(ctx.msg, ctx.path, self.on_done, self.on_change, self.on_cancel)
+        pv = self.window.show_input_panel(ctx.msg, ctx.path, self.on_done, self.on_change, self.on_cancel)
+        if self.rename:
+            pv.sel().clear()
+            pv.sel().add(Region(0, len(basename(self.cfp).split('.')[0])))
 
     def on_done(self, value):
         ctx = map_window_to_ctx.pop(self.window.id(), None)
         self._close_completions()
-        ctx.callback(ctx.path)
+        if self.rename:
+            ctx.callback(self.fqn, self.new_file, 1)
+        else:
+            ctx.callback(ctx.path)
 
     def on_cancel(self):
         self._close_completions()
+        if self.rename:
+            self.window.active_view().run_command('dired_refresh', {"goto": self.cursor})
 
     def on_change(self, value):
         # Keep the path in the ctx up to date in case Tab is pressed.  It will cancel this completion
@@ -65,6 +83,8 @@ class DiredPromptCommand(WindowCommand):
         ctx = map_window_to_ctx.get(self.window.id())
         if ctx:
             ctx.path = value
+        if self.rename:
+            self.new_file = join(dirname(self.fqn), value)
 
     def _close_completions(self):
         ctx = map_window_to_ctx.pop(self.window.id(), None)

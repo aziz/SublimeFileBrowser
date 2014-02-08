@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
-import os, re, shutil, tempfile, subprocess
-from os.path import basename, dirname, isdir, exists, join, isabs, normpath, normcase
+import os, re, shutil, tempfile, subprocess, itertools
+from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
 ECODING = 'UTF-8'
@@ -83,10 +84,8 @@ def reuse_view():
 
 def sort_nicely(l):
     """ Sort the given list in the way that humans expect.
-
     Source: http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
     """
-
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     l.sort(key=alphanum_key)
@@ -96,6 +95,7 @@ def without_hidden(names):
     Returns list of names without hidden directories and files
     """
     return [name for name in names if not name.startswith('.')]
+
 
 class DiredCommand(WindowCommand):
     """
@@ -140,18 +140,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         """
         print(self.view.settings())
 
-        if ST3:
-            status = " 𝌆 [?: Help] "
-        else:
-            status = " [?: Help] "
-
+        status = " 𝌆 [?: Help] " if ST3 else " [?: Help] "
         show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-
-        if show_hidden:
-            status += 'Hidden: ON'
-        else:
-            status += 'Hidden: OFF'
-
+        status += 'Hidden: ON' if show_hidden else 'Hidden: OFF'
         self.view.set_status("__FileBrowser__", status)
 
         path = self.path
@@ -404,32 +395,65 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
         if kwargs and kwargs["to"]:
             self.move_to_extreme(kwargs["to"])
             return
+        elif kwargs and kwargs["duplicate"]:
+            self.items = self._get_items(self.path)
+            self.cursor = self.view.substr(self.view.line(self.view.sel()[0].a))[2:]
+            self._duplicate(duplicate=kwargs["duplicate"])
         else:
             files = self.get_marked() or self.get_selected()
             if files:
                 prompt.start('Move to:', self.view.window(), self.path, self._move)
 
-    def _move(self, path):
-        if path == self.path:
-            return
-
+    def _get_items(self, path):
         files = self.get_marked() or self.get_selected()
+        path = normpath(normcase(path))
+        for filename in files:
+            fqn = normpath(normcase(join(self.path, filename)))
+            yield fqn
 
+    def _move(self, path):
         if not isabs(path):
             path = join(self.path, path)
         if not isdir(path):
             sublime.error_message('Not a valid directory: {0}'.format(path))
             return
-
-        # Move all items into the target directory.  If the target directory was also selected,
-        # ignore it.
-        files = self.get_marked() or self.get_selected()
-        path = normpath(normcase(path))
-        for filename in files:
-            fqn = normpath(normcase(join(self.path, filename)))
+        for fqn in self._get_items(path):
             if fqn != path:
                 shutil.move(fqn, path)
         self.view.run_command('dired_refresh')
+
+    def _duplicate(self, duplicate=''):
+        fqn = next(self.items)
+        for i in itertools.count(2):
+            p, n = os.path.split(fqn)
+            cfp = "{1} {0}.{2}".format(i, join(p, n.split('.')[0]), '.'.join(n.split('.')[1:]))
+            if os.path.isfile(cfp) or os.path.isdir(cfp):
+                pass
+            else:
+                break
+        if duplicate == 'rename':
+            prompt.start('New name:', self.view.window(), os.path.basename(cfp), self._copy_duplicate, rename=(fqn, cfp, self.cursor))
+        else:
+            self._copy_duplicate(fqn, cfp, 0)
+
+    def _copy_duplicate(self, fqn, cfp, int):
+        if isdir(fqn):
+            if not isdir(cfp):
+                shutil.copytree(fqn, cfp)
+            else:
+                print(*("", "Skip! Folder with this name exists already:", cfp), sep='\n', end='\n\n')
+        else:
+            if not isfile(cfp):
+                shutil.copy2(fqn, cfp)
+            else:
+                print(*("", "Skip! File with this name exists already:", cfp), sep='\n', end='\n\n')
+        try:
+            if int == 0:
+                self._duplicate()
+            elif int == 1:
+                self._duplicate(duplicate='rename')
+        except StopIteration:
+            self.view.run_command('dired_refresh', {"goto": self.cursor})
 
 
 class DiredRenameCommand(TextCommand, DiredBaseCommand):
