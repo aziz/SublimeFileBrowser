@@ -17,7 +17,7 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 { 
   "keys": ["f1"], 
   "command": "dired", 
-  "args": { "immediate": true} 
+  "args": { "immediate": true } 
 }
 ```
 
