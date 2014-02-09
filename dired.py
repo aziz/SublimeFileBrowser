@@ -90,11 +90,18 @@ def sort_nicely(l):
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     l.sort(key=alphanum_key)
 
-def without_hidden(names):
-    """
-    Returns list of names without hidden directories and files
-    """
-    return [name for name in names if not name.startswith('.')]
+def has_hidden_attribute(filepath):
+    if sublime.platform() == 'windows':
+        import ctypes
+        try:
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(filepath)
+            assert attrs != -1
+            result = bool(attrs & 2)
+        except (AttributeError, AssertionError):
+            result = False
+        return result
+    elif sublime.platform() == 'linux':
+        return False
 
 
 class DiredCommand(WindowCommand):
@@ -153,7 +160,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         try:
             names = os.listdir(path)
             if not show_hidden:
-                names = without_hidden(names)
+                names = [name for name in names if not (name.startswith('.') or  has_hidden_attribute(join(path, name)))]
             sort_nicely(names)
         except WindowsError as e:
             self.view.run_command("dired_up")
