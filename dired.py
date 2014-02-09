@@ -124,6 +124,11 @@ class DiredCommand(WindowCommand):
             if folders:
                 return folders[0]['path']
 
+        # Use window folder if possible
+        folders = self.window.folders()
+        if len(folders) > 0:
+            return folders[0]
+
         # Use the user's home directory.
         return os.path.expanduser('~')
 
