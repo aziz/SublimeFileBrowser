@@ -118,8 +118,7 @@ class DiredCommand(WindowCommand):
             return dirname(path)
 
         # Use the first project folder if there is one.
-        if ST3:
-            data = self.window.project_data()
+        data = self.window.project_data() if ST3 else None
         if data and 'folders' in data:
             folders = data['folders']
             if folders:
