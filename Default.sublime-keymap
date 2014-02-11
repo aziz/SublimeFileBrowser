@@ -246,6 +246,22 @@
     ]
   },
   {
+    "keys": ["p"],
+    "command": "dired_jump",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["P"],
+    "command": "dired_edit_jump_point",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
     "keys": ["?"],
     "command": "dired_help",
     "context": [

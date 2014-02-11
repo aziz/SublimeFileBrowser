@@ -15,6 +15,7 @@ if ST3:
     from .common import RE_FILE, DiredBaseCommand
     from . import prompt
     from .show import show
+    from .jumping import jump_names
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
     PARENT_SYM = "⠤"
     try:
@@ -26,6 +27,7 @@ else:
     from common import RE_FILE, DiredBaseCommand
     import prompt
     from show import show
+    from jumping import jump_names
     MARK_OPTIONS = 0
     PARENT_SYM = "⠤".decode(ECODING)
     try:
@@ -38,37 +40,39 @@ else:
 
 COMMANDS_HELP = """\
 
-Browse Shortcuts:
-+---------------------------+------------------------+
-| Command                   | Shortcut               |
-|---------------------------+------------------------|
-| Help page                 | ?                      |
-| Toggle mark               | m                      |
-| Toggle mark and move down | shift+down             |
-| Toggle mark and move up   | shift+up               |
-| Toggle all marks          | t                      |
-| Unmark all                | u                      |
-| Mark by extension         | *                      |
-| Rename                    | R                      |
-| Move                      | M                      |
-| Delete                    | D                      |
-| Send to trash             | s                      |
-| Create directory          | cd                     |
-| Create file               | cf                     |
-| Open file/view directory  | enter/o                |
-| Open in Finder/Explorer   | \                      |
-| Open in new window        | w                      |
-| Go to parent directory    | backspace              |
-| Go to directory           | g                      |
-| Go to first               | super+up / ctrl+home   |
-| Go to last                | super+down / ctrl+end  |
-| Move to previous          | k/up                   |
-| Move to next              | j/down                 |
-| Jump to                   | /                      |
-| Refresh view              | r                      |
-| Toggle hidden files       | h                      |
-| Quicklook for Mac         | space                  |
-+---------------------------+------------------------+
+Browse Shortcu
++-------------------------------+------------------------+
+| Command                       | Shortcut               |
+|-------------------------------+------------------------|
+| Help page                     | ?                      |
+| Toggle mark                   | m                      |
+| Toggle mark and move down     | shift+down             |
+| Toggle mark and move up       | shift+up               |
+| Toggle all marks              | t                      |
+| Unmark all                    | u                      |
+| Mark by extension             | *                      |
+| Rename                        | R                      |
+| Move                          | M                      |
+| Delete                        | D                      |
+| Send to trash                 | s                      |
+| Create directory              | cd                     |
+| Create file                   | cf                     |
+| Open file/view directory      | enter/o                |
+| Open in Finder/Explorer       | \                      |
+| Open in new window            | w                      |
+| Go to parent directory        | backspace              |
+| Go to directory               | g                      |
+| Quck jump to directory        | p                      |
+| Create/Edit/Remove jump point | P                      |
+| Go to first                   | super+up / ctrl+home   |
+| Go to last                    | super+down / ctrl+end  |
+| Move to previous              | k/up                   |
+| Move to next                  | j/down                 |
+| Jump to                       | /                      |
+| Refresh view                  | r                      |
+| Toggle hidden files           | h                      |
+| Quicklook for Mac             | space                  |
++-------------------------------+------------------------+
 
 In Rename Mode:
 +--------------------------+-------------+
@@ -195,11 +199,16 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
 
         marked = set(self.get_marked())
 
-        text = [ path ]
+        name = jump_names().get(path)
+        if name:
+            caption = "{0} -> {1}".format(name, path)
+        else:
+            caption = path
+        text = [ caption ]
         try:
-            text.append(len(path)*('—'.decode(ECODING)))
+            text.append(len(caption)*('—'.decode(ECODING)))
         except:
-            text.append(len(path)*('—'))
+            text.append(len(caption)*('—'))
         if not f or self.show_parent():
             text.append(PARENT_SYM)
         text.extend(f)
