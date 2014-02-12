@@ -1,6 +1,7 @@
 {
   "dired_reuse_view": true,
   "dired_show_parent": true, // double dot as first element of each folder
+  "dired_confirm_send2trash": true,
   "color_scheme": "Packages/FileBrowser/dired.hidden-tmTheme",
   "line_numbers": false,
   "margin": 0,

@@ -54,7 +54,7 @@ Browse Shortcu
 | Rename                        | R                      |
 | Move                          | M                      |
 | Delete                        | D                      |
-| Send to trash                 | s                      |
+| Send to trash                 | S                      |
 | Create directory              | cd                     |
 | Create file                   | cf                     |
 | Open file/view directory      | enter/o                |
@@ -395,19 +395,57 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                 msg = "Delete {0}?".format(files[0])
             else:
                 msg = "Delete {0} items?".format(len(files))
+            if trash:
+                need_confirm = self.view.settings().get('dired_confirm_send2trash')
             if trash and not send2trash:
                 msg = "Cannot send to trash.\nPermanently " + msg[0].lower() + msg[1:]
                 trash = False
-            if trash or sublime.ok_cancel_dialog(msg):
-                for filename in files:
-                    fqn = join(self.path, filename)
-                    if trash and send2trash:
-                        send2trash.send2trash(fqn)
-                    elif isdir(fqn):
-                        shutil.rmtree(fqn)
-                    else:
-                        os.remove(fqn)
-                self.view.run_command('dired_refresh')
+            elif trash and need_confirm:
+                msg = msg.replace('Delete', 'Send to trash')
+
+            if trash and send2trash:
+                if not need_confirm or (need_confirm and sublime.ok_cancel_dialog(msg)):
+                    self._to_trash(files)
+            elif not trash and sublime.ok_cancel_dialog(msg):
+                self._delete(files)
+            else:
+                print("Something wrong in DiredDeleteCommand")
+
+    def _to_trash(self, files):
+        import threading
+        path = self.path
+        def _status(filename='', done=False):
+            if done:
+                sublime.set_timeout(lambda: self.view.run_command('dired_refresh'), 1)
+            else:
+                status = u'Please, wait… Removing ' + filename
+                sublime.set_timeout(lambda: self.view.set_status("__FileBrowser__", status), 1)
+        def _sender(files, event_for_wait, event_for_set):
+            for filename in files:
+                event_for_wait.wait()
+                event_for_wait.clear()
+                if event_for_wait is remove_event:
+                    send2trash.send2trash(join(path, filename))
+                else:
+                    _status(filename)
+                event_for_set.set()
+            _status(done=True)
+        remove_event = threading.Event()
+        report_event = threading.Event()
+        t1 = threading.Thread(target=_sender, args=(files, remove_event, report_event))
+        t2 = threading.Thread(target=_sender, args=(files, report_event, remove_event))
+        t1.start()
+        t2.start()
+        report_event.set()
+
+    def _delete(self, files):
+        for filename in files:
+            fqn = join(self.path, filename)
+            if isdir(fqn):
+                shutil.rmtree(fqn)
+            else:
+                os.remove(fqn)
+        self.view.run_command('dired_refresh')
 
 
 class DiredMoveCommand(TextCommand, DiredBaseCommand):

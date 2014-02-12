@@ -141,7 +141,7 @@
       ]
   },
   {
-      "keys": ["s"],
+      "keys": ["S"],
       "command": "dired_delete", "args": {"trash": true},
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
