@@ -77,6 +77,18 @@ class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
 
     def edit_jump_point(self, name):
         if name: # edit or create jump point
+            if ST3:
+                iterable = list(self.names.items())
+            else:
+                iterable = self.names.items()
+            for t, n in iterable:
+                if n == name:
+                    msg =  "The jump point with name '{0}' is already exists ({1})\n\n".format(n, t)
+                    msg += "Do you want to overwrite it?"
+                    if ok_cancel_dialog(msg):
+                        del self.names[t]
+                    else:
+                        return
             self.names[self.path] = name
             status_message("Jump point for this directory was set to '{0}'".format(name))
         elif self.path in self.names:
