@@ -601,7 +601,12 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
             return
 
         if len(set(after)) != len(after):
-            sublime.error_message('There are duplicate filenames')
+            sublime.error_message('There are duplicate filenames (see details in console)')
+            self.view.window().run_command("show_panel", {"panel": "console"})
+            print(*(u'\n   Original name: {0}\nConflicting name: {1}'.format(b, a)
+                    for (b, a) in zip(before, after) if b != a and a in before),
+                  sep='\n', end='\n\n')
+            print('You can either resolve conflicts and apply changes or cancel renaming.\n')
             return
 
         diffs = [ (b, a) for (b, a) in zip(before, after) if b != a ]
