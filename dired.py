@@ -57,7 +57,9 @@ Browse Shortcu
 | Send to trash                 | S                      |
 | Create directory              | cd                     |
 | Create file                   | cf                     |
-| Open file/view directory      | enter/o                |
+| Open file/view directory      | o                      |
+| Open file in another group    | enter                  |
+| Preview file in another group | shift+enter            |
 | Open in Finder/Explorer       | \                      |
 | Open in new window            | w                      |
 | Go to parent directory        | backspace              |
@@ -270,7 +272,7 @@ class DiredNextLineCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
-    def run(self, edit, new_view=False):
+    def run(self, edit, new_view=False, other_group='', preview=''):
         path = self.path
         filenames = self.get_selected()
 
@@ -284,13 +286,42 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 self.view.window().run_command("dired_up")
                 return
 
+        if other_group or preview:
+            # we need group number of FB view, hence twice check for other_group
+            dired_view = self.view
+            nag = self.view.window().active_group()
+        w = self.view.window()
         for filename in filenames:
             fqn = join(path, filename)
             if '<' not in fqn: # ignore 'item <error>'
                 if isdir(fqn):
                     show(self.view.window(), fqn, ignore_existing=new_view)
                 else:
-                    self.view.window().open_file(fqn)
+                    if preview:
+                        w.focus_group(self._other_group(w, nag))
+                        v = w.open_file(fqn, sublime.TRANSIENT)
+                        w.set_view_index(v, self._other_group(w, nag), 0)
+                        w.focus_group(nag)
+                        w.focus_view(dired_view)
+                        break # preview is possible for a single file only
+                    else:
+                        v = w.open_file(fqn)
+                        if other_group:
+                            w.focus_view(dired_view)
+                            w.set_view_index(v, self._other_group(w, nag), 0)
+                            w.focus_view(v)
+
+    def _other_group(self, w, nag):
+        groups = w.num_groups()
+        if groups == 1:
+            w.set_layout({"cols": [0.0, 0.3, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
+        if groups <= 4 and nag < 2:
+            group = 1 if nag == 0 else 0
+        elif groups == 4 and nag >= 2:
+            group = 3 if nag == 2 else 2
+        else:
+            group = nag - 1
+        return group
 
 
 class DiredCreateCommand(TextCommand, DiredBaseCommand):

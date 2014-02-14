@@ -21,7 +21,15 @@
   },
   {
       "keys": ["enter"],
-      "command": "dired_select",
+      "command": "dired_select", "args": {"other_group": true},
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["shift+enter"],
+      "command": "dired_select", "args": {"preview": true},
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
