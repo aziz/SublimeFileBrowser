@@ -1,0 +1,20 @@
+0.2.6
+
+• More support for Sublime Text 2: fix bug when FileBrowser could not start,
+  all strings are represented as Unicode.
+
+• ‘Toggle hidden files’ supports the corresponding attribute on Windows.
+  Note, dotfiles even without this attribute will be hidden — it is not a bug.
+
+• ‘Quick jump’ allow to create jump point — just like bookmarks; to add current
+  folder in a list, press P; to view a list press p.
+
+• Keybinding for ‘Send to trash’ was changed to S; also it asks confirmation by
+  default (you can disable it: "dired_confirm_send2trash": false);
+  improved  performance (no freezing app anymore).
+
+• ‘Open in another group’ makes easy to use FileBrowser as sidebar, o key still
+  opens file in the same group, and with shift+enter you can preview a file, i.e.
+  focus will remain in FileBrowser view.
+
+• ‘Fuzzy search’ is hiding behind standard ‘Goto Symbol…’ ⌘+r or ctrl+r.

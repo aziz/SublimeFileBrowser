@@ -1,3 +1,5 @@
+0.2.5
+
 • Files can be sent to trash (recycle bin) by pressing s.
   Note, this action is executed without confirmation.
 
