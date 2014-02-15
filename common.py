@@ -6,7 +6,6 @@ import sublime
 from sublime import Region
 
 ST3 = int(sublime.version()) >= 3000
-ECODING = 'UTF-8'
 
 if ST3:
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
@@ -29,11 +28,8 @@ class DiredBaseCommand:
     def path(self):
         return self.view.settings().get('dired_path')
 
-    def _remove_ui(self, str):
-        try:
-            return str.replace("▸ ".decode(ECODING), "").replace("≡ ".decode(ECODING), "")
-        except:
-            return str.replace("▸ ", "").replace("≡ ", "")
+    def _remove_ui(self, s):
+        return s.replace(u"▸ ", "").replace(u"≡ ", "")
 
     def filecount(self):
         """
@@ -163,7 +159,7 @@ class DiredBaseCommand:
 
                     if mark not in (True, False):
                         newmark = mark(filename in marked, filename)
-                        assert newmark in (True, False), 'Invalid mark: {0}'.format(newmark)
+                        assert newmark in (True, False), u'Invalid mark: {0}'.format(newmark)
                     else:
                         newmark = mark
 
@@ -188,8 +184,5 @@ class DiredBaseCommand:
         region = regions[0]
         start = region.begin()
         self.view.erase(edit, region)
-        try:
-            new_text = "——[RENAME MODE]——".decode(ECODING) + ("—".decode(ECODING))*(region.size()-17)
-        except:
-            new_text = "——[RENAME MODE]——" + "—"*(region.size()-17)
+        new_text = u"——[RENAME MODE]——" + u"—"*(region.size()-17)
         self.view.insert(edit, start, new_text)

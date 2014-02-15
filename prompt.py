@@ -43,7 +43,7 @@ class PromptContext:
         self.completion_view = None
 
     def __repr__(self):
-        return '{0} {1} view:{2}'.format(self.path, bool(self.completion_view))
+        return u'{0} {1} view:{2}'.format(self.path, bool(self.completion_view))
 
 
 class DiredPromptCommand(WindowCommand):

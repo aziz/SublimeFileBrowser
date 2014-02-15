@@ -9,7 +9,6 @@ import os, re, shutil, tempfile, subprocess, itertools
 from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
-ECODING = 'UTF-8'
 
 if ST3:
     from .common import RE_FILE, DiredBaseCommand
@@ -17,7 +16,6 @@ if ST3:
     from .show import show
     from .jumping import jump_names
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
-    PARENT_SYM = "⠤"
     try:
         import Default.send2trash as send2trash
     except ImportError:
@@ -29,11 +27,11 @@ else:
     from show import show
     from jumping import jump_names
     MARK_OPTIONS = 0
-    PARENT_SYM = "⠤".decode(ECODING)
     try:
         import send2trash
     except ImportError:
         send2trash = None
+PARENT_SYM = u"⠤"
 
 
 # Each dired view stores its path in its local settings as 'dired_path'.
@@ -100,17 +98,14 @@ def sort_nicely(l):
     l.sort(key=alphanum_key)
 
 def has_hidden_attribute(filepath):
-    if sublime.platform() == 'windows':
-        import ctypes
-        try:
-            attrs = ctypes.windll.kernel32.GetFileAttributesW(filepath)
-            assert attrs != -1
-            result = bool(attrs & 2)
-        except (AttributeError, AssertionError):
-            result = False
-        return result
-    elif sublime.platform() == 'linux':
-        return False
+    import ctypes
+    try:
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(filepath)
+        assert attrs != -1
+        result = bool(attrs & 2)
+    except (AttributeError, AssertionError):
+        result = False
+    return result
 
 
 class DiredCommand(WindowCommand):
@@ -171,20 +166,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         goto
             Optional filename to put the cursor on.
         """
-
-        status = " 𝌆 [?: Help] " if ST3 else " [?: Help] "
-        path_in_project = any(folder == self.path[:-1] for folder in self.view.window().folders())
-        status += 'Project root, ' if path_in_project else ''
-        show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-        status += 'Hidden: On' if show_hidden else 'Hidden: Off'
-        self.view.set_status("__FileBrowser__", status)
-
         path = self.path
         try:
             names = os.listdir(path)
-            if not show_hidden:
-                names = [name for name in names if not (name.startswith('.') or  has_hidden_attribute(join(path, name)))]
-            sort_nicely(names)
         except WindowsError as e:
             self.view.run_command("dired_up")
             self.view.set_read_only(False)
@@ -196,35 +180,40 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.continue_refreshing(edit, path, names, goto)
 
     def continue_refreshing(self, edit, path, names, goto=None):
+        status = status = u" 𝌆 [?: Help] "
+        path_in_project = any(folder == self.path[:-1] for folder in self.view.window().folders())
+        status += 'Project root, ' if path_in_project else ''
+        show_hidden = self.view.settings().get('dired_show_hidden_files', True)
+        status += 'Hidden: On' if show_hidden else 'Hidden: Off'
+        self.view.set_status("__FileBrowser__", status)
+
+        if not show_hidden:
+            if sublime.platform() == 'windows':
+                names = [name for name in names if not (name.startswith('.') or  has_hidden_attribute(join(path, name)))]
+            else:
+                names = [name for name in names if not name.startswith('.')]
+        sort_nicely(names)
+
         f = []
 
         # generating dirs list first
         for name in names:
             if isdir(join(path, name)):
-                try:
-                    name = "▸ ".decode(ECODING) + name + os.sep
-                except:
-                    name = "▸ " + name + os.sep
+                name = u"▸ " + name + os.sep
                 f.append(name)
 
         # generating files list
         for name in names:
             if not isdir(join(path, name)):
-                try:
-                    name = "≡ ".decode(ECODING) + name
-                except:
-                    name = "≡ " + name
+                name = u"≡ " + name
                 f.append(name)
 
         marked = set(self.get_marked())
 
         name = jump_names().get(path)
-        caption = "{0} -> {1}".format(name, path) if name else path
+        caption = u"{0} → {1}".format(name, path) if name else path
         text = [ caption ]
-        try:
-            text.append(len(caption)*('—'.decode(ECODING)))
-        except:
-            text.append(len(caption)*('—'))
+        text.append(len(caption)*(u'—'))
         if not f or self.show_parent():
             text.append(PARENT_SYM)
         text.extend(f)
@@ -256,15 +245,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             pt = self.fileregion(with_parent_link=True).a
             if goto:
                 if isdir(join(path, goto)) and not goto.endswith(os.sep):
-                    try:
-                        goto = "▸ ".decode(ECODING) + goto + os.sep
-                    except:
-                        goto = "▸ " + goto + os.sep
+                    goto = u"▸ " + goto + os.sep
                 else:
-                    try:
-                        goto = "≡ ".decode(ECODING) + goto
-                    except:
-                        goto = "≡ " + goto
+                    goto = u"≡ " + goto
                 try:
                     line = f.index(goto) + (3 if self.show_parent() else 2)
                     pt = self.view.text_point(line, 2)
@@ -360,7 +343,7 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
 
         fqn = join(self.path, value)
         if exists(fqn):
-            sublime.error_message('{0} already exists'.format(fqn))
+            sublime.error_message(u'{0} already exists'.format(fqn))
             return
 
         if which == 'directory':
@@ -437,13 +420,13 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
         if files:
             # Yes, I know this is English.  Not sure how Sublime is translating.
             if len(files) == 1:
-                msg = "Delete {0}?".format(files[0])
+                msg = u"Delete {0}?".format(files[0])
             else:
-                msg = "Delete {0} items?".format(len(files))
+                msg = u"Delete {0} items?".format(len(files))
             if trash:
                 need_confirm = self.view.settings().get('dired_confirm_send2trash')
             if trash and not send2trash:
-                msg = "Cannot send to trash.\nPermanently " + msg[0].lower() + msg[1:]
+                msg = u"Cannot send to trash.\nPermanently " + msg[0].lower() + msg[1:]
                 trash = False
             elif trash and need_confirm:
                 msg = msg.replace('Delete', 'Send to trash')
@@ -518,7 +501,7 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
         if not isabs(path):
             path = join(self.path, path)
         if not isdir(path):
-            sublime.error_message('Not a valid directory: {0}'.format(path))
+            sublime.error_message(u'Not a valid directory: {0}'.format(path))
             return
         for fqn in self._get_items(path):
             if fqn != path:
@@ -529,7 +512,7 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
         fqn = next(self.items)
         for i in itertools.count(2):
             p, n = os.path.split(fqn)
-            cfp = "{1} {0}.{2}".format(i, join(p, n.split('.')[0]), '.'.join(n.split('.')[1:]))
+            cfp = u"{1} {0}.{2}".format(i, join(p, n.split('.')[0]), '.'.join(n.split('.')[1:]))
             if os.path.isfile(cfp) or os.path.isdir(cfp):
                 pass
             else:
@@ -544,12 +527,12 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
             if not isdir(cfp):
                 shutil.copytree(fqn, cfp)
             else:
-                print(*("", "Skip! Folder with this name exists already:", cfp), sep='\n', end='\n\n')
+                print(*("\nSkip! Folder with this name exists already:", cfp), sep='\n', end='\n\n')
         else:
             if not isfile(cfp):
                 shutil.copy2(fqn, cfp)
             else:
-                print(*("", "Skip! File with this name exists already:", cfp), sep='\n', end='\n\n')
+                print(*("\nSkip! File with this name exists already:", cfp), sep='\n', end='\n\n')
         try:
             if int == 0:
                 self._duplicate()
@@ -569,10 +552,7 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
 
             self.set_ui_in_rename_mode(edit)
 
-            if ST3:
-                self.view.set_status("__FileBrowser__", " 𝌆 [enter: Apply changes] [escape: Discard changes] ")
-            else:
-                self.view.set_status("__FileBrowser__", " [enter: Apply changes] [escape: Discard changes] ")
+            self.view.set_status("__FileBrowser__", u" 𝌆 [enter: Apply changes] [escape: Discard changes] ")
 
             # Mark the original filename lines so we can make sure they are in the same
             # place.
@@ -637,7 +617,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
                     diffs.append((tmp, a))
                     a = tmp
 
-                print('dired rename: {0} --> {1}'.format(b, a))
+                print(u'dired rename: {0} → {1}'.format(b, a))
                 os.rename(join(self.path, b), join(self.path, a))
                 existing.remove(b)
                 existing.add(a)
@@ -723,27 +703,26 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                 items.append(fqn)
 
             if sublime.platform() == 'osx':
-               try:
+                try:
                    subprocess.Popen(['subl'] + items, cwd=self.path)
-               except:
-                   try:
-                       subprocess.Popen(['sublime'] + items, cwd=self.path)
-                   except:
-                       subprocess.Popen(['/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl'] + items, cwd=self.path)
+                except:
+                    try:
+                        subprocess.Popen(['sublime'] + items, cwd=self.path)
+                    except:
+                        subprocess.Popen(['/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl'] + items, cwd=self.path)
             elif sublime.platform() == 'windows':
-               try:
-                   subprocess.Popen(['subl'] + items, cwd=self.path, shell=True)
-               except:
-                   try:
-                       subprocess.Popen(['sublime'] + items, cwd=self.path, shell=True)
-                   except:
-                       subprocess.Popen(['sublime_text.exe'] + items, cwd=self.path, shell=True)
+                try:
+                    subprocess.Popen(['subl'] + items, cwd=self.path, shell=True)
+                except:
+                    try:
+                        subprocess.Popen(['sublime'] + items, cwd=self.path, shell=True)
+                    except:
+                        subprocess.Popen(['sublime_text.exe'] + items, cwd=self.path, shell=True)
             else:
-               try:
-                   subprocess.Popen(['subl'] + items, cwd=self.path)
-               except:
-                   subprocess.Popen(['sublime'] + items, cwd=self.path)
-
+                try:
+                    subprocess.Popen(['subl'] + items, cwd=self.path)
+                except:
+                    subprocess.Popen(['sublime'] + items, cwd=self.path)
 
 
 class DiredHelpCommand(TextCommand):
@@ -791,7 +770,7 @@ class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
     def run(self, edit):
         if not ST3:
             return
-        msg = "Set '{0}' as only one project folder (will remove all other folders from project)?".format(self.path)
+        msg = u"Set '{0}' as only one project folder (will remove all other folders from project)?".format(self.path)
         if sublime.ok_cancel_dialog(msg):
             data = self.view.window().project_data()
             data['folders'] = [{ 'path': self.path[:-1] }]

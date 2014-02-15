@@ -6,13 +6,11 @@ import sublime
 from os.path import basename
 
 ST3 = int(sublime.version()) >= 3000
-ECODING = 'UTF-8'
 
 if ST3:
     from .common import first
 else:
     from common import first
-    import locale
 
 
 def show(window, path, view_id=None, ignore_existing=False, goto=None):
@@ -41,10 +39,7 @@ def show(window, path, view_id=None, ignore_existing=False, goto=None):
     else:
         view_name = basename(path.rstrip(os.sep))
 
-    if ST3:
-        name = "𝌆 {0}".format(view_name)
-    else:
-        name = view_name
+    name = u"𝌆 {0}".format(view_name)
 
     view.set_name(name)
     view.settings().set('dired_path', path)

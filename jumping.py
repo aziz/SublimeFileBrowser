@@ -1,3 +1,4 @@
+# coding: utf8
 import sublime
 from sublime import status_message, ok_cancel_dialog, load_settings, save_settings
 from sublime_plugin import TextCommand, WindowCommand
@@ -54,13 +55,13 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
             status_message("Jumping to point '{0}' complete".format(name))
         else:
             # workaround ST3 bag https://github.com/SublimeText/Issues/issues/39
-            self.view.window().run_command('hide_overlay') 
-            msg = "Can't jump to '{0} -> {1}'.\n\nRemove that jump point?".format(name, target)
+            self.view.window().run_command('hide_overlay')
+            msg = u"Can't jump to '{0} → {1}'.\n\nRemove that jump point?".format(name, target)
             if ok_cancel_dialog(msg):
                 points = load_jump_points()
                 del points[name]
                 save_jump_points(points)
-                status_message("Jump point '{0}' was removed".format(name))
+                status_message(u"Jump point '{0}' was removed".format(name))
                 self.view.run_command('dired_refresh')
 
 
@@ -83,14 +84,14 @@ class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
                 iterable = self.names.items()
             for t, n in iterable:
                 if n == name:
-                    msg =  "The jump point with name '{0}' is already exists ({1})\n\n".format(n, t)
+                    msg =  u"The jump point with name '{0}' is already exists ({1})\n\n".format(n, t)
                     msg += "Do you want to overwrite it?"
                     if ok_cancel_dialog(msg):
                         del self.names[t]
                     else:
                         return
             self.names[self.path] = name
-            status_message("Jump point for this directory was set to '{0}'".format(name))
+            status_message(u"Jump point for this directory was set to '{0}'".format(name))
         elif self.path in self.names:
             del self.names[self.path]
             status_message("Jump point for this directory was removed")
