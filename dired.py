@@ -73,6 +73,9 @@ Browse Shortcu
 | Jump to                       | /                      |
 | Refresh view                  | r                      |
 | Toggle hidden files           | h                      |
+| Toggle add folder to project  | f                      |
+| Set current folder as         | F                      |
+| only one for the project      |                        |
 | Quicklook for Mac             | space                  |
 +-------------------------------+------------------------+
 
@@ -114,11 +117,24 @@ class DiredCommand(WindowCommand):
     """
     Prompt for a directory to display and display it.
     """
-    def run(self, immediate=False):
+    def run(self, immediate=False, project=False):
+        path = self._determine_path()
+        if project:
+            folders = self.window.folders()
+            if len(folders) == 1:
+                path = folders[0]
+            elif folders:
+                folders = [ [basename(f), f] for f in folders]
+                self.window.show_quick_panel(folders, self._show_folder)
+                return
         if immediate:
-            show(self.window, self._determine_path())
+            show(self.window, path)
         else:
-            prompt.start('Directory:', self.window, self._determine_path(), self._show)
+            prompt.start('Directory:', self.window, path, self._show)
+
+    def _show_folder(self, index):
+        if index != -1:
+            show(self.window, self.window.folders()[index])
 
     def _show(self, path):
         show(self.window, path)
@@ -155,11 +171,12 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         goto
             Optional filename to put the cursor on.
         """
-        print(self.view.settings())
 
         status = " 𝌆 [?: Help] " if ST3 else " [?: Help] "
+        path_in_project = any(folder == self.path[:-1] for folder in self.view.window().folders())
+        status += 'Project root, ' if path_in_project else ''
         show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-        status += 'Hidden: ON' if show_hidden else 'Hidden: OFF'
+        status += 'Hidden: On' if show_hidden else 'Hidden: Off'
         self.view.set_status("__FileBrowser__", status)
 
         path = self.path
@@ -202,10 +219,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         marked = set(self.get_marked())
 
         name = jump_names().get(path)
-        if name:
-            caption = "{0} -> {1}".format(name, path)
-        else:
-            caption = path
+        caption = "{0} -> {1}".format(name, path) if name else path
         text = [ caption ]
         try:
             text.append(len(caption)*('—'.decode(ECODING)))
@@ -756,3 +770,30 @@ class DiredToggleHiddenFilesCommand(TextCommand):
         show = self.view.settings().get('dired_show_hidden_files', True)
         self.view.settings().set('dired_show_hidden_files', not show)
         self.view.run_command('dired_refresh')
+
+
+class DiredToggleProjectFolder(TextCommand, DiredBaseCommand):
+    def run(self, edit):
+        if not ST3:
+            return
+        path = self.path[:-1]
+        data = self.view.window().project_data()
+        data['folders'] = data.get('folders') or {}
+        folders = [f for f in data['folders'] if f['path'] != path]
+        if len(folders) == len(data['folders']):
+            folders.insert(0, { 'path': path })
+        data['folders'] = folders
+        self.view.window().set_project_data(data)
+        self.view.window().run_command('dired_refresh')
+
+
+class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
+    def run(self, edit):
+        if not ST3:
+            return
+        msg = "Set '{0}' as only one project folder (will remove all other folders from project)?".format(self.path)
+        if sublime.ok_cancel_dialog(msg):
+            data = self.view.window().project_data()
+            data['folders'] = [{ 'path': self.path[:-1] }]
+            self.view.window().set_project_data(data)
+            self.view.window().run_command('dired_refresh')

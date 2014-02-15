@@ -60,6 +60,9 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | Jump to                       | <kbd>/</kbd>                           |
 | Refresh view                  | <kbd>r</kbd>                           |
 | Toggle hidden files           | <kbd>h</kbd>                           |
+| Toggle add folder to project  | <kbd>f</kbd>                           |
+| Set current folder as         | <kbd>F</kbd>                           |
+| only one for the project      |                                        |
 | Quicklook for Mac             | <kbd>space</kbd>                       |
 
 In **Rename Mode**:
