@@ -285,6 +285,22 @@
         { "key": "setting.dired_rename_mode", "operand": false }
     ]
   },
+  {
+    "keys": ["f"],
+    "command": "dired_toggle_project_folder",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["F"],
+    "command": "dired_only_one_project_folder",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
 // custom movement in buffer
   {
       "keys": ["super+up"],
