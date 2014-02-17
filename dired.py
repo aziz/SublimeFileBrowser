@@ -442,9 +442,13 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
     def _to_trash(self, files):
         import threading
         path = self.path
+        errors = []
         def _status(filename='', done=False):
             if done:
                 sublime.set_timeout(lambda: self.view.run_command('dired_refresh'), 1)
+                if errors:
+                    sublime.error_message(u'Some files couldn’t be sent to trash (perhaps, they are being used by another process): \n\n'
+                                          +'\n'.join(errors).replace('Couldn\'t perform operation.', ''))
             else:
                 status = u'Please, wait… Removing ' + filename
                 sublime.set_timeout(lambda: self.view.set_status("__FileBrowser__", status), 1)
@@ -453,11 +457,15 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                 event_for_wait.wait()
                 event_for_wait.clear()
                 if event_for_wait is remove_event:
-                    send2trash.send2trash(join(path, filename))
+                    try:
+                        send2trash.send2trash(join(path, filename))
+                    except OSError as e:
+                        errors.append(u'{1}:\t{0}'.format(filename, e))
                 else:
                     _status(filename)
                 event_for_set.set()
-            _status(done=True)
+            if event_for_wait is remove_event:
+                _status(done=True)
         remove_event = threading.Event()
         report_event = threading.Event()
         t1 = threading.Thread(target=_sender, args=(files, remove_event, report_event))
