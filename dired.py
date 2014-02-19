@@ -416,7 +416,7 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, trash=False):
-        files = self.get_marked() or self.get_selected()
+        files = self.get_marked() or self.get_selected(parent=False)
         if files:
             # Yes, I know this is English.  Not sure how Sublime is translating.
             if len(files) == 1:
@@ -426,10 +426,10 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
             if trash:
                 need_confirm = self.view.settings().get('dired_confirm_send2trash')
             if trash and not send2trash:
-                msg = u"Cannot send to trash.\nPermanently " + msg[0].lower() + msg[1:]
+                msg = u"Cannot send to trash.\nPermanently " + msg.replace('D', 'd', 1)
                 trash = False
             elif trash and need_confirm:
-                msg = msg.replace('Delete', 'Send to trash')
+                msg = msg.replace('Delete', 'Send to trash', 1)
 
             if trash and send2trash:
                 if not need_confirm or (need_confirm and sublime.ok_cancel_dialog(msg)):
@@ -437,7 +437,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
             elif not trash and sublime.ok_cancel_dialog(msg):
                 self._delete(files)
             else:
-                print("Something wrong in DiredDeleteCommand")
+                print("Cancel delete or something wrong in DiredDeleteCommand")
 
     def _to_trash(self, files):
         import threading
@@ -460,7 +460,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                     try:
                         send2trash.send2trash(join(path, filename))
                     except OSError as e:
-                        errors.append(u'{1}:\t{0}'.format(filename, e))
+                        errors.append(u'{0}:\t{1}'.format(e, filename))
                 else:
                     _status(filename)
                 event_for_set.set()
@@ -475,13 +475,30 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
         report_event.set()
 
     def _delete(self, files):
+        errors = []
+        if ST3:
+            fail = (PermissionError, FileNotFoundError)
+        else:
+            fail = (WindowsError, OSError)
+            sys_enc = locale.getpreferredencoding(False)
         for filename in files:
             fqn = join(self.path, filename)
-            if isdir(fqn):
-                shutil.rmtree(fqn)
-            else:
-                os.remove(fqn)
+            try:
+                if isdir(fqn):
+                    shutil.rmtree(fqn)
+                else:
+                    os.remove(fqn)
+            except fail as e:
+                e = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
+                if not ST3:
+                    try:
+                        e = str(e).decode(sys_enc)
+                    except: # failed getpreferredencoding
+                        e = 'Unknown error'
+                errors.append(u'{0}:\t{1}'.format(e, filename))
         self.view.run_command('dired_refresh')
+        if errors:
+            sublime.error_message(u'Some files couldn’t be deleted: \n\n' + '\n'.join(errors))
 
 
 class DiredMoveCommand(TextCommand, DiredBaseCommand):

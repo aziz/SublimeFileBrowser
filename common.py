@@ -101,12 +101,12 @@ class DiredBaseCommand:
         return [ self._remove_ui(RE_FILE.match(self.view.substr(l)).group(1)) for l in self.view.lines(self.fileregion()) ]
 
 
-    def get_selected(self):
+    def get_selected(self, parent=True):
         """
         Returns a list of selected filenames.
         """
         names = set()
-        fileregion = self.fileregion(with_parent_link=True)
+        fileregion = self.fileregion(with_parent_link=parent)
         for sel in self.view.sel():
             lines = self.view.lines(sel)
             for line in lines:
