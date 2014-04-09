@@ -5,7 +5,7 @@ from __future__ import print_function
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
-import os, re, shutil, tempfile, subprocess, itertools
+import os, re, shutil, tempfile, subprocess, itertools, sys
 from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
@@ -85,6 +85,17 @@ In Rename Mode:
 | Discard changes          | escape      |
 +--------------------------+-------------+
 """
+
+def print(*args, **kwargs):
+    """ Redefine print() function; the reason is the inconsistent treatment of
+        unicode literals among Python versions used in ST2.
+        Redefining/tweaking built-in things is relatively safe; of course, when
+        ST2 will become irrelevant, this def might be removed undoubtedly.
+    """
+    if not ST3 and sublime.platform() == 'osx':
+        args = (s.encode('utf-8') for s in args)
+    sep, end = kwargs.get('sep', ' '), kwargs.get('end', '\n')
+    sys.stdout.write(sep.join(s for s in args) + end)
 
 def reuse_view():
     return sublime.load_settings('dired.sublime-settings').get('dired_reuse_view', False)
