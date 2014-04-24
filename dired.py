@@ -280,7 +280,7 @@ class DiredNextLineCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
-    def run(self, edit, new_view=False, other_group='', preview=''):
+    def run(self, edit, new_view=False, other_group='', preview='', and_close=''):
         path = self.path
         filenames = self.get_selected()
 
@@ -294,7 +294,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 self.view.window().run_command("dired_up")
                 return
 
-        if other_group or preview:
+        if other_group or preview or and_close:
             # we need group number of FB view, hence twice check for other_group
             dired_view = self.view
             nag = self.view.window().active_group()
@@ -318,6 +318,10 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                             w.focus_view(dired_view)
                             w.set_view_index(v, self._other_group(w, nag), 0)
                             w.focus_view(v)
+        if and_close:
+            w.focus_view(dired_view)
+            w.run_command("close")
+            w.focus_view(v)
 
     def _other_group(self, w, nag):
         groups = w.num_groups()

@@ -86,6 +86,19 @@ After you are done with editing press <kbd>enter</kbd> to commit your changes or
 ### Open in new window
 Selecting a couple of files and/or directories (either by marking them or using the noraml multiple cursor feature of sublime) and pressing <kbd>w</kbd> will open them in a new SublimeText window. 
 
+### Close FileBrowser when files have been opened
+Add the following code in your user key bindings file:
+
+```json
+{"keys": ["o"],
+ "command": "dired_select", "args": {"and_close": true},
+ "context": [
+  { "key": "selector", "operator": "equal", "operand": "text.dired" },
+  { "key": "setting.dired_rename_mode", "operand": false }
+ ]
+}
+```
+
 ### Customizing UI
 If you don’t like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace` to go to parent directory) you can do it in your user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`) and paste the code below:
 
