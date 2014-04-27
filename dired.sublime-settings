@@ -12,5 +12,10 @@
   "scroll_past_end": false,
   "draw_indent_guides": false,
   "fold_buttons": false,
-  "drag_text": false
+  "drag_text": false,
+
+  // Path to git executable, fallback to git
+  // Wildcards are supported, e.g. if you use GitHub for Windows it would be:
+  //     "git_path" : "~/Appdata/Local/GitHub/PortableGit_*/cmd/git.exe"
+  "git_path": ""
 }

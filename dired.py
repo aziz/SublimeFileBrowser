@@ -5,7 +5,7 @@ from __future__ import print_function
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
-import os, re, shutil, tempfile, subprocess, itertools, sys
+import os, re, shutil, tempfile, subprocess, itertools, sys, threading, glob
 from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
 
 ST3 = int(sublime.version()) >= 3000
@@ -188,6 +188,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                              .replace('[Error 5] ', 'Access denied'))
             self.view.set_read_only(True)
         else:
+            git_path = glob.glob(os.path.expanduser(self.view.settings().get('git_path', 'git')))
+            git = git_path if git_path else 'git'
+            self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, names, git))
+            self.vcs_thread.start()
             self.continue_refreshing(edit, path, names, goto)
 
     def continue_refreshing(self, edit, path, names, goto=None):
@@ -272,6 +276,34 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
+
+    def vcs_check(self, edit, path, names, git='git'):
+        try:
+            p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=True)
+            git_output = p.communicate()[0]
+        except:
+            pass # cant catch it, perhaps Im missing something obvious :/
+        else:
+            if git_output:
+                git_output = str(git_output, 'utf-8').split('\x00') if ST3 else git_output.split('\00')
+                self.changed_items = dict((i[3:], i[1]) for i in git_output if i != '')
+                sublime.set_timeout(self.vcs_colorized, 1)
+
+    def vcs_colorized(self):
+        rgns, modified, untracked = [], [], []
+        for fn in self.changed_items.keys():
+            if os.path.split(fn)[0] in dirname(self.path):
+                ptrn = basename(fn) if ST3 else unicode(basename(fn), 'utf8')
+                r = self.view.find(ptrn, 0, sublime.LITERAL)
+                if r:
+                    rgns.append((r, self.changed_items[fn]))
+        for r, status in rgns:
+            if status == 'M':
+                modified.append(r)
+            elif status == '?':
+                untracked.append(r)
+        self.view.add_regions('M', modified, 'item.modified.dired', '', sublime.DRAW_OUTLINED)
+        self.view.add_regions('?', untracked, 'item.untracked.dired', '', sublime.DRAW_OUTLINED)
 
 
 class DiredNextLineCommand(TextCommand, DiredBaseCommand):
@@ -455,7 +487,6 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                 print("Cancel delete or something wrong in DiredDeleteCommand")
 
     def _to_trash(self, files):
-        import threading
         path = self.path
         errors = []
         def _status(filename='', done=False):

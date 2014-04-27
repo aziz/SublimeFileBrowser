@@ -182,6 +182,30 @@
 			</dict>
 		</dict>
 
+		<dict>
+			<key>name</key>
+			<string>VCS Modified</string>
+			<key>scope</key>
+			<string>item.modified.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#F09609</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>VCS Untracked</string>
+			<key>scope</key>
+			<string>item.untracked.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#339933</string>
+			</dict>
+		</dict>
+
 	</array>
 	<key>uuid</key>
 	<string>07379361-ce49-4e6c-a03f-26378a7a2131</string>

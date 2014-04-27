@@ -108,6 +108,10 @@ If you don’t like `⠤` symbol and want to hide it (then you should use keyboa
 }
 ```
 
+### Git integration
+In case `git status` returns a colorable output in current folder, the modified and untracked files will be designated by orange and green outlines respectively.  
+If Git is not presented in your `PATH` you may set `git_path` setting (see example in default settings file).
+
 ## Changing color scheme
 If you don’t like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User folder, change colors and paste the code below in your user syntax specific settings file:
 
