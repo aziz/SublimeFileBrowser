@@ -93,7 +93,9 @@ def print(*args, **kwargs):
         ST2 will become irrelevant, this def might be removed undoubtedly.
     """
     if not ST3 and sublime.platform() == 'osx':
-        args = (s.encode('utf-8') for s in args)
+        args = (s.encode('utf-8') if type(s) == unicode else str(s) for s in args)
+    else:
+        args = (str(s) if type(s) != unicode else s for s in args)
     sep, end = kwargs.get('sep', ' '), kwargs.get('end', '\n')
     sys.stdout.write(sep.join(s for s in args) + end)
 
