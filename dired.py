@@ -784,13 +784,16 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                     except:
                         subprocess.Popen(['/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl'] + items, cwd=self.path)
             elif sublime.platform() == 'windows':
+                # 9200 means win8
+                shell = True if sys.getwindowsversion()[2] < 9200 else False
+                items = [i.encode(locale.getpreferredencoding(False)) if sys.getwindowsversion()[2] == 9200 else i for i in items]
                 try:
-                    subprocess.Popen(['subl'] + items, cwd=self.path, shell=True)
+                    subprocess.Popen(['subl'] + items, cwd=self.path, shell=shell)
                 except:
                     try:
-                        subprocess.Popen(['sublime'] + items, cwd=self.path, shell=True)
+                        subprocess.Popen(['sublime'] + items, cwd=self.path, shell=shell)
                     except:
-                        subprocess.Popen(['sublime_text.exe'] + items, cwd=self.path, shell=True)
+                        subprocess.Popen(['sublime_text.exe'] + items, cwd=self.path, shell=shell)
             else:
                 try:
                     subprocess.Popen(['subl'] + items, cwd=self.path)
