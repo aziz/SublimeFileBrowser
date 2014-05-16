@@ -92,10 +92,10 @@ def print(*args, **kwargs):
         Redefining/tweaking built-in things is relatively safe; of course, when
         ST2 will become irrelevant, this def might be removed undoubtedly.
     """
-    if not ST3 and sublime.platform() == 'osx':
-        args = (s.encode('utf-8') if type(s) == unicode else str(s) for s in args)
+    if not ST3 and sublime.platform() != 'windows':
+        args = (s.encode('utf-8') if isinstance(s, unicode) else str(s) for s in args)
     else:
-        args = (str(s) if type(s) != unicode else s for s in args)
+        args = (s if isinstance(s, str if ST3 else unicode) else str(s) for s in args)
     sep, end = kwargs.get('sep', ' '), kwargs.get('end', '\n')
     sys.stdout.write(sep.join(s for s in args) + end)
 
