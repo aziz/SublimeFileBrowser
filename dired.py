@@ -39,43 +39,44 @@ PARENT_SYM = u"⠤"
 COMMANDS_HELP = """\
 
 Browse Shortcu
-+-------------------------------+------------------------+
-| Command                       | Shortcut               |
-|-------------------------------+------------------------|
-| Help page                     | ?                      |
-| Toggle mark                   | m                      |
-| Toggle mark and move down     | shift+down             |
-| Toggle mark and move up       | shift+up               |
-| Toggle all marks              | t                      |
-| Unmark all                    | u                      |
-| Mark by extension             | *                      |
-| Rename                        | R                      |
-| Move                          | M                      |
-| Delete                        | D                      |
-| Send to trash                 | S                      |
-| Create directory              | cd                     |
-| Create file                   | cf                     |
-| Open file/view directory      | o                      |
-| Open file in another group    | enter                  |
-| Preview file in another group | shift+enter            |
-| Open in Finder/Explorer       | \                      |
-| Open in new window            | w                      |
-| Go to parent directory        | backspace              |
-| Go to directory               | g                      |
-| Quck jump to directory        | p                      |
-| Create/Edit/Remove jump point | P                      |
-| Go to first                   | super+up / ctrl+home   |
-| Go to last                    | super+down / ctrl+end  |
-| Move to previous              | k/up                   |
-| Move to next                  | j/down                 |
-| Jump to                       | /                      |
-| Refresh view                  | r                      |
-| Toggle hidden files           | h                      |
-| Toggle add folder to project  | f                      |
-| Set current folder as         | F                      |
-| only one for the project      |                        |
-| Quicklook for Mac             | space                  |
-+-------------------------------+------------------------+
++-------------------------------+--------------------------+
+| Command                       | Shortcut                 |
+|-------------------------------+--------------------------|
+| Help page                     | ?                        |
+| Toggle mark                   | m                        |
+| Toggle mark and move down     | shift+down               |
+| Toggle mark and move up       | shift+up                 |
+| Toggle all marks              | t                        |
+| Unmark all                    | u                        |
+| Mark by extension             | *                        |
+| Rename                        | R                        |
+| Move                          | M                        |
+| Delete                        | D                        |
+| Send to trash                 | S                        |
+| Create directory              | cd                       |
+| Create file                   | cf                       |
+| Open file/view directory      | o                        |
+| Open file in another group    | enter                    |
+| Preview file in another group | shift+enter              |
+| Open all marked items         | super+enter / ctrl+enter |
+| Open in Finder/Explorer       | \                        |
+| Open in new window            | w                        |
+| Go to parent directory        | backspace                |
+| Go to directory               | g                        |
+| Quck jump to directory        | p                        |
+| Create/Edit/Remove jump point | P                        |
+| Go to first                   | super+up / ctrl+home     |
+| Go to last                    | super+down / ctrl+end    |
+| Move to previous              | k/up                     |
+| Move to next                  | j/down                   |
+| Jump to                       | /                        |
+| Refresh view                  | r                        |
+| Toggle hidden files           | h                        |
+| Toggle add folder to project  | f                        |
+| Set current folder as         | F                        |
+| only one for the project      |                          |
+| Quicklook for Mac             | space                    |
++-------------------------------+--------------------------+
 
 In Rename Mode:
 +--------------------------+-------------+
@@ -316,7 +317,7 @@ class DiredNextLineCommand(TextCommand, DiredBaseCommand):
 class DiredSelect(TextCommand, DiredBaseCommand):
     def run(self, edit, new_view=False, other_group='', preview='', and_close=''):
         path = self.path
-        filenames = self.get_selected()
+        filenames = self.get_selected() if not new_view else self.get_marked() or self.get_selected()
 
         # If reuse view is turned on and the only item is a directory, refresh the existing view.
         if not new_view and reuse_view():
@@ -337,7 +338,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
             fqn = join(path, filename)
             if '<' not in fqn: # ignore 'item <error>'
                 if isdir(fqn):
-                    show(self.view.window(), fqn, ignore_existing=new_view)
+                    show(w, fqn, ignore_existing=new_view)
                 else:
                     if preview:
                         w.focus_group(self._other_group(w, nag))

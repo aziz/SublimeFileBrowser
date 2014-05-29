@@ -47,6 +47,7 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | Open file/view directory      | <kbd>o</kbd>                           |
 | Open file in another group    | <kbd>enter</kbd>                       |
 | Preview file in another group | <kbd>shift+enter</kbd>                 |
+| Open all marked items in new tabs | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
 | Open in Finder/File Explorer  | <kbd>\\</kbd>                          |
 | Open in new window            | <kbd>w</kbd>                           |
 | Go to parent directory        | <kbd>backspace</kbd>                   |
