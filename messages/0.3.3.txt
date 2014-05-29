@@ -1,0 +1,6 @@
+0.3.3
+
+• ‘⌘+enter’ and ‘ctrl+enter’ take the marked items first, if any, otherwise
+  take the selected item(s) — all items (files and folders), as previously,
+  will be opened in new tabs at the same group.
+  Additional arguments can be combined in custom keybindings.
