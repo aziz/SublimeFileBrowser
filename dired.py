@@ -183,7 +183,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         path = self.path
         try:
             names = os.listdir(path)
-        except WindowsError as e:
+        except OSError as e:
             self.view.run_command("dired_up")
             self.view.set_read_only(False)
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b,
@@ -336,7 +336,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         w = self.view.window()
         for filename in filenames:
             fqn = join(path, filename)
-            if '<' not in fqn: # ignore 'item <error>'
+            if exists(fqn): # ignore 'item <error>'
                 if isdir(fqn):
                     show(w, fqn, ignore_existing=new_view)
                 else:
