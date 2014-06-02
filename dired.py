@@ -698,7 +698,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
                     # thus it False and symlink to file shall be os.rename'd
                     dest = os.readlink(orig[:~0])
                     os.unlink(orig[:~0])
-                    os.symlink(dest, a if '/' in dest else join(self.path, a))
+                    os.symlink(dest, join(self.path, a)[:~0])
                 else:
                     os.rename(orig, join(self.path, a))
                 existing.remove(b)
