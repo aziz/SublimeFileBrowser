@@ -692,7 +692,15 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
                     a = tmp
 
                 print(u'dired rename: {0} → {1}'.format(b, a))
-                os.rename(join(self.path, b), join(self.path, a))
+                orig = join(self.path, b)
+                if orig[~0] == '/' and os.path.islink(orig[:~0]):
+                    # last slash shall be omitted; file has no last slash,
+                    # thus it False and symlink to file shall be os.rename'd
+                    dest = os.readlink(orig[:~0])
+                    os.unlink(orig[:~0])
+                    os.symlink(dest, a if '/' in dest else join(self.path, a))
+                else:
+                    os.rename(orig, join(self.path, a))
                 existing.remove(b)
                 existing.add(a)
 
