@@ -59,6 +59,7 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | Move to previous              | <kbd>k</kbd> or <kbd>↑</kbd>           |
 | Move to next                  | <kbd>j</kbd> or <kbd>↓</kbd>           |
 | Jump to                       | <kbd>/</kbd>                           |
+| Find in files                 | <kbd>s</kbd>                           |
 | Refresh view                  | <kbd>r</kbd>                           |
 | Toggle hidden files           | <kbd>h</kbd>                           |
 | Toggle add folder to project  | <kbd>f</kbd>                           |
@@ -78,6 +79,9 @@ You can select files and/or directories by marking them with <kbd>m</kbd>, or <k
 
 ### Search
 Besides incremental search availibale by <kbd>/</kbd>, you also may use build-in ‘Goto Symbol…’ (<kbd>⌘+r</kbd> or <kbd>ctrl+r</kbd>) for fuzzy search.
+
+### ‘Find in Files…’ integration
+Press <kbd>s</kbd> to summon ‘Find in Files…’ panel — if you’ve marked some files they will fill ‘Where’ field, otherwise it’ll be filled by current folder path.
 
 ### Rename Mode
 The rename command puts the view into **rename mode**. The view is made editable so files can be renamed directly in the view using all of your Sublime Text tools: multiple cursors, search and replace, etc.

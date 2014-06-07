@@ -38,7 +38,7 @@ PARENT_SYM = u"⠤"
 
 COMMANDS_HELP = """\
 
-Browse Shortcu
+Browse Shortcuts
 +-------------------------------+--------------------------+
 | Command                       | Shortcut                 |
 |-------------------------------+--------------------------|
@@ -70,6 +70,7 @@ Browse Shortcu
 | Move to previous              | k/up                     |
 | Move to next                  | j/down                   |
 | Jump to                       | /                        |
+| Find in files                 | s                        |
 | Refresh view                  | r                        |
 | Toggle hidden files           | h                        |
 | Toggle add folder to project  | f                        |
@@ -462,6 +463,13 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
         # to mark successive files.
         if not markall and len(self.view.sel()) == 1 and self.view.sel()[0].empty():
             self.move(forward)
+
+
+class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
+    def run(self, edit):
+        where = ', '.join(join(self.path, p) for p in self.get_marked()) or self.path or ''
+        args = {"panel": "find_in_files", "where": where, "replace": "", "reverse": "false"}
+        sublime.active_window().run_command("show_panel", args)
 
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):

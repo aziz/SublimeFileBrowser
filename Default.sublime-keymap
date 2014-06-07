@@ -326,6 +326,14 @@
         { "key": "selector", "operator": "equal", "operand": "text.dired" }
       ]
   },
+// search
+  {
+      "keys": ["s"],
+      "command": "dired_find_in_files",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" }
+      ]
+  },
 
 // Disabling some keys in rename mode
   {
