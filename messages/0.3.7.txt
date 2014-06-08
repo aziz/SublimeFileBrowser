@@ -1,0 +1,4 @@
+0.3.7
+
+• Press ‘s’ to summon ‘Find in Files…’ panel — if you’ve marked some files they
+  will fill ‘Where’ field, otherwise it’ll be filled by current folder path.

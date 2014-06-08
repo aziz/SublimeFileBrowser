@@ -1,5 +1,5 @@
 Thank you for installing FileBrowser.
 
-Mind you, this plugin has many feature, so please read:
-https://github.com/aziz/SublimeFileBrowser/blob/e5dc316b6131fd58a70c333920c388dfb78ee917/README.md
+Mind you, this plugin has many features, so please read:
+https://github.com/aziz/SublimeFileBrowser/blob/83f2fc25ecefa402a7215ae5615e39f7c32b7698/README.md
 This link points to appropriate readme for your version.
