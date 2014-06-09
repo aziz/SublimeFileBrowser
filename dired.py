@@ -536,7 +536,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
         if ST3:
             fail = (PermissionError, FileNotFoundError)
         else:
-            fail = (WindowsError, OSError)
+            fail = OSError
             sys_enc = locale.getpreferredencoding(False)
         for filename in files:
             fqn = join(self.path, filename)
