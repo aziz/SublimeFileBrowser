@@ -331,7 +331,8 @@
       "keys": ["s"],
       "command": "dired_find_in_files",
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" }
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
       ]
   },
 
