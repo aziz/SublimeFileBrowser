@@ -127,7 +127,7 @@ class DiredCommand(WindowCommand):
     """
     Prompt for a directory to display and display it.
     """
-    def run(self, immediate=False, project=False):
+    def run(self, immediate=False, single_pane=False, project=False):
         path = self._determine_path()
         if project:
             folders = self.window.folders()
@@ -138,7 +138,7 @@ class DiredCommand(WindowCommand):
                 self.window.show_quick_panel(folders, self._show_folder)
                 return
         if immediate:
-            show(self.window, path)
+            show(self.window, path, single_pane=single_pane)
         else:
             prompt.start('Directory:', self.window, path, self._show)
 

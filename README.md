@@ -95,12 +95,27 @@ Selecting a couple of files and/or directories (either by marking them or using 
 Add the following code in your user key bindings file:
 
 ```json
-{"keys": ["o"],
- "command": "dired_select", "args": {"and_close": true},
- "context": [
-  { "key": "selector", "operator": "equal", "operand": "text.dired" },
-  { "key": "setting.dired_rename_mode", "operand": false }
- ]
+{
+  "keys": ["o"],
+  "command": "dired_select", "args": {"and_close": true},
+  "context": [
+    { "key": "selector", "operator": "equal", "operand": "text.dired" },
+    { "key": "setting.dired_rename_mode", "operand": false }
+  ]
+}
+```
+
+### Always use a single File Browser view
+Add the following code in your user key bindings file:
+
+``` json
+{ 
+  "keys": ["f1"], 
+  "command": "dired", 
+  "args": {
+    "immediate": true,
+    "single_pane":true
+  }
 }
 ```
 

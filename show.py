@@ -13,7 +13,7 @@ else:
     from common import first
 
 
-def show(window, path, view_id=None, ignore_existing=False, goto=None):
+def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None):
     """
     Determines the correct view to use, creating one if necessary, and prepares it.
     """
@@ -28,7 +28,10 @@ def show(window, path, view_id=None, ignore_existing=False, goto=None):
 
     if not view and not ignore_existing:
         # See if a view for this path already exists.
-        view = first(window.views(), lambda v: v.settings().get('dired_path') == path)
+        same_path = lambda v: v.settings().get('dired_path') == path
+        # See if any reusable view exists in case of single_pane argument
+        any_path  = lambda v: v.score_selector(0, "text.dired") > 0
+        view = first(window.views(), any_path if single_pane else same_path)
 
     if not view:
         view = window.new_file()
