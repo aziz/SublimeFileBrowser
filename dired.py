@@ -5,8 +5,11 @@ from __future__ import print_function
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand
-import os, re, shutil, tempfile, subprocess, itertools, sys, threading, glob
+import os, re, shutil, tempfile, subprocess, itertools, sys, threading, glob, fnmatch
 from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
+
+if sublime.platform() == 'windows':
+    import ctypes
 
 ST3 = int(sublime.version()) >= 3000
 
@@ -112,16 +115,6 @@ def sort_nicely(l):
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     l.sort(key=alphanum_key)
 
-def has_hidden_attribute(filepath):
-    import ctypes
-    try:
-        attrs = ctypes.windll.kernel32.GetFileAttributesW(filepath)
-        assert attrs != -1
-        result = bool(attrs & 2)
-    except (AttributeError, AssertionError):
-        result = False
-    return result
-
 
 class DiredCommand(WindowCommand):
     """
@@ -207,10 +200,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.set_status("__FileBrowser__", status)
 
         if not show_hidden:
-            if sublime.platform() == 'windows':
-                names = [name for name in names if not (name.startswith('.') or  has_hidden_attribute(join(path, name)))]
-            else:
-                names = [name for name in names if not name.startswith('.')]
+            names = [name for name in names if not self.is_hidden(name)]
         sort_nicely(names)
 
         f = []
@@ -280,6 +270,23 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
+
+    def is_hidden(self, filename):
+        tests = self.view.settings().get('dired_hidden_files_patterns', ['.*'])
+        if isinstance(tests, str):
+            tests = [tests]
+        if any(fnmatch.fnmatch(filename, pattern) for pattern in tests):
+            return True
+        if sublime.platform() != 'windows':
+            return False
+        # check for attribute on windows:
+        try:
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(join(self.path, filename))
+            assert attrs != -1
+            result = bool(attrs & 2)
+        except (AttributeError, AssertionError):
+            result = False
+        return result
 
     def vcs_check(self, edit, path, names, git='git'):
         try:
