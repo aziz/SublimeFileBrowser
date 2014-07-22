@@ -1,0 +1,7 @@
+0.3.11
+
+• Add hidden files pattern — so you can decide which kind of files must be
+  considered hidden.
+
+• Space key, as previously opens file(s) in Quick Look, but now if you’re not
+  on OSX, launches file in default application.
