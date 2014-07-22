@@ -64,7 +64,7 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | Toggle hidden files           | <kbd>h</kbd>                           |
 | Toggle add folder to project  | <kbd>f</kbd>                           |
 | Set current folder as only one for the project | <kbd>F</kbd>          |
-| Quicklook for Mac             | <kbd>space</kbd>                       |
+| Quicklook for Mac or open in default app on other OSs | <kbd>space</kbd> |
 
 In **Rename Mode**:
 

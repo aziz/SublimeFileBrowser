@@ -353,6 +353,14 @@
         { "key": "selector", "operator": "equal", "operand": "header.dired | help.dired" },
         { "key": "setting.dired_rename_mode", "operand": true }
       ]
+  },
+  {
+    "keys": [" "],
+    "command": "dired_quick_look",
+    "context": [
+      { "key": "selector", "operator": "equal", "operand": "text.dired" },
+      { "key": "setting.dired_rename_mode", "operand": false }
+    ]
   }
 
 ]

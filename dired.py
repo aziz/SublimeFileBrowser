@@ -79,7 +79,8 @@ Browse Shortcuts
 | Toggle add folder to project  | f                        |
 | Set current folder as         | F                        |
 | only one for the project      |                          |
-| Quicklook for Mac             | space                    |
+| Quicklook for Mac or open in  | space                    |
+| default app on other OSs      |                          |
 +-------------------------------+--------------------------+
 
 In Rename Mode:
@@ -753,17 +754,23 @@ class DiredGotoCommand(TextCommand, DiredBaseCommand):
 
 class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
     """
-    quick look current file in mac in mac
+    quick look current file in mac or open in default app on other OSs
     """
     def run(self, edit):
         files = self.get_marked() or self.get_selected()
         if "⠤" in files:
             files.remove("⠤")
-        cmd = ["qlmanage", "-p"]
-        for filename in files:
-            fqn = join(self.path, filename)
-            cmd.append(fqn)
-        subprocess.call(cmd)
+        if sublime.platform() == 'osx':
+            cmd = ["qlmanage", "-p"]
+            for filename in files:
+                fqn = join(self.path, filename)
+                cmd.append(fqn)
+            subprocess.call(cmd)
+        else:
+            import webbrowser
+            for filename in files:
+                fqn = join(self.path, filename)
+                webbrowser.open_new_tab(fqn)
 
 
 class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
