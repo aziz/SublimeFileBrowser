@@ -58,6 +58,8 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 | Go to last                    | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>  |
 | Move to previous              | <kbd>k</kbd> or <kbd>↑</kbd>           |
 | Move to next                  | <kbd>j</kbd> or <kbd>↓</kbd>           |
+| Expand directory              | <kbd>→</kbd>                           |
+| Collapse directory            | <kbd>←</kbd>                           |
 | Jump to                       | <kbd>/</kbd>                           |
 | Find in files                 | <kbd>s</kbd>                           |
 | Refresh view                  | <kbd>r</kbd>                           |

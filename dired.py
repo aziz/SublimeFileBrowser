@@ -72,6 +72,8 @@ Browse Shortcuts
 | Go to last                    | super+down / ctrl+end    |
 | Move to previous              | k/up                     |
 | Move to next                  | j/down                   |
+| Expand directory              | right                    |
+| Collapse directory            | left                     |
 | Jump to                       | /                        |
 | Find in files                 | s                        |
 | Refresh view                  | r                        |
@@ -170,16 +172,17 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     """
     Populates or repopulates a dired view.
     """
-    def run(self, edit, goto=None):
+    def run(self, edit, goto=None, inline=False):
         """
         goto
             Optional filename to put the cursor on.
         """
         path = self.path
         try:
-            names = os.listdir(path)
+            names = os.listdir(path if not inline else goto)
         except OSError as e:
-            self.view.run_command("dired_up")
+            if not inline:
+                self.view.run_command("dired_up")
             self.view.set_read_only(False)
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b,
                              '\t<%s>' % str(e).split(':')[0]
@@ -190,10 +193,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             git = git_path if git_path else 'git'
             self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, names, git))
             self.vcs_thread.start()
-            self.continue_refreshing(edit, path, names, goto)
+            self.continue_refreshing(edit, path, names, goto, indent='\t' if inline else '')
 
-    def continue_refreshing(self, edit, path, names, goto=None):
-        status = status = u" 𝌆 [?: Help] "
+    def continue_refreshing(self, edit, path, names, goto=None, indent=''):
+        status = u" 𝌆 [?: Help] "
         path_in_project = any(folder == self.path[:-1] for folder in self.view.window().folders())
         status += 'Project root, ' if path_in_project else ''
         show_hidden = self.view.settings().get('dired_show_hidden_files', True)
@@ -204,36 +207,31 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             names = [name for name in names if not self.is_hidden(name)]
         sort_nicely(names)
 
-        f = []
-
-        # generating dirs list first
-        for name in names:
-            if isdir(join(path, name)):
-                name = u"▸ " + name + os.sep
-                f.append(name)
-
-        # generating files list
-        for name in names:
-            if not isdir(join(path, name)):
-                name = u"≡ " + name
-                f.append(name)
+        f = self.ls(path, names, goto=goto if indent else '', indent=indent)
 
         marked = set(self.get_marked())
 
-        name = jump_names().get(path)
-        caption = u"{0} → {1}".format(name, path) if name else path
-        text = [ caption ]
-        text.append(len(caption)*(u'—'))
-        if not f or self.show_parent():
-            text.append(PARENT_SYM)
-        text.extend(f)
-
         self.view.set_read_only(False)
 
-        self.view.erase(edit, Region(0, self.view.size()))
-        self.view.insert(edit, 0, '\n'.join(text))
-        self.view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
-        self.view.settings().set('dired_count', len(f))
+        if indent and f:
+            self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\n'+'\n'.join(f))
+            dired_count = self.view.settings().get('dired_count', 0)
+            self.view.settings().set('dired_count', int(dired_count) + len(f))
+        elif indent:
+            self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<empty>')
+        else:
+            name = jump_names().get(path)
+            caption = u"{0} → {1}".format(name, path) if name else path
+            text = [ caption ]
+            text.append(len(caption)*(u'—'))
+            if not f or self.show_parent():
+                text.append(PARENT_SYM)
+            text.extend(f)
+
+            self.view.erase(edit, Region(0, self.view.size()))
+            self.view.insert(edit, 0, '\n'.join(text))
+            self.view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
+            self.view.settings().set('dired_count', len(f))
 
         if marked:
             # Even if we have the same filenames, they may have moved so we have to manually
@@ -251,7 +249,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.set_read_only(True)
 
         # Place the cursor.
-        if f:
+        if f and not indent:
             pt = self.fileregion(with_parent_link=True).a
             if goto:
                 if isdir(join(path, goto)) and not goto.endswith(os.sep):
@@ -267,10 +265,31 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
             self.view.show_at_center(Region(pt, pt))
-        else: # empty folder?
+        elif not f and not indent: # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
+        else:
+            self.view.show_at_center(self.view.sel()[0])
+
+    def ls(self, path, names, goto='', indent=''):
+        f = []
+        tab = self.view.settings().get('tab_size')
+        line = self.view.line(self.view.sel()[0].a)
+        content = self.view.substr(line).replace('\t', ' '*tab)
+        ind = re.compile('^(\s*)').match(content).group(1)
+        level = indent * int((len(ind) / tab) + 1) if ind else indent
+        # generating dirs list first
+        for name in names:
+            if isdir(join(path, goto, name)):
+                name = ''.join([level, u"▸ ", name, os.sep])
+                f.append(name)
+        # generating files list
+        for name in names:
+            if not isdir(join(path, goto, name)):
+                name = ''.join([level, u"≡ ", name])
+                f.append(name)
+        return f
 
     def is_hidden(self, filename):
         tests = self.view.settings().get('dired_hidden_files_patterns', ['.*'])
@@ -324,15 +343,20 @@ class DiredNextLineCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
-    def run(self, edit, new_view=False, other_group='', preview='', and_close=''):
+    def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0, inline=0):
         path = self.path
         filenames = self.get_selected() if not new_view else self.get_marked() or self.get_selected()
 
         # If reuse view is turned on and the only item is a directory, refresh the existing view.
         if not new_view and reuse_view():
-            if len(filenames) == 1 and isdir(join(path, filenames[0])):
-                fqn = join(path, filenames[0])
-                show(self.view.window(), fqn, view_id=self.view.id())
+            fqn = join(path, filenames[0])
+            if inline and '<empty>' == fqn[~6:]:
+                return
+            if len(filenames) == 1 and isdir(fqn):
+                if inline:
+                    # if directory was unfolded, then it’ll be folded and unfolded again
+                    self.view.run_command('dired_fold', {'update': True})
+                show(self.view.window(), fqn, view_id=self.view.id(), inline=inline)
                 return
             elif len(filenames) == 1 and filenames[0] == PARENT_SYM:
                 self.view.window().run_command("dired_up")
@@ -344,7 +368,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
             nag = self.view.window().active_group()
         w = self.view.window()
         for filename in filenames:
-            fqn = join(path, filename)
+            fqn = join(path, filename.replace('<empty>', '').rstrip())
             if exists(fqn): # ignore 'item <error>'
                 if isdir(fqn):
                     show(w, fqn, ignore_existing=new_view)
@@ -378,6 +402,53 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         else:
             group = nag - 1
         return group
+
+
+class DiredFold(TextCommand, DiredBaseCommand):
+    u'''
+    This command used to fold/erase/shrink (whatever you like to call it) content
+    of some [sub]directory (within current directory, see self.path).
+    There are two cases when this command would be fired:
+        1. User mean to fold   (key ←)
+        2. User mean to unfold (key →)
+    In first case we just erase region and set dired_count; however, we need to
+    figure out which region to erase:
+        (a) if cursor placed on directory item and next line indented
+            (representing content of the directory) — erase indented line;
+        (b) next line is not indented, but the line of directory item is indented —
+            erase directory item itself;
+        (c) cursor placed on file item which is indented — erase file item.
+    In second case we need to decide if erasing needed or not:
+        (a) if directory was unfolded (as in 1.a) — erase that region, so then
+            it’ll be filled (basically it is like update/refresh), also set dired_count;
+        (b) directory was folded (as in 1.b) — do nothing
+    '''
+    def run(self, edit, update=''):
+        v    = self.view
+        line = v.line(v.sel()[0].a)
+        current_region = v.indented_region(line.b)
+        next_region    = v.indented_region(line.b + 2)
+        is_folder      = 'directory' in v.scope_name(line.a)
+
+        if update and next_region.contains(line):
+            # this is unfolded subfolder, so we exit
+            return
+        elif update and current_region.empty() and next_region.empty():
+            # unfolded folder, so we exit
+            return
+        elif update or is_folder and not next_region.empty():
+            indented_region = next_region
+        else:
+            indented_region = current_region
+            v.sel().clear()
+            v.sel().add(sublime.Region(line.a - 2, line.a - 2))
+
+        dired_count = v.settings().get('dired_count', 0)
+        v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
+
+        v.set_read_only(False)
+        v.erase(edit, indented_region)
+        v.set_read_only(True)
 
 
 class DiredCreateCommand(TextCommand, DiredBaseCommand):
@@ -678,7 +749,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
 
         for region in self.view.get_regions('rename'):
             for line in self.view.lines(region):
-                after.append(self._remove_ui(self.view.substr(line).strip()))
+                after.append(self._remove_ui(self.get_parent(line, self.view.substr(line).strip())))
 
         if len(after) != len(before):
             sublime.error_message('You cannot add or remove lines')

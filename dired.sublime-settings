@@ -15,6 +15,7 @@
   "draw_indent_guides": false,
   "fold_buttons": false,
   "drag_text": false,
+  "tab_size": 3,
 
   // Path to git executable, fallback to git
   // Wildcards are supported, e.g. if you use GitHub for Windows it would be:

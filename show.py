@@ -13,7 +13,7 @@ else:
     from common import first
 
 
-def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None):
+def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, inline=False):
     """
     Determines the correct view to use, creating one if necessary, and prepares it.
     """
@@ -44,8 +44,11 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
 
     name = u"𝌆 {0}".format(view_name)
 
-    view.set_name(name)
-    view.settings().set('dired_path', path)
+    if not inline:
+        view.set_name(name)
+        view.settings().set('dired_path', path)
+    else:
+        goto = path[:~0]
     view.settings().set('dired_rename_mode', False)
     window.focus_view(view)
-    view.run_command('dired_refresh', { 'goto': goto })
+    view.run_command('dired_refresh', { 'goto': goto, 'inline': inline })

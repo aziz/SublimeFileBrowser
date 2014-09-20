@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import re
+import re, os
 import sublime
 from sublime import Region
 
@@ -14,7 +14,7 @@ else:
     import locale
 
 
-RE_FILE = re.compile(r'^([^\\// ].*)$')
+RE_FILE = re.compile(r'^([^\\//].*)$')
 
 def first(seq, pred):
     # I can't comprehend how this isn't built-in.
@@ -93,12 +93,22 @@ class DiredBaseCommand:
             else:
                 return Region(self.view.text_point(2, 0), self.view.text_point(count+2, 0))
 
+    def get_parent(self, line, text):
+        '''
+        Returns relative path for text using os.sep, e.g. bla\\parent\\text\\
+        '''
+        indent = self.view.indented_region(line.b)
+        while not indent.empty():
+            parent = self.view.line(indent.a - 2)
+            text   = os.path.join(self.view.substr(parent).lstrip(), text.lstrip())
+            indent = self.view.indented_region(parent.a)
+        return text
 
     def get_all(self):
         """
         Returns a list of all filenames in the view.
         """
-        return [ self._remove_ui(RE_FILE.match(self.view.substr(l)).group(1)) for l in self.view.lines(self.fileregion()) ]
+        return [ self._remove_ui(RE_FILE.match(self.get_parent(l, self.view.substr(l))).group(1)) for l in self.view.lines(self.fileregion()) ]
 
 
     def get_selected(self, parent=True):
@@ -113,7 +123,7 @@ class DiredBaseCommand:
                 if fileregion.contains(line):
                     text = self.view.substr(line)
                     if text:
-                        names.add(self._remove_ui(RE_FILE.match(text).group(1)))
+                        names.add(self._remove_ui(RE_FILE.match(self.get_parent(line, text)).group(1)))
         return sorted(list(names))
 
     def get_marked(self):
@@ -121,7 +131,7 @@ class DiredBaseCommand:
         if self.filecount():
             for region in self.view.get_regions('marked'):
                 lines.extend(self.view.lines(region))
-        return [ self._remove_ui(RE_FILE.match(self.view.substr(line)).group(1)) for line in lines ]
+        return [ self._remove_ui(RE_FILE.match(self.get_parent(line, self.view.substr(line))).group(1)) for line in lines ]
 
 
     def _mark(self, mark=None, regions=None):

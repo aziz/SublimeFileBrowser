@@ -62,6 +62,23 @@
       ]
   },
   {
+      "keys": ["right"],
+      "command": "dired_select",
+      "args": { "inline": true },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.directory" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["left"],
+      "command": "dired_fold",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
       "keys": ["c", "d"],
       "command": "dired_create",
       "args": { "which": "directory" },

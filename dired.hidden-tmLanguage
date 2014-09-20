@@ -17,7 +17,7 @@
 
       <dict>
           <key>match</key>
-          <string>^(▸ )([^\\/]*)(\\|/)?(.*)?$</string>
+          <string>^\s*(▸ )([^\\/]*)(\\|/)?(.*)?$</string>
           <key>name</key>
           <string>dired.item.directory</string>
           <key>captures</key>
@@ -47,7 +47,7 @@
 
       <dict>
           <key>match</key>
-          <string>^(≡ )(\S.*)$</string>
+          <string>^\s*(≡ )(\S.*)$</string>
           <key>name</key>
           <string>dired.item.file</string>
           <key>captures</key>
