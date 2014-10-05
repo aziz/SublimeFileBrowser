@@ -1,0 +1,4 @@
+0.4.0
+
+• Tree view: you can expand (→) and collapse (←) subdirectories.
+  Renaming works, unless you rename parent and child at the same time.
