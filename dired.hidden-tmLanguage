@@ -76,7 +76,7 @@
           <key>begin</key>
           <string>(\S(.+)?$)</string>
           <key>end</key>
-          <string>^(—+)(\[RENAME MODE\]){0,1}(—+)\n</string>
+          <string>^(—+)(\[RENAME MODE\]){0,1}(—*)\n</string>
           <key>name</key>
           <string>header.dired</string>
           <key>endCaptures</key>
