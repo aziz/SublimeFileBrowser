@@ -4,7 +4,7 @@
 from __future__ import print_function
 import sublime
 from sublime import Region
-from sublime_plugin import WindowCommand, TextCommand
+from sublime_plugin import WindowCommand, TextCommand, EventListener
 import os, re, shutil, tempfile, subprocess, itertools, sys, threading, glob, fnmatch
 from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
 
@@ -954,3 +954,13 @@ class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
             data['folders'] = [{ 'path': self.path[:-1] }]
             self.view.window().set_project_data(data)
             self.view.window().run_command('dired_refresh')
+
+
+# Some plugins like **Color Highlighter** are forcing their color-scheme to the activated view
+# Although, it's something that should be fixed on their side, in the meantime, it's safe to force
+# the color shceme on `on_activated_async` event.
+class DiredForceColorSchemeCommand(EventListener):
+    def on_activated_async(self, view):
+        syntax = view.settings().get('syntax')
+        if syntax and (syntax.endswith("dired.hidden-tmLanguage")):
+            view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
