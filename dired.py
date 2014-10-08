@@ -440,20 +440,27 @@ class DiredFold(TextCommand, DiredBaseCommand):
         elif update and current_region.empty() and next_region.empty():
             # unfolded folder, so we exit
             return
+        elif not is_folder and current_region.empty():
+            self.view.run_command("move", {"by": "characters", "forward": False})
+            return
         elif update or is_folder and not next_region.empty():
             indented_region = next_region
-        else:
+        elif not current_region.empty():
             indented_region = current_region
-            v.sel().clear()
-            v.sel().add(sublime.Region(line.a - 2, line.a - 2))
-        name_point  = self.view.extract_scope(line.b - 1).a
+            line = v.line(indented_region.a - 2)
+        else:
+            # this is not supposed to happen, but it does sometimes
+            return
+        v.sel().clear()
+        v.sel().add(sublime.Region(line.a + 2, line.a + 2))
+        name_point  = v.extract_scope(line.b - 1).a
         icon_region = sublime.Region(name_point - 2, name_point - 1)
 
         dired_count = v.settings().get('dired_count', 0)
         v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
 
         v.set_read_only(False)
-        self.view.replace(edit, icon_region, u'▸')
+        v.replace(edit, icon_region, u'▸')
         v.erase(edit, indented_region)
         v.set_read_only(True)
 
