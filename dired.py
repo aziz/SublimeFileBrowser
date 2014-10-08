@@ -214,9 +214,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
 
         self.view.set_read_only(False)
 
-        if indent and f:
+        if indent:
             line = self.view.line(self.view.sel()[0])
-            name_point  = self.view.extract_scope(line.b - 1).a
+            name_point = self.view.extract_scope(line.b - 1).a
+        if indent and f:
             icon_region = sublime.Region(name_point - 2, name_point - 1)
             self.view.replace(edit, icon_region, u'▾')
             self.view.insert(edit, line.b, '\n'+'\n'.join(f))
@@ -274,7 +275,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
         else:
-            self.view.show_at_center(self.view.sel()[0])
+            self.view.sel().clear()
+            self.view.sel().add(Region(name_point, name_point))
+            self.view.show_at_center(name_point)
 
     def ls(self, path, names, goto='', indent=''):
         f = []
@@ -434,7 +437,7 @@ class DiredFold(TextCommand, DiredBaseCommand):
         next_region    = v.indented_region(line.b + 2)
         is_folder      = 'directory' in v.scope_name(line.a)
 
-        if update and next_region.contains(line):
+        if update and (next_region.contains(line) or next_region.empty()):
             # this is unfolded subfolder, so we exit
             return
         elif update and current_region.empty() and next_region.empty():
@@ -443,7 +446,7 @@ class DiredFold(TextCommand, DiredBaseCommand):
         elif not is_folder and current_region.empty():
             self.view.run_command("move", {"by": "characters", "forward": False})
             return
-        elif update or is_folder and not next_region.empty():
+        elif update or (is_folder and not next_region.empty() and not next_region.contains(line)):
             indented_region = next_region
         elif not current_region.empty():
             indented_region = current_region
@@ -451,8 +454,6 @@ class DiredFold(TextCommand, DiredBaseCommand):
         else:
             # this is not supposed to happen, but it does sometimes
             return
-        v.sel().clear()
-        v.sel().add(sublime.Region(line.a + 2, line.a + 2))
         name_point  = v.extract_scope(line.b - 1).a
         icon_region = sublime.Region(name_point - 2, name_point - 1)
 
@@ -466,6 +467,9 @@ class DiredFold(TextCommand, DiredBaseCommand):
         v.replace(edit, icon_region, u'▸')
         v.erase(edit, indented_region)
         v.set_read_only(True)
+
+        v.sel().clear()
+        v.sel().add(sublime.Region(name_point, name_point))
 
 
 class DiredCreateCommand(TextCommand, DiredBaseCommand):
