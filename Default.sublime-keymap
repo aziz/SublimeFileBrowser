@@ -336,6 +336,14 @@
       ]
   },
   {
+      "keys": ["ctrl+end"],
+      "command": "dired_move",
+      "args": {"to": "eof"},
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" }
+      ]
+  },
+  {
       "keys": ["ctrl+home"],
       "command": "dired_move",
       "args": {"to": "bof"},

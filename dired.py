@@ -459,6 +459,9 @@ class DiredFold(TextCommand, DiredBaseCommand):
         dired_count = v.settings().get('dired_count', 0)
         v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
 
+        if indented_region.b == v.size(): # MUST avoid new line at eof
+            indented_region = sublime.Region(indented_region.a - 1, indented_region.b)
+
         v.set_read_only(False)
         v.replace(edit, icon_region, u'▸')
         v.erase(edit, indented_region)
