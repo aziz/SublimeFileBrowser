@@ -29,7 +29,7 @@ class DiredBaseCommand:
         return self.view.settings().get('dired_path')
 
     def _remove_ui(self, s):
-        return s.replace(u"▸ ", "").replace(u"≡ ", "")
+        return s.replace(u"▸ ", "").replace(u"▾ ", "").replace(u"≡ ", "")
 
     def filecount(self):
         """

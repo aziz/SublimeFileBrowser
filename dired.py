@@ -215,7 +215,11 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.set_read_only(False)
 
         if indent and f:
-            self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\n'+'\n'.join(f))
+            line = self.view.line(self.view.sel()[0])
+            name_point  = self.view.extract_scope(line.b - 1).a
+            icon_region = sublime.Region(name_point - 2, name_point - 1)
+            self.view.replace(edit, icon_region, u'▾')
+            self.view.insert(edit, line.b, '\n'+'\n'.join(f))
             dired_count = self.view.settings().get('dired_count', 0)
             self.view.settings().set('dired_count', int(dired_count) + len(f))
         elif indent:
@@ -442,11 +446,14 @@ class DiredFold(TextCommand, DiredBaseCommand):
             indented_region = current_region
             v.sel().clear()
             v.sel().add(sublime.Region(line.a - 2, line.a - 2))
+        name_point  = self.view.extract_scope(line.b - 1).a
+        icon_region = sublime.Region(name_point - 2, name_point - 1)
 
         dired_count = v.settings().get('dired_count', 0)
         v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
 
         v.set_read_only(False)
+        self.view.replace(edit, icon_region, u'▸')
         v.erase(edit, indented_region)
         v.set_read_only(True)
 
