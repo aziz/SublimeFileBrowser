@@ -1,25 +1,5 @@
 [
   {
-      "keys": ["j"],
-      "command": "dired_next_line",
-      "args": { "forward": true },
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false },
-        { "key": "setting.command_mode", "operand": false }
-      ]
-  },
-  {
-      "keys": ["k"],
-      "command": "dired_next_line",
-      "args": { "forward": false },
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false },
-        { "key": "setting.command_mode", "operand": false }
-      ]
-  },
-  {
       "keys": ["enter"],
       "command": "dired_select", "args": {"other_group": true},
       "context": [
@@ -67,6 +47,14 @@
       "args": { "inline": true },
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.directory" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  { // Disable right key on files
+      "keys": ["right"],
+      "command": "dired_noop",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.file" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
   },
@@ -320,7 +308,55 @@
   },
 // custom movement in buffer
   {
+      "keys": ["j"],
+      "command": "dired_next_line",
+      "args": { "forward": true },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["down"],
+      "command": "dired_next_line",
+      "args": { "forward": true },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["k"],
+      "command": "dired_next_line",
+      "args": { "forward": false },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["up"],
+      "command": "dired_next_line",
+      "args": { "forward": false },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  {
       "keys": ["super+up"],
+      "command": "dired_move",
+      "args": {"to": "bof"},
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" }
+      ]
+  },
+  {
+      "keys": ["ctrl+home"],
       "command": "dired_move",
       "args": {"to": "bof"},
       "context": [
@@ -339,14 +375,6 @@
       "keys": ["ctrl+end"],
       "command": "dired_move",
       "args": {"to": "eof"},
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" }
-      ]
-  },
-  {
-      "keys": ["ctrl+home"],
-      "command": "dired_move",
-      "args": {"to": "bof"},
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" }
       ]

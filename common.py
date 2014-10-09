@@ -46,10 +46,7 @@ class DiredBaseCommand:
         if extreme == "bof":
             ext_region = Region(files.a, files.a)
         else:
-            line = self.view.line(files.b)
-            name_point = self.view.extract_scope(line.b - 1).a
-            if name_point == line.a:
-                name_point +=2
+            name_point = self.view.extract_scope(self.view.line(files.b).b - 1).a
             ext_region = Region(name_point, name_point)
         self.view.sel().add(ext_region)
         self.view.show_at_center(ext_region)
@@ -76,8 +73,11 @@ class DiredBaseCommand:
             pt = (pt > files.b) and files.b or files.a
 
         line = self.view.line(pt)
+        name_point = self.view.extract_scope(line.b - 1).a
+        if 'string.error.dired' in self.view.scope_name(name_point):
+            name_point = self.view.extract_scope(name_point - 2).a
         self.view.sel().clear()
-        self.view.sel().add(Region(line.a, line.a))
+        self.view.sel().add(Region(name_point, name_point))
         self.view.show(pt, False)
 
     def show_parent(self):
