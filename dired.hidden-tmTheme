@@ -190,6 +190,10 @@
 			<key>settings</key>
 			<dict>
 				<key>background</key>
+				<string>#d9dee0</string>
+				<key>caret</key>
+				<string>#367cc0</string>
+				<key>foreground</key>
 				<string>#F09609</string>
 			</dict>
 		</dict>
@@ -202,7 +206,9 @@
 			<key>settings</key>
 			<dict>
 				<key>background</key>
-				<string>#339933</string>
+				<string>#d9dee0</string>
+				<key>foreground</key>
+				<string>#00c406</string>
 			</dict>
 		</dict>
 

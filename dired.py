@@ -316,32 +316,45 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         return result
 
     def vcs_check(self, edit, path, names, git='git'):
+        shell = True if sublime.platform()=='windows' else False
         try:
-            p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=True)
+            p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
             git_output = p.communicate()[0]
+            p = subprocess.Popen([git, 'rev-parse', '--show-toplevel'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
+            root = p.communicate()[0].decode('utf-8').strip('\n')
         except:
             pass # cant catch it, perhaps Im missing something obvious :/
         else:
             if git_output:
                 git_output = str(git_output, 'utf-8').split('\x00') if ST3 else git_output.split('\00')
                 self.changed_items = dict((i[3:], i[1]) for i in git_output if i != '')
-                sublime.set_timeout(self.vcs_colorized, 1)
+                sublime.set_timeout(lambda p=path, r=root: self.vcs_colorized(p, r), 1)
 
-    def vcs_colorized(self):
+    def vcs_colorized(self, path, root):
         rgns, modified, untracked = [], [], []
+        path = normpath(path)
+        files_regions = dict((normpath(join(path, f)), r) for f, r in zip(self.get_all(), self.view.split_by_newlines(self.fileregion())))
+        colorblind = self.view.settings().get('vcs_color_blind', False)
         for fn in self.changed_items.keys():
-            if os.path.split(fn)[0] in dirname(self.path):
-                ptrn = basename(fn) if ST3 else unicode(basename(fn), 'utf8')
-                r = self.view.find(ptrn, 0, sublime.LITERAL)
-                if r:
-                    rgns.append((r, self.changed_items[fn]))
+            full_fn = normpath(join(root, fn if ST3 else unicode(fn, 'utf-8')))
+            r = files_regions.get(full_fn, 0)
+            if r:
+                content = self.view.substr(r)
+                indent  = len(re.match(r'^(\s*)', content).group(1))
+                if indent:
+                    icon = r.a + indent
+                    r = Region(icon, icon + (1 if not colorblind else 0))
+                else:
+                    r = Region(r.a, r.a + (1 if not colorblind else 0))
+                rgns.append((r, self.changed_items[fn]))
         for r, status in rgns:
             if status == 'M':
                 modified.append(r)
             elif status == '?':
                 untracked.append(r)
-        self.view.add_regions('M', modified, 'item.modified.dired', '', sublime.DRAW_OUTLINED)
-        self.view.add_regions('?', untracked, 'item.untracked.dired', '', sublime.DRAW_OUTLINED)
+        options = MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE
+        self.view.add_regions('M', modified, 'item.modified.dired', '', options)
+        self.view.add_regions('?', untracked, 'item.untracked.dired', '', options)
 
 
 class DiredNextLineCommand(TextCommand, DiredBaseCommand):
