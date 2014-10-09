@@ -76,9 +76,12 @@ class DiredBaseCommand:
         name_point = self.view.extract_scope(line.b - 1).a
         if 'string.error.dired' in self.view.scope_name(name_point):
             name_point = self.view.extract_scope(name_point - 2).a
+        if 'punctuation' in self.view.scope_name(name_point):
+            name_point += 2 # fix for filenames w/o dot or whitespace
         self.view.sel().clear()
         self.view.sel().add(Region(name_point, name_point))
-        self.view.show(pt, False)
+        surroundings = True if self.view.rowcol(name_point)[0] < 3 else False
+        self.view.show(pt, surroundings)
 
     def show_parent(self):
         return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
