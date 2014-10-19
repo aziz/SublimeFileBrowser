@@ -1,0 +1,6 @@
+0.4.2
+
+• Hijack New Window: Now you can have a file brower buffer in a new widnow.
+
+  Note: Only available in ST3 and it is disabled by default. you need to
+        activate it manually.
