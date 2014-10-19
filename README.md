@@ -154,6 +154,18 @@ You can also customize the patterns used to determine if a file should be hidden
 In case `git status` returns a colorable output in current folder, the modified and untracked files will be designated by orange and green outlines respectively.  
 If Git is not presented in your `PATH` you may set `git_path` setting (see example in default settings file).
 
+
+### Hijacking New Windows
+**Filebrowser** can hijack `new window` command and show a new window with a file browsing buffer by default. 
+This feature is only available for ST3 and is disabled by default. You can activate it by setting `dired_hijack_new_window` to `true` in you user settings file. 
+
+``` json
+{
+  "dired_hijack_new_window": true
+}
+```
+
+
 ## Changing color scheme
 If you don’t like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User folder, change colors and paste the code below in your user syntax specific settings file:
 

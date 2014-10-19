@@ -995,3 +995,14 @@ class DiredForceColorSchemeCommand(EventListener):
         syntax = view.settings().get('syntax')
         if syntax and (syntax.endswith("dired.hidden-tmLanguage")):
             view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
+
+
+class HijackNewWindow(EventListener):
+   def on_window_command(self, window, command_name, args):
+        if command_name != "new_window":
+            return
+
+        settings = sublime.load_settings('dired.sublime-settings')
+
+        if settings.get("dired_hijack_new_window"):
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
