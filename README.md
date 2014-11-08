@@ -21,6 +21,28 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 }
 ```
 
+You also can use optional arguments to tweak behaviour:
+
+* `"single_pane": true` — always use a single File Browser view, i.e. prefer to reuse existing one rather than create a new;
+* `"other_group": "left"` (or `"right`) — open File Browser in other group, i.e. like sidebar; if you use `"left"` then all other tabs from left group will be moved into the right one;
+* `"project": true` — always prefer project’s folder(s) rather than path of current view.
+
+You can mix these arguments as you like (perhaps, even bind several shortcuts for different cases); e.g. to completely mimic sidebar, it would be:
+
+``` json
+{
+  "keys": ["f1"],
+  "command": "dired",
+  "args": {
+    "immediate": true,
+    "single_pane": true,
+    "other_group": "left",
+    "project": true
+  }
+}
+```
+
+
 
 | Commands                                 | Description                                       |
 | :--------------------------------------- | :------------------------------------------------ |
@@ -104,20 +126,6 @@ Add the following code in your user key bindings file:
     { "key": "selector", "operator": "equal", "operand": "text.dired" },
     { "key": "setting.dired_rename_mode", "operand": false }
   ]
-}
-```
-
-### Always use a single File Browser view
-Add the following code in your user key bindings file:
-
-``` json
-{
-  "keys": ["f1"],
-  "command": "dired",
-  "args": {
-    "immediate": true,
-    "single_pane":true
-  }
 }
 ```
 

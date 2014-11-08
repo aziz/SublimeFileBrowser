@@ -13,7 +13,7 @@ else:
     from common import first
 
 
-def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, inline=False):
+def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, inline=False, other_group=''):
     """
     Determines the correct view to use, creating one if necessary, and prepares it.
     """
@@ -33,9 +33,38 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         any_path  = lambda v: v.score_selector(0, "text.dired") > 0
         view = first(window.views(), any_path if single_pane else same_path)
 
+    if other_group:
+        prev_focus = window.active_view()
+
     if not view:
         view = window.new_file()
         view.set_scratch(True)
+
+    nag = window.active_group()
+    if other_group:
+        group = 0 if other_group=='left' else 1
+        if window.num_groups() == 1:
+            cols = [0.0, 0.3, 1.0] if other_group=='left' else [0.0, 0.66, 1.0]
+            window.set_layout({"cols": cols, "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
+        elif view:
+            groups = window.num_groups()
+            if groups <= 4 and nag < 2:
+                group = 1 if nag == 0 else 0
+            elif groups == 4 and nag >= 2:
+                group = 3 if nag == 2 else 2
+            else:
+                group = nag - 1
+        window.set_view_index(view, group, 0)
+    else:
+        group = nag
+
+    # when other_group is left, we need move all views to right except FB view
+    if other_group == 'left' and group == 0:
+        for v in reversed(window.views_in_group(nag)[1:]):
+            window.set_view_index(v, 1, 0)
+
+    if other_group:
+        window.focus_view(prev_focus)
 
     if path == os.sep:
         view_name = os.sep

@@ -123,7 +123,7 @@ class DiredCommand(WindowCommand):
     """
     Prompt for a directory to display and display it.
     """
-    def run(self, immediate=False, single_pane=False, project=False):
+    def run(self, immediate=False, single_pane=False, project=False, other_group=''):
         path = self._determine_path()
         if project:
             folders = self.window.folders()
@@ -134,7 +134,7 @@ class DiredCommand(WindowCommand):
                 self.window.show_quick_panel(folders, self._show_folder)
                 return
         if immediate:
-            show(self.window, path, single_pane=single_pane)
+            show(self.window, path, single_pane=single_pane, other_group=other_group)
         else:
             prompt.start('Directory:', self.window, path, self._show)
 
@@ -1006,3 +1006,17 @@ class HijackNewWindow(EventListener):
 
         if settings.get("dired_hijack_new_window"):
             sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
+
+
+class HideEmptyGroup(EventListener):
+    def on_close(self, view):
+        if not 'dired' in view.scope_name(0):
+            return
+
+        w = sublime.active_window()
+        # check if closed view was a single one in group
+        single = ([view.id()] == [v.id() for v in w.views_in_group(0)] or
+                  [view.id()] == [v.id() for v in w.views_in_group(1)])
+        if w.num_groups() == 2 and single:
+            # without timeout ST may crash
+            sublime.set_timeout(lambda: w.set_layout({"cols": [0.0, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1]]}), 300)
