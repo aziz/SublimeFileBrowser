@@ -1,0 +1,15 @@
+0.4.3
+
+• Optional argument to open File Browser in other group
+
+    {
+      "keys": ["f1"],
+      "command": "dired",
+      "args": {
+        "immediate": true,
+        "other_group": "left" // or "right"
+      }
+    }
+
+• Automatically set a single column/group if there are two columns, and
+  a closed view was File Browser and the only one in its group.
