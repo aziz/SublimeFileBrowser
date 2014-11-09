@@ -123,7 +123,7 @@ class DiredCommand(WindowCommand):
     """
     Prompt for a directory to display and display it.
     """
-    def run(self, immediate=False, single_pane=False, project=False, other_group=''):
+    def run(self, immediate=False, single_pane=False, project=False, other_group=False):
         path = self._determine_path()
         if project:
             folders = self.window.folders()
@@ -341,20 +341,20 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             if r:
                 content = self.view.substr(r)
                 indent  = len(re.match(r'^(\s*)', content).group(1))
-                if indent:
-                    icon = r.a + indent
-                    r = Region(icon, icon + (1 if not colorblind else 0))
-                else:
-                    r = Region(r.a, r.a + (1 if not colorblind else 0))
+                icon = r.a + indent
+                r = Region(icon, icon + (1 if not colorblind else 0))
                 rgns.append((r, self.changed_items[fn]))
         for r, status in rgns:
             if status == 'M':
                 modified.append(r)
             elif status == '?':
                 untracked.append(r)
-        options = MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE
-        self.view.add_regions('M', modified, 'item.modified.dired', '', options)
-        self.view.add_regions('?', untracked, 'item.untracked.dired', '', options)
+        if colorblind:
+            self.view.add_regions('M', modified, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE)
+            self.view.add_regions('?', untracked, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY)
+        else:
+            self.view.add_regions('M', modified, 'item.modified.dired', '', MARK_OPTIONS)
+            self.view.add_regions('?', untracked, 'item.untracked.dired', '', MARK_OPTIONS)
 
 
 class DiredNextLineCommand(TextCommand, DiredBaseCommand):
@@ -449,11 +449,11 @@ class DiredFold(TextCommand, DiredBaseCommand):
         current_region = v.indented_region(line.b)
         next_region    = v.indented_region(line.b + 2)
         is_folder      = 'directory' in v.scope_name(line.a)
-        unfolded_subfolder = update and (next_region.contains(line) or next_region.empty() or next_region.contains(current_region))
-        unfolded_folder    = update and current_region.empty() and next_region.empty()
+        folded_subfolder = update and (next_region.contains(line) or next_region.empty() or next_region.contains(current_region))
+        folded_folder    = update and current_region.empty() and next_region.empty()
         file_item_in_root  = not is_folder and current_region.empty()
 
-        if unfolded_subfolder or unfolded_folder or file_item_in_root:
+        if folded_subfolder or folded_folder or file_item_in_root:
             # folding is not supposed to happen, so we exit
             return
         elif update or (is_folder and not next_region.empty() and not next_region.contains(line)):
@@ -1015,8 +1015,11 @@ class HideEmptyGroup(EventListener):
 
         w = sublime.active_window()
         # check if closed view was a single one in group
-        single = ([view.id()] == [v.id() for v in w.views_in_group(0)] or
-                  [view.id()] == [v.id() for v in w.views_in_group(1)])
+        if ST3:
+            single = not w.views_in_group(0) or not w.views_in_group(1)
+        else:
+            single = ([view.id()] == [v.id() for v in w.views_in_group(0)] or
+                      [view.id()] == [v.id() for v in w.views_in_group(1)])
         if w.num_groups() == 2 and single:
             # without timeout ST may crash
             sublime.set_timeout(lambda: w.set_layout({"cols": [0.0, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1]]}), 300)

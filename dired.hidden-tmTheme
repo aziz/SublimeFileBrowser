@@ -191,8 +191,6 @@
 			<dict>
 				<key>background</key>
 				<string>#d9dee0</string>
-				<key>caret</key>
-				<string>#367cc0</string>
 				<key>foreground</key>
 				<string>#F09609</string>
 			</dict>
@@ -209,6 +207,18 @@
 				<string>#d9dee0</string>
 				<key>foreground</key>
 				<string>#00c406</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>VCS Colorblind</string>
+			<key>scope</key>
+			<string>item.colorblind.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#000000</string>
 			</dict>
 		</dict>
 

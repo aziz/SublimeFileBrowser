@@ -159,7 +159,8 @@ You can also customize the patterns used to determine if a file should be hidden
 ```
 
 ### Git integration
-In case `git status` returns a colorable output in current folder, the modified and untracked files will be designated by orange and green outlines respectively.  
+In case `git status` returns a colorable output in current folder, the modified and untracked files will be designated by orange and green icons respectively.  
+You can use setting `"vcs_color_blind": true` — untracked files will get vertical line on left side of their icons, modified files will get horizontal line under their icons.  
 If Git is not presented in your `PATH` you may set `git_path` setting (see example in default settings file).
 
 
