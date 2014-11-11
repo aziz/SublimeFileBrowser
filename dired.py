@@ -997,7 +997,7 @@ class DiredForceColorSchemeCommand(EventListener):
             view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
 
 
-class HijackNewWindow(EventListener):
+class DiredHijackNewWindow(EventListener):
    def on_window_command(self, window, command_name, args):
         if command_name != "new_window":
             return
@@ -1008,7 +1008,7 @@ class HijackNewWindow(EventListener):
             sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
 
 
-class HideEmptyGroup(EventListener):
+class DiredHideEmptyGroup(EventListener):
     def on_close(self, view):
         if not 'dired' in view.scope_name(0):
             return
@@ -1023,3 +1023,17 @@ class HideEmptyGroup(EventListener):
         if w.num_groups() == 2 and single:
             # without timeout ST may crash
             sublime.set_timeout(lambda: w.set_layout({"cols": [0.0, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1]]}), 300)
+
+
+class DiredMoveOpenOrNewFileToRightGroup(EventListener):
+    def on_new(self, view):
+        w = sublime.active_window()
+        if w.num_groups() < 2:
+            return
+
+        if any(v for v in w.views_in_group(0) if 'dired' in v.scope_name(0)):
+            g, i = w.get_view_index(w.active_view_in_group(1))
+            sublime.set_timeout(lambda: w.set_view_index(view, g, i+1), 1)
+
+    def on_load(self, view):
+        self.on_new(view)

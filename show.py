@@ -35,6 +35,10 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
 
     if other_group:
         prev_focus = window.active_view()
+        # simulate 'toggle sidebar':
+        if 'dired' in prev_focus.scope_name(0):
+            window.run_command('close_file')
+            return
 
     if not view:
         view = window.new_file()
