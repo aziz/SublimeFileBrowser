@@ -18,8 +18,10 @@
   "drag_text": false,
   "tab_size": 3,
 
-  // Path to git executable, fallback to git
+  // Path to git executable.
   // Wildcards are supported, e.g. if you use GitHub for Windows it would be:
-  //     "git_path" : "~/Appdata/Local/GitHub/PortableGit_*/cmd/git.exe"
-  "git_path": ""
+  //     "git_path": "~/Appdata/Local/GitHub/PortableGit_*/cmd/git.exe"
+  // To disable git integration set to empty string:
+  //     "git_path": ""
+  "git_path": "git"
 }

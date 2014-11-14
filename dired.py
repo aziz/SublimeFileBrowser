@@ -189,10 +189,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                              .replace('[Error 5] ', 'Access denied'))
             self.view.set_read_only(True)
         else:
-            git_path = glob.glob(os.path.expanduser(self.view.settings().get('git_path', 'git')))
-            git = git_path if git_path else 'git'
-            self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, names, git))
-            self.vcs_thread.start()
+            git = glob.glob(os.path.expanduser(self.view.settings().get('git_path', '')))
+            if git:  # empty string disable git integration
+                self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, names, git))
+                self.vcs_thread.start()
             self.continue_refreshing(edit, path, names, goto, indent='\t' if inline else '')
 
     def continue_refreshing(self, edit, path, names, goto=None, indent=''):
