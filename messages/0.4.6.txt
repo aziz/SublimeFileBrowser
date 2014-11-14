@@ -1,0 +1,4 @@
+0.4.6
+
+• Change default value of git_path — "git_path": "git".
+  Empty string (previous default) will disable git integration now.
