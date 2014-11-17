@@ -36,7 +36,7 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
     if other_group:
         prev_focus = window.active_view()
         # simulate 'toggle sidebar':
-        if 'dired' in prev_focus.scope_name(0):
+        if prev_focus and 'dired' in prev_focus.scope_name(0):
             window.run_command('close_file')
             return
 
@@ -63,11 +63,11 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         group = nag
 
     # when other_group is left, we need move all views to right except FB view
-    if other_group == 'left' and group == 0:
+    if nag == 0 and other_group == 'left' and group == 0:
         for v in reversed(window.views_in_group(nag)[1:]):
             window.set_view_index(v, 1, 0)
 
-    if other_group:
+    if other_group and prev_focus:
         window.focus_view(prev_focus)
 
     if path == os.sep:

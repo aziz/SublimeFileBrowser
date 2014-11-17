@@ -1026,14 +1026,30 @@ class DiredHideEmptyGroup(EventListener):
 
 
 class DiredMoveOpenOrNewFileToRightGroup(EventListener):
+    def on_activated(self, view):
+        '''
+        Trick to prevent unexpected movements (e.g. when switching project in
+        current window; or restart)
+        Reason why the whole logic shall not be run on_activated, is
+        user should be able to explicitly put any view in left group
+        no matter what, e.g. using keybinding or drag&drop
+        '''
+        w = sublime.active_window()
+        if w and any(v for v in w.views_in_group(0) if 'dired' in v.scope_name(0)):
+            self.MOVE = True
+        else:
+            self.MOVE = False
+
     def on_new(self, view):
+        if not self.MOVE:
+            return
+
         w = sublime.active_window()
         if w.num_groups() < 2:
             return
 
         if any(v for v in w.views_in_group(0) if 'dired' in v.scope_name(0)):
-            g, i = w.get_view_index(w.active_view_in_group(1))
-            sublime.set_timeout(lambda: w.set_view_index(view, g, i+1), 1)
+            sublime.set_timeout(lambda: w.set_view_index(view, 1, 0), 1)
 
     def on_load(self, view):
         self.on_new(view)
