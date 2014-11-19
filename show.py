@@ -12,6 +12,10 @@ if ST3:
 else:
     from common import first
 
+def set_proper_scheme(view):
+    # Since we cannot create file with syntax, there is moment when view has no settings,
+    # but it is activated, so some plugins (e.g. Color Highlighter) set wrong color scheme
+    view.settings().set('color_scheme', sublime.load_settings('dired.sublime-settings').get('color_scheme'))
 
 def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, inline=False, other_group=''):
     """
@@ -42,6 +46,7 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
 
     if not view:
         view = window.new_file()
+        view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
         view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
         view.set_scratch(True)
 

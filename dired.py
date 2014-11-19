@@ -996,16 +996,6 @@ class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
             self.view.window().run_command('dired_refresh')
 
 
-# Some plugins like **Color Highlighter** are forcing their color-scheme to the activated view
-# Although, it's something that should be fixed on their side, in the meantime, it's safe to force
-# the color shceme on `on_activated_async` event.
-class DiredForceColorSchemeCommand(EventListener):
-    def on_activated_async(self, view):
-        syntax = view.settings().get('syntax')
-        if syntax and (syntax.endswith("dired.hidden-tmLanguage")):
-            view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
-
-
 class DiredHijackNewWindow(EventListener):
    def on_window_command(self, window, command_name, args):
         if command_name != "new_window":
