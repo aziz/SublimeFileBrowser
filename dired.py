@@ -196,7 +196,6 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.continue_refreshing(edit, path, names, goto, indent='\t' if inline else '')
 
     def continue_refreshing(self, edit, path, names, goto=None, indent=''):
-        self.view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
         status = u" 𝌆 [?: Help] "
         path_in_project = any(folder == self.path[:-1] for folder in self.view.window().folders())
         status += 'Project root, ' if path_in_project else ''

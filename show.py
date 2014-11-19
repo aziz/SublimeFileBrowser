@@ -42,6 +42,7 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
 
     if not view:
         view = window.new_file()
+        view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
         view.set_scratch(True)
 
     nag = window.active_group()
