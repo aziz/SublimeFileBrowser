@@ -189,7 +189,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                              .replace('[Error 5] ', 'Access denied'))
             self.view.set_read_only(True)
         else:
-            git = glob.glob(os.path.expanduser(self.view.settings().get('git_path', '')))
+            git = self.view.settings().get('git_path', '')
             if git:  # empty string disable git integration
                 self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, names, git))
                 self.vcs_thread.start()
@@ -316,6 +316,16 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         return result
 
     def vcs_check(self, edit, path, names, git='git'):
+        if any(c for c in '~*?[]' if c in git):
+            match = glob.glob(os.path.expanduser(git))
+            if match:
+                git = match[0]
+            else:
+                sublime.error_message('FileBrowser:\n'
+                    'It seems like you use wildcards in "git_path": "%s".\n'
+                    'But the pattern cannot be found, please, fix it '
+                    'or use absolute path without wildcards.' % git)
+
         shell = True if sublime.platform()=='windows' else False
         try:
             p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
