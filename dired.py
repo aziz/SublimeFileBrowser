@@ -124,7 +124,7 @@ class DiredCommand(WindowCommand):
     Prompt for a directory to display and display it.
     """
     def run(self, immediate=False, single_pane=False, project=False, other_group=False):
-        path = self._determine_path()
+        path, goto = self._determine_path()
         if project:
             folders = self.window.folders()
             if len(folders) == 1:
@@ -134,7 +134,7 @@ class DiredCommand(WindowCommand):
                 self.window.show_quick_panel(folders, self._show_folder)
                 return
         if immediate:
-            show(self.window, path, single_pane=single_pane, other_group=other_group)
+            show(self.window, path, goto=goto, single_pane=single_pane, other_group=other_group)
         else:
             prompt.start('Directory:', self.window, path, self._show)
 
@@ -146,26 +146,27 @@ class DiredCommand(WindowCommand):
         show(self.window, path)
 
     def _determine_path(self):
+        '''Return (path, fname) so goto=fname to set cursor'''
         # Use the current view's directory if it has one.
         view = self.window.active_view()
         path = view and view.file_name()
         if path:
-            return dirname(path)
+            return os.path.split(path)
 
         # Use the first project folder if there is one.
         data = self.window.project_data() if ST3 else None
         if data and 'folders' in data:
             folders = data['folders']
             if folders:
-                return folders[0]['path']
+                return (folders[0]['path'], None)
 
         # Use window folder if possible
         folders = self.window.folders()
         if len(folders) > 0:
-            return folders[0]
+            return (folders[0], None)
 
         # Use the user's home directory.
-        return os.path.expanduser('~')
+        return (os.path.expanduser('~'), None)
 
 
 class DiredRefreshCommand(TextCommand, DiredBaseCommand):
