@@ -131,16 +131,20 @@ class DiredCommand(WindowCommand):
                 path = folders[0]
             elif folders:
                 folders = [ [basename(f), f] for f in folders]
-                self.window.show_quick_panel(folders, self._show_folder)
+                self.window.show_quick_panel(folders, lambda i: self._show_folder(i, path, goto, single_pane, other_group))
                 return
         if immediate:
             show(self.window, path, goto=goto, single_pane=single_pane, other_group=other_group)
         else:
             prompt.start('Directory:', self.window, path, self._show)
 
-    def _show_folder(self, index):
+    def _show_folder(self, index, path, goto, single_pane, other_group):
         if index != -1:
-            show(self.window, self.window.folders()[index])
+            choice = self.window.folders()[index]
+            if path == choice:
+                show(self.window, path, goto=goto, single_pane=single_pane, other_group=other_group)
+            else:
+                show(self.window, choice, single_pane=single_pane, other_group=other_group)
 
     def _show(self, path):
         show(self.window, path)
