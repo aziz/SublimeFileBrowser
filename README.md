@@ -14,11 +14,13 @@ Or you can clone this repo into your Sublime Text Packages folder and rename the
 This plugin does not add any keybindings for opening a new tab in "Browse mode". Although, the commands to do that are available in *command pallete* but I recommend binding <kbd>F1</kbd> to open the current file folder in "Browse mode" with this peice of code (that you can add it to your `Key Bindings - User` file):
 
 ``` json
-{
-  "keys": ["f1"],
-  "command": "dired",
-  "args": { "immediate": true }
-}
+[
+  {
+    "keys": ["f1"],
+    "command": "dired",
+    "args": { "immediate": true }
+  }
+]
 ```
 
 You also can use optional arguments to tweak behaviour:
@@ -30,16 +32,18 @@ You also can use optional arguments to tweak behaviour:
 You can mix these arguments as you like (perhaps, even bind several shortcuts for different cases); e.g. to completely mimic sidebar, it would be:
 
 ``` json
-{
-  "keys": ["f1"],
-  "command": "dired",
-  "args": {
-    "immediate": true,
-    "single_pane": true,
-    "other_group": "left",
-    "project": true
+[
+  {
+    "keys": ["f1"],
+    "command": "dired",
+    "args": {
+      "immediate": true,
+      "single_pane": true,
+      "other_group": "left",
+      "project": true
+    }
   }
-}
+]
 ```
 
 
