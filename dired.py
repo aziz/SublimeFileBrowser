@@ -280,7 +280,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.sel().add(Region(pt, pt))
         else:
             self.view.sel().clear()
-            self.view.sel().add(Region(name_point, 0))
+            self.view.sel().add(Region(name_point, name_point))
             self.view.show_at_center(name_point)
 
     def ls(self, path, names, goto='', indent=''):
