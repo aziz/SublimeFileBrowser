@@ -3,73 +3,42 @@
 <plist version="1.0">
 <dict>
     <key>name</key>
-    <string>dired</string>
+    <string>dired jump list</string>
     <key>scopeName</key>
-    <string>text.dired</string>
+    <string>text.dired_jump_list</string>
     <key>uuid</key>
     <string>638375b8-3509-4d37-a8d8-afad7a95b428</string>
-    <key>fileTypes</key>
-    <array>
-        <string>dired</string>
-    </array>
     <key>patterns</key>
     <array>
 
       <dict>
           <key>match</key>
-          <string>^\s*([▸▾] )([^\\/]*)(\\|/)?(.*)?$</string>
+          <string>^(★ )(\S.*)(❯\s*)(.+)$</string>
           <key>name</key>
-          <string>dired.item.directory</string>
+          <string>dired.item.projects</string>
           <key>captures</key>
           <dict>
               <key>1</key>
               <dict>
                   <key>name</key>
-                  <string>punctuation.definition.directory.symbol.dired</string>
+                  <string>punctuation.definition.projects.star.symbol.dired</string>
               </dict>
               <key>2</key>
               <dict>
                   <key>name</key>
-                  <string>string.name.directory.dired</string>
+                  <string>string.name.project.dired</string>
               </dict>
               <key>3</key>
               <dict>
                   <key>name</key>
-                  <string>punctuation.definition.directory.slash.dired</string>
+                  <string>punctuation.definition.projects.chevron.symbol.dired</string>
               </dict>
               <key>4</key>
-                  <dict>
-                      <key>name</key>
-                      <string>string.error.dired</string>
-                  </dict>
-          </dict>
-      </dict>
-
-      <dict>
-          <key>match</key>
-          <string>^\s*(≡ )(\S.*)$</string>
-          <key>name</key>
-          <string>dired.item.file</string>
-          <key>captures</key>
-          <dict>
-              <key>1</key>
               <dict>
                   <key>name</key>
-                  <string>punctuation.definition.file.symbol.dired</string>
-              </dict>
-              <key>2</key>
-              <dict>
-                  <key>name</key>
-                  <string>string.name.file.dired</string>
+                  <string>string.name.project_path.dired</string>
               </dict>
           </dict>
-      </dict>
-
-      <dict>
-          <key>match</key>
-          <string>^⠤$</string>
-          <key>name</key>
-          <string>dired.item.parent_dir</string>
       </dict>
 
       <dict>
