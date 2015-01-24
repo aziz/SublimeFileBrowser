@@ -44,13 +44,13 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
             status_message("No jump points available. To create jump point for this directory use 'P'.")
             return
         # show_quick_panel didn't work with dict_items
-        self.points = [[n, t] for n, t in jump_points()]
-        self.view.window().show_quick_panel(self.points, self.on_pick_point)
+        self.jump_points = [[n, t] for n, t in jump_points()]
+        self.view.window().show_quick_panel(self.jump_points, self.on_pick_point)
 
     def on_pick_point(self, index):
         if index == -1:
             return
-        name, target = self.points[index]
+        name, target = self.jump_points[index]
         if exists(target) and isdir(target) and target[-1] == os.sep:
             show(self.view.window(), target, view_id=self.view.id())
             status_message("Jumping to point '{0}' complete".format(name))
@@ -120,12 +120,17 @@ class DiredJumpListRenderCommand(TextCommand):
     def render(self):
         self.view_width = 80
         self.col_padding = 2
-        self.points = [[n, t] for n, t in jump_points()]
+        self.jump_points = [[n, t] for n, t in jump_points()]
         self.names = [n for n, t in jump_points()]
-        self.max_len_names = max([len(n) for n, t in jump_points()])
-        self.view.settings().set('dired_project_count', len(self.names))
         content = "Jump to…\n" + "—"*self.view_width + "\n\n"
-        for p in self.points:
+
+        if len(self.names) > 0:
+            self.max_len_names = max([len(n) for n, t in jump_points()])
+            self.view.settings().set('dired_project_count', len(self.names))
+        else:
+            content += "Jump list is empty!"
+
+        for p in self.jump_points:
             content += u'★ {0}❯{1}\n'.format(self.display_name(p[0]), self.display_path(p[1]))
         return content
 

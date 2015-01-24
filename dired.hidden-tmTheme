@@ -29,6 +29,12 @@
 				<string>#22222233</string>
 				<key>inactiveSelection</key>
 				<string>#22222219</string>
+
+				<key>shadow</key>
+				<string>#d9dee5</string>
+				<key>shadowWidth</key>
+				<string>16</string>
+
 			</dict>
 		</dict>
 
