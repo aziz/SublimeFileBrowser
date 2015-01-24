@@ -1072,8 +1072,5 @@ def hijack_window():
             sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
 
 def plugin_loaded():
-    print("FB loaded")
-    print(len(sublime.windows()))
-    print(len(sublime.windows()[0].views()))
     if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
         hijack_window()

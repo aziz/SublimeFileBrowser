@@ -270,7 +270,7 @@
     "keys": ["P"],
     "command": "dired_edit_jump_point",
     "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired - dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false }
     ]
   },
@@ -481,5 +481,13 @@
         { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
+  },
+  {
+    "keys": ["P"],
+    "command": "dired_project_edit_jump_point",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
   }
 ]

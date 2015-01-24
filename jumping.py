@@ -65,14 +65,15 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
                 status_message(u"Jump point '{0}' was removed".format(name))
                 self.view.run_command('dired_refresh')
 
-
 class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit):
+    def run(self, edit, item=False):
         self.names = jump_names()
-        name = self.names.get(self.path)
+        self.project_path = item[1] or self.path
+        self.item = item
+        name = item[0] or self.names.get(self.project_path)
         if not name:
             prompt = 'Create jump point:'
-            name = basename(self.path[:-1])
+            name = basename(self.project_path[:-1])
         else:
             prompt = 'Edit jump point (clear to Remove):'
         self.view.window().show_input_panel(prompt, name, self.edit_jump_point, None, None)
@@ -91,16 +92,19 @@ class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
                         del self.names[t]
                     else:
                         return
-            self.names[self.path] = name
+            self.names[self.project_path] = name
             status_message(u"Jump point for this directory was set to '{0}'".format(name))
-        elif self.path in self.names:
-            del self.names[self.path]
+        elif self.project_path in self.names:
+            del self.names[self.project_path]
             status_message("Jump point for this directory was removed")
         else:
             status_message("Jump point wasn't created")
             return
         save_jump_points(self.names, reverse=True)
-        self.view.run_command('dired_refresh')
+        if self.item:
+            self.view.run_command('dired_jump_list', {"reuse": True})
+        else:
+            self.view.run_command('dired_refresh')
 
 
 class DiredJumpListRenderCommand(TextCommand):
@@ -141,11 +145,13 @@ class DiredJumpListRenderCommand(TextCommand):
 
 
 class DiredJumpListCommand(TextCommand):
-    def run(self, edit):
-        if not jump_points():
-            status_message("No jump points available. To create jump point for this directory use 'P'.")
-            return
-        view = self.view.window().new_file()
+    def run(self, edit, reuse=False):
+        if reuse:
+            view = self.view
+            view.set_read_only(False)
+        else:
+            view = self.view.window().new_file()
+
         view.set_name("FileBrowser: Jump List")
         view.set_scratch(True)
         view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
@@ -177,14 +183,13 @@ class DiredProjectNextLineCommand(TextCommand):
             # Not (or no longer) in the list of files, so move to the closest edge.
             pt = (pt > files.b) and files.b or files.a
 
-        print(pt)
-
+        # print(pt)
         line = self.view.line(pt)
         self.view.sel().clear()
         self.view.sel().add(Region(line.a, line.a))
 
 
-class DiredProjectSelect(TextCommand):
+class DiredProjectSelectCommand(TextCommand):
     def run(self, edit):
         pt = self.view.sel()[0].a
         row, col = self.view.rowcol(pt)
@@ -192,3 +197,12 @@ class DiredProjectSelect(TextCommand):
         current_project = [points[row - 3][1]]
         self.view.run_command("dired_open_in_new_window", { "project_folder": current_project})
         sublime.set_timeout(lambda: self.view.close(), 100)
+
+
+class DiredProjectEditJumpPointCommand(TextCommand):
+    def run(self, edit):
+        pt = self.view.sel()[0].a
+        row, col = self.view.rowcol(pt)
+        points = [[n, t] for n, t in jump_points()]
+        current_project = points[row - 3]
+        self.view.run_command("dired_edit_jump_point", { "item": current_project})
