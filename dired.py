@@ -1074,3 +1074,6 @@ def hijack_window():
 def plugin_loaded():
     if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
         hijack_window()
+
+if not ST3:
+    plugin_loaded()
