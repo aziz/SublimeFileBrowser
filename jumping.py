@@ -27,7 +27,6 @@ def save_jump_points(points, reverse=False):
     load_settings('dired.sublime-settings').set('dired_jump_points', points)
     save_settings('dired.sublime-settings')
 
-
 def jump_points():
     return load_jump_points().items()
 
@@ -45,7 +44,15 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
             return
         # show_quick_panel didn't work with dict_items
         self.jump_points = [[n, t] for n, t in jump_points()]
-        self.view.window().show_quick_panel(self.jump_points, self.on_pick_point)
+        self.display_jump_points = [[n, self.display_path(t)] for n, t in jump_points()]
+        self.view.window().show_quick_panel(self.display_jump_points, self.on_pick_point, sublime.MONOSPACE_FONT)
+
+    def display_path(self, folder):
+        display = folder
+        home = os.path.expanduser("~")
+        if folder.startswith(home):
+            display = folder.replace(home, "~", 1)
+        return display
 
     def on_pick_point(self, index):
         if index == -1:
