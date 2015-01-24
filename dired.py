@@ -1014,13 +1014,7 @@ class DiredHijackNewWindow(EventListener):
    def on_window_command(self, window, command_name, args):
         if command_name != "new_window":
             return
-        settings = sublime.load_settings('dired.sublime-settings')
-        command = settings.get("dired_hijack_new_window")
-        if command:
-            if command == "jump_list":
-                sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list") , 1)
-            else:
-                sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
+        hijack_window()
 
 class DiredHideEmptyGroup(EventListener):
     def on_close(self, view):
@@ -1067,3 +1061,19 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
 
     def on_load(self, view):
         self.on_new(view)
+
+def hijack_window():
+    settings = sublime.load_settings('dired.sublime-settings')
+    command = settings.get("dired_hijack_new_window")
+    if command:
+        if command == "jump_list":
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list") , 1)
+        else:
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
+
+def plugin_loaded():
+    print("FB loaded")
+    print(len(sublime.windows()))
+    print(len(sublime.windows()[0].views()))
+    if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
+        hijack_window()
