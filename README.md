@@ -48,10 +48,13 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 
 
 
-| Commands                                 | Description                                       |
-| :--------------------------------------- | :------------------------------------------------ |
-| **Browse Mode...**                       | Asks for a directory to open in browse mode       |
-| **Browse Mode: Current file or project** | Open the directory of current file in browse mode |
+| Commands                                 | Description                                                  |
+| :--------------------------------------- | :----------------------------------------------------------- |
+| **Browse Mode...**                       | Ask for a directory to open in browse mode                   |
+| **Browse Mode: Current file or project** | Open the directory of current file or project in browse mode |
+| **Browse Mode: Left Sidebar**            | Open in browse mode as a sidebar on the left                 |
+| **Browse Mode: Right Sidebar**           | Open in browse mode as a sidebar on the right                |
+| **Browse Mode: Jump List**               | Show the projects' jump list (see jump list section below)   |
 
 ### Shortcuts
 
