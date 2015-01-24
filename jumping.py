@@ -135,7 +135,7 @@ class DiredJumpListRenderCommand(TextCommand):
             self.max_len_names = max([len(n) for n, t in jump_points()])
             self.view.settings().set('dired_project_count', len(self.names))
         else:
-            content += "Jump list is empty!"
+            content += "Jump list is empty!\n\nAdd a folder to your jump list by pressing P (shift + p)\nwhile you are browing that folder in FileBrowser"
 
         for p in self.jump_points:
             content += u'★ {0}❯{1}\n'.format(self.display_name(p[0]), self.display_path(p[1]))

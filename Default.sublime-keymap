@@ -469,14 +469,14 @@
       "keys": ["enter"],
       "command": "dired_project_select",
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired_jump_list" }
+        { "key": "selector", "operator": "equal", "operand": "text.dired_jump_list dired.item.projects" }
       ]
   },
   {
     "keys": ["P"],
     "command": "dired_project_edit_jump_point",
     "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired_jump_list" }
+        { "key": "selector", "operator": "equal", "operand": "text.dired_jump_list dired.item.projects" }
     ]
   }
 ]
