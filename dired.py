@@ -273,14 +273,14 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
 
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
-            self.view.show_at_center(Region(pt, pt))
+            self.view.show_at_center(Region(pt, 0))
         elif not f and not indent: # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
         else:
             self.view.sel().clear()
-            self.view.sel().add(Region(name_point, name_point))
+            self.view.sel().add(Region(name_point, 0))
             self.view.show_at_center(name_point)
 
     def ls(self, path, names, goto='', indent=''):
