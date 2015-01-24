@@ -4,7 +4,6 @@
   "dired_confirm_send2trash": true,
   "dired_show_hidden_files": true,
   "dired_hidden_files_patterns": [".*"],
-  "dired_hijack_new_window": false, // (ST3 Only) shows a filebrowser view in new window by default
   "color_scheme": "Packages/FileBrowser/dired.hidden-tmTheme",
   "line_numbers": false,
   "margin": 0,
@@ -17,6 +16,12 @@
   "fold_buttons": false,
   "drag_text": false,
   "tab_size": 3,
+
+  // (ST3 Only) shows a filebrowser or a jump list view in new window by default
+  // false: hijacking is disabled
+  // "jump_list": shows the project jump list
+  // "dired": shows a normal file brower view defaults to user directory
+  "dired_hijack_new_window": false,
 
   // Path to git executable.
   // Wildcards are supported, e.g. if you use GitHub for Windows it would be:

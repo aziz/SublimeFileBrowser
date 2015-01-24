@@ -3,7 +3,7 @@
       "keys": ["enter"],
       "command": "dired_select", "args": {"other_group": true},
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired - dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
   },
@@ -62,7 +62,7 @@
       "keys": ["left"],
       "command": "dired_fold",
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired - dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
   },
@@ -312,7 +312,7 @@
       "command": "dired_next_line",
       "args": { "forward": true },
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired - dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false },
         { "key": "setting.command_mode", "operand": false }
       ]
@@ -322,17 +322,18 @@
       "command": "dired_next_line",
       "args": { "forward": true },
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired - dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false },
         { "key": "setting.command_mode", "operand": false }
       ]
   },
+
   {
       "keys": ["k"],
       "command": "dired_next_line",
       "args": { "forward": false },
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired - dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false },
         { "key": "setting.command_mode", "operand": false }
       ]
@@ -342,7 +343,7 @@
       "command": "dired_next_line",
       "args": { "forward": false },
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired - dired.item.projects" },
         { "key": "setting.dired_rename_mode", "operand": false },
         { "key": "setting.command_mode", "operand": false }
       ]
@@ -414,6 +415,71 @@
       { "key": "selector", "operator": "equal", "operand": "text.dired" },
       { "key": "setting.dired_rename_mode", "operand": false }
     ]
-  }
+  },
 
+  // PROJECTS
+  {
+      "keys": ["j"],
+      "command": "dired_project_next_line",
+      "args": { "forward": true },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["down"],
+      "command": "dired_project_next_line",
+      "args": { "forward": true },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["k"],
+      "command": "dired_project_next_line",
+      "args": { "forward": false },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["up"],
+      "command": "dired_project_next_line",
+      "args": { "forward": false },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false },
+        { "key": "setting.command_mode", "operand": false }
+      ]
+  },
+  { // Disable left and right key on projects
+      "keys": ["right"],
+      "command": "dired_noop",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["left"],
+      "command": "dired_noop",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["enter"],
+      "command": "dired_project_select",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.projects" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  }
 ]

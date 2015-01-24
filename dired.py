@@ -898,9 +898,12 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit):
+    def run(self, edit, project_folder=False):
+        if project_folder:
+            files = project_folder
+        else:
+            files = self.get_marked() or self.get_selected()
         items = []
-        files = self.get_marked() or self.get_selected()
 
         if ST3: # sublime.executable_path() is not available in ST2
             executable_path = sublime.executable_path()
@@ -946,6 +949,12 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                     subprocess.Popen(['subl'] + items, cwd=self.path)
                 except:
                     subprocess.Popen(['sublime'] + items, cwd=self.path)
+
+        def run_on_new_window():
+            sublime.active_window().run_command("dired", { "immediate": True, "project": True, "other_group": "left"})
+
+        sublime.set_timeout(run_on_new_window , 200)
+
 
 
 class DiredHelpCommand(TextCommand):
@@ -1005,12 +1014,13 @@ class DiredHijackNewWindow(EventListener):
    def on_window_command(self, window, command_name, args):
         if command_name != "new_window":
             return
-
         settings = sublime.load_settings('dired.sublime-settings')
-
-        if settings.get("dired_hijack_new_window"):
-            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
-
+        command = settings.get("dired_hijack_new_window")
+        if command:
+            if command == "jump_list":
+                sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list") , 1)
+            else:
+                sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
 
 class DiredHideEmptyGroup(EventListener):
     def on_close(self, view):

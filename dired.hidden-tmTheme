@@ -34,6 +34,41 @@
 
 		<dict>
 			<key>name</key>
+			<string>Project Symbols > Star</string>
+			<key>scope</key>
+			<string>punctuation.definition.projects.star.symbol.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#7c8692</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Project Symbols > Chevron</string>
+			<key>scope</key>
+			<string>punctuation.definition.projects.chevron.symbol.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#7c869266</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Project Path</string>
+			<key>scope</key>
+			<string>string.name.project_path.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#707e8b</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
 			<string>File/Dir Symbols</string>
 			<key>scope</key>
 			<string>punctuation.definition.directory.symbol.dired, punctuation.definition.file.symbol.dired, dired.item.parent_dir</string>
@@ -60,7 +95,7 @@
 			<key>name</key>
 			<string>Dir Name</string>
 			<key>scope</key>
-			<string>string.name.directory.dired</string>
+			<string>string.name.directory.dired, string.name.project.dired</string>
 			<key>settings</key>
 			<dict>
 				<key>fontStyle</key>

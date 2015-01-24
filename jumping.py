@@ -1,9 +1,10 @@
 # coding: utf8
 import sublime
-from sublime import status_message, ok_cancel_dialog, load_settings, save_settings
+from sublime import status_message, ok_cancel_dialog, load_settings, save_settings, Region
 from sublime_plugin import TextCommand, WindowCommand
 
 import os
+import re
 from os.path import dirname, realpath, join, isdir, basename, exists
 
 ST3 = int(sublime.version()) >= 3000
@@ -100,3 +101,94 @@ class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
             return
         save_jump_points(self.names, reverse=True)
         self.view.run_command('dired_refresh')
+
+
+class DiredJumpListRenderCommand(TextCommand):
+    def run(self, edit):
+        self.view.erase(edit, Region(0, self.view.size()))
+        self.view.insert(edit, 0, self.render())
+        self.view.sel().clear()
+        pt = self.view.text_point(3, 0)
+        self.view.sel().clear()
+        self.view.sel().add(Region(pt, pt))
+        self.view.set_read_only(True)
+
+    def render(self):
+        self.view_width = 80
+        self.col_padding = 2
+        self.points = [[n, t] for n, t in jump_points()]
+        self.names = [n for n, t in jump_points()]
+        self.max_len_names = max([len(n) for n, t in jump_points()])
+        self.view.settings().set('dired_project_count', len(self.names))
+        content = "Jump to…\n" + "—"*self.view_width + "\n\n"
+        for p in self.points:
+            content += u'★ {0}❯{1}\n'.format(self.display_name(p[0]), self.display_path(p[1]))
+        return content
+
+    def display_name(self, name):
+        return name + " " * (self.max_len_names - len(name) + self.col_padding)
+
+    def display_path(self, folder):
+        display = folder
+        home = os.path.expanduser("~")
+        label_characters = self.view_width - 3 - (self.col_padding*2) - self.max_len_names
+        if folder.startswith(home):
+            display = folder.replace(home, "~", 1)
+        if len(display) > label_characters:
+            chars = int(label_characters/2)
+            display = display[:chars] + "…" + display[-chars:]
+        return " " * self.col_padding + display
+
+
+class DiredJumpListCommand(TextCommand):
+    def run(self, edit):
+        if not jump_points():
+            status_message("No jump points available. To create jump point for this directory use 'P'.")
+            return
+        view = self.view.window().new_file()
+        view.set_name("FileBrowser: Jump List")
+        view.set_scratch(True)
+        view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
+        view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
+        view.settings().set('line_numbers', False)
+        view.settings().set('draw_centered', True)
+        view.run_command('dired_jump_list_render')
+        sublime.active_window().focus_view(view)
+
+
+class DiredProjectNextLineCommand(TextCommand):
+    def run(self, edit, forward=None):
+        assert forward in (True, False), 'forward must be set to True or False'
+
+        count = self.view.settings().get('dired_project_count', 0)
+        files = Region(self.view.text_point(3, 0), self.view.text_point(count+3-1, 0))
+
+        if files.empty():
+            return
+
+        pt = self.view.sel()[0].a
+
+        if files.contains(pt):
+            # Try moving by one line.
+            line = self.view.line(pt)
+            pt = forward and (line.b + 1) or (line.a - 1)
+
+        if not files.contains(pt):
+            # Not (or no longer) in the list of files, so move to the closest edge.
+            pt = (pt > files.b) and files.b or files.a
+
+        print(pt)
+
+        line = self.view.line(pt)
+        self.view.sel().clear()
+        self.view.sel().add(Region(line.a, line.a))
+
+
+class DiredProjectSelect(TextCommand):
+    def run(self, edit):
+        pt = self.view.sel()[0].a
+        row, col = self.view.rowcol(pt)
+        points = [[n, t] for n, t in jump_points()]
+        current_project = [points[row - 3][1]]
+        self.view.run_command("dired_open_in_new_window", { "project_folder": current_project})
+        sublime.set_timeout(lambda: self.view.close(), 100)
