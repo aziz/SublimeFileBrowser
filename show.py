@@ -81,7 +81,10 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
     else:
         view_name = basename(path.rstrip(os.sep))
 
-    name = u"𝌆 {0}".format(view_name)
+    if ST3:
+        name = u"𝌆 {0}".format(view_name)
+    else:
+        name = u"{0}".format(view_name)
 
     if not inline:
         view.set_name(name)

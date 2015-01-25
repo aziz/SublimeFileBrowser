@@ -217,7 +217,14 @@ class DiredProjectSelectCommand(TextCommand):
         points = [[n, t] for n, t in jump_points()]
         current_project = [points[row - 3][1]]
         self.view.run_command("dired_open_in_new_window", { "project_folder": current_project})
-        sublime.set_timeout(lambda: self.view.close(), 100)
+
+        def close_view(view):
+            if ST3:
+                view.close()
+            else:
+                view.window().run_command("close_file")
+
+        sublime.set_timeout(close_view(self.view), 100)
 
 
 class DiredProjectEditJumpPointCommand(TextCommand):

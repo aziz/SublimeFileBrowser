@@ -956,6 +956,8 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
             sublime.active_window().run_command("dired", { "immediate": True, "project": True, "other_group": "left"})
 
         sublime.set_timeout(run_on_new_window , 200)
+        if not ST3:
+            sublime.set_timeout(lambda: sublime.active_window().run_command("toggle_side_bar") , 200)
 
 
 
