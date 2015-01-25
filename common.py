@@ -81,7 +81,7 @@ class DiredBaseCommand:
         self.view.sel().clear()
         self.view.sel().add(Region(name_point, name_point))
         surroundings = True if self.view.rowcol(name_point)[0] < 3 else False
-        self.view.show(pt, surroundings)
+        self.view.show(name_point, surroundings)
 
     def show_parent(self):
         return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
