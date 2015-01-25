@@ -932,7 +932,9 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                     try:
                         subprocess.Popen(['sublime'] + items, cwd=self.path)
                     except:
-                        subprocess.Popen(['/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl'] + items, cwd=self.path)
+                        app_path = subprocess.Popen(["osascript", "-e" "tell application \"System Events\" to POSIX path of (file of process \"Sublime Text 2\" as alias)"], stdout=subprocess.PIPE).communicate()[0].rstrip()
+                        subl_path = "{0}/Contents/SharedSupport/bin/subl".format(app_path)
+                        subprocess.Popen([subl_path] + items, cwd=self.path)
             elif sublime.platform() == 'windows':
                 # 9200 means win8
                 shell = True if sys.getwindowsversion()[2] < 9200 else False
