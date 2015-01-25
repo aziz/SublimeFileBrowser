@@ -1,0 +1,15 @@
+0.5.0
+
+• New Feature: Jump List view to quickly open your favorite projects
+
+• Hijack empty windows on first run of SublimeText
+
+• Run Jump List quick panel from anywhere
+
+• New Commands in Command Palette
+
+
+Please read READE file for more detail information.
+
+https://github.com/aziz/SublimeFileBrowser
+
