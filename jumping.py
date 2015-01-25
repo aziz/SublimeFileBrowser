@@ -28,7 +28,8 @@ def save_jump_points(points, reverse=False):
     save_settings('dired.sublime-settings')
 
 def jump_points():
-    return load_jump_points().items()
+    sorted_jp = sorted(load_jump_points().items(), key=lambda x:x[0].lower())
+    return sorted_jp
 
 def jump_targets():
     return load_jump_points()
@@ -72,12 +73,13 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
                 status_message(u"Jump point '{0}' was removed".format(name))
                 self.view.run_command('dired_refresh')
 
+
 class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, item=False):
         self.names = jump_names()
-        self.project_path = item[1] or self.path
+        self.project_path = item and item[1] or self.path
         self.item = item
-        name = item[0] or self.names.get(self.project_path)
+        name = item and item[0] or self.names.get(self.project_path)
         if not name:
             prompt = 'Create jump point:'
             name = basename(self.project_path[:-1])
