@@ -136,7 +136,7 @@ class DiredJumpListRenderCommand(TextCommand):
         self.col_padding = 2
         self.jump_points = [[n, t] for n, t in jump_points()]
         self.names = [n for n, t in jump_points()]
-        content = "Jump to…\n" + "—" * self.view_width + "\n\n"
+        content = u"Jump to…\n" + u"—" * self.view_width + u"\n\n"
 
         if len(self.names) > 0:
             self.max_len_names = max([len(n) for n, t in jump_points()])
@@ -161,7 +161,7 @@ class DiredJumpListRenderCommand(TextCommand):
             display = display[:-1]
         if len(display) > label_characters:
             chars = int(label_characters/2)
-            display = display[:chars] + "…" + display[-chars:]
+            display = display[:chars] + u"…" + display[-chars:]
         return " " * self.col_padding + display
 
 
