@@ -48,61 +48,63 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 
 
 
-| Commands                                 | Description                                                  |
-| :--------------------------------------- | :----------------------------------------------------------- |
-| **Browse Mode...**                       | Ask for a directory to open in browse mode                   |
-| **Browse Mode: Current file or project** | Open the directory of current file or project in browse mode |
-| **Browse Mode: Left Sidebar**            | Open in browse mode as a sidebar on the left                 |
-| **Browse Mode: Right Sidebar**           | Open in browse mode as a sidebar on the right                |
-| **Browse Mode: Jump List**               | Show the projects' jump list (see jump list section below)   |
+| Commands                                 | Description                                                     |
+| :--------------------------------------- | :-------------------------------------------------------------- |
+| **Browse Mode...**                       | Ask for a directory to open in browse mode                      |
+| **Browse Mode: Current file or project** | Open the directory of current file or project in browse mode    |
+| **Browse Mode: Left Sidebar**            | Open in browse mode as a sidebar on the left                    |
+| **Browse Mode: Right Sidebar**           | Open in browse mode as a sidebar on the right                   |
+| **Browse Mode: Jump List**               | Show the projects' jump list view (see jump list section below) |
+| **Browse Mode: Jump List Quick Panel**   | Show the projects' jump list in quick panel                     |
+
 
 ### Shortcuts
 
-| Command                       | Shortcut                               |
-| :-----------------------------| :--------------------------------------|
-| Help page                     | <kbd>?</kbd>                           |
-| Toggle mark                   | <kbd>m</kbd>                           |
-| Toggle mark and move down     | <kbd>shift+↓</kbd>                     |
-| Toggle mark and move up       | <kbd>shift+↑</kbd>                     |
-| Toggle all marks              | <kbd>t</kbd>                           |
-| Unmark all                    | <kbd>u</kbd>                           |
-| Mark by extension             | <kbd>\*</kbd>                          |
-| Rename                        | <kbd>R</kbd>                           |
-| Move                          | <kbd>M</kbd>                           |
-| Delete                        | <kbd>D</kbd>                           |
-| Send to trash                 | <kbd>S</kbd>                           |
-| Create directory              | <kbd>cd</kbd>                          |
-| Create file                   | <kbd>cf</kbd>                          |
-| Open file/view directory      | <kbd>o</kbd>                           |
-| Open file in another group    | <kbd>enter</kbd>                       |
-| Preview file in another group | <kbd>shift+enter</kbd>                 |
-| Open all marked items in new tabs | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
-| Open in Finder/File Explorer  | <kbd>\\</kbd>                          |
-| Open in new window            | <kbd>w</kbd>                           |
-| Go to parent directory        | <kbd>backspace</kbd>                   |
-| Go to directory               | <kbd>g</kbd>                           |
-| Quick jump to directory       | <kbd>p</kbd>                           |
-| Create/Edit/Remove jump point | <kbd>P</kbd>                           |
-| Go to first                   | <kbd>⌘+↑</kbd> or <kbd>ctrl+home</kbd> |
-| Go to last                    | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>  |
-| Move to previous              | <kbd>k</kbd> or <kbd>↑</kbd>           |
-| Move to next                  | <kbd>j</kbd> or <kbd>↓</kbd>           |
-| Expand directory              | <kbd>→</kbd>                           |
-| Collapse directory            | <kbd>←</kbd>                           |
-| Jump to                       | <kbd>/</kbd>                           |
-| Find in files                 | <kbd>s</kbd>                           |
-| Refresh view                  | <kbd>r</kbd>                           |
-| Toggle hidden files           | <kbd>h</kbd>                           |
-| Toggle add folder to project  | <kbd>f</kbd>                           |
-| Set current folder as only one for the project | <kbd>F</kbd>          |
-| Quicklook for Mac or open in default app on other OSs | <kbd>space</kbd> |
+| Command                                               | Shortcut                                   |
+| :---------------------------------------------------- | :----------------------------------------- |
+| Help page                                             | <kbd>?</kbd>                               |
+| Toggle mark                                           | <kbd>m</kbd>                               |
+| Toggle mark and move down                             | <kbd>shift+↓</kbd>                         |
+| Toggle mark and move up                               | <kbd>shift+↑</kbd>                         |
+| Toggle all marks                                      | <kbd>t</kbd>                               |
+| Unmark all                                            | <kbd>u</kbd>                               |
+| Mark by extension                                     | <kbd>\*</kbd>                              |
+| Rename                                                | <kbd>R</kbd>                               |
+| Move                                                  | <kbd>M</kbd>                               |
+| Delete                                                | <kbd>D</kbd>                               |
+| Send to trash                                         | <kbd>S</kbd>                               |
+| Create directory                                      | <kbd>cd</kbd>                              |
+| Create file                                           | <kbd>cf</kbd>                              |
+| Open file/view directory                              | <kbd>o</kbd>                               |
+| Open file in another group                            | <kbd>enter</kbd>                           |
+| Preview file in another group                         | <kbd>shift+enter</kbd>                     |
+| Open all marked items in new tabs                     | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
+| Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |
+| Open in new window                                    | <kbd>w</kbd>                               |
+| Go to parent directory                                | <kbd>backspace</kbd>                       |
+| Go to directory                                       | <kbd>g</kbd>                               |
+| Quick jump to directory                               | <kbd>p</kbd>                               |
+| Create/Edit/Remove jump point                         | <kbd>P</kbd>                               |
+| Go to first                                           | <kbd>⌘+↑</kbd> or <kbd>ctrl+home</kbd>     |
+| Go to last                                            | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>      |
+| Move to previous                                      | <kbd>k</kbd> or <kbd>↑</kbd>               |
+| Move to next                                          | <kbd>j</kbd> or <kbd>↓</kbd>               |
+| Expand directory                                      | <kbd>→</kbd>                               |
+| Collapse directory                                    | <kbd>←</kbd>                               |
+| Jump to                                               | <kbd>/</kbd>                               |
+| Find in files                                         | <kbd>s</kbd>                               |
+| Refresh view                                          | <kbd>r</kbd>                               |
+| Toggle hidden files                                   | <kbd>h</kbd>                               |
+| Toggle add folder to project                          | <kbd>f</kbd>                               |
+| Set current folder as only one for the project        | <kbd>F</kbd>                               |
+| Quicklook for Mac or open in default app on other OSs | <kbd>space</kbd>                           |
 
 In **Rename Mode**:
 
-| Command          | Shortcut               |
-| :--------------- | :--------------------- |
-| Apply changes    | <kbd>enter</kbd>       |
-| Discard changes  | <kbd>escape</kbd>      |
+| Command          | Shortcut           |
+| :--------------- | :----------------- |
+| Apply changes    | <kbd>enter</kbd>   |
+| Discard changes  | <kbd>escape</kbd>  |
 
 
 ### Selecting Files and Directories

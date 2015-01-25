@@ -39,11 +39,12 @@ def jump_names():
 
 
 class DiredJumpCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit):
+    def run(self, edit, new_window=False):
         if not jump_points():
             status_message("No jump points available. To create jump point for this directory use 'P'.")
             return
         # show_quick_panel didn't work with dict_items
+        self.new_window = new_window
         self.jump_points = [[n, t] for n, t in jump_points()]
         self.display_jump_points = [[n, self.display_path(t)] for n, t in jump_points()]
         self.view.window().show_quick_panel(self.display_jump_points, self.on_pick_point, sublime.MONOSPACE_FONT)
@@ -60,10 +61,14 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
             return
         name, target = self.jump_points[index]
         if exists(target) and isdir(target) and target[-1] == os.sep:
-            show(self.view.window(), target, view_id=self.view.id())
-            status_message("Jumping to point '{0}' complete".format(name))
+            if self.new_window:
+                print(target)
+                self.view.run_command("dired_open_in_new_window", { "project_folder": [target] })
+            else:
+                show(self.view.window(), target, view_id=self.view.id())
+                status_message("Jumping to point '{0}' complete".format(name))
         else:
-            # workaround ST3 bag https://github.com/SublimeText/Issues/issues/39
+            # workaround ST3 bug https://github.com/SublimeText/Issues/issues/39
             self.view.window().run_command('hide_overlay')
             msg = u"Can't jump to '{0} → {1}'.\n\nRemove that jump point?".format(name, target)
             if ok_cancel_dialog(msg):
@@ -127,11 +132,11 @@ class DiredJumpListRenderCommand(TextCommand):
         self.view.set_read_only(True)
 
     def render(self):
-        self.view_width = 80
+        self.view_width = 79
         self.col_padding = 2
         self.jump_points = [[n, t] for n, t in jump_points()]
         self.names = [n for n, t in jump_points()]
-        content = "Jump to…\n" + "—"*self.view_width + "\n\n"
+        content = "Jump to…\n" + "—" * self.view_width + "\n\n"
 
         if len(self.names) > 0:
             self.max_len_names = max([len(n) for n, t in jump_points()])
@@ -149,9 +154,11 @@ class DiredJumpListRenderCommand(TextCommand):
     def display_path(self, folder):
         display = folder
         home = os.path.expanduser("~")
-        label_characters = self.view_width - 3 - (self.col_padding*2) - self.max_len_names
+        label_characters = self.view_width - 4 - (self.col_padding*2) - self.max_len_names
         if folder.startswith(home):
             display = folder.replace(home, "~", 1)
+        if folder.endswith("/") or folder.endswith("\\"):
+            display = display[:-1]
         if len(display) > label_characters:
             chars = int(label_characters/2)
             display = display[:chars] + "…" + display[-chars:]

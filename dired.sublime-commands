@@ -2,6 +2,7 @@
     { "caption": "Browse Mode...", "command": "dired" },
     { "caption": "Browse Mode: Current file or project", "command": "dired", "args": { "immediate": true } },
     { "caption": "Browse Mode: Jump List", "command": "dired_jump_list" },
+    { "caption": "Browse Mode: Jump List Quick Panel", "command": "dired_jump", "args": {"new_window": true} },
     { "caption": "Browse Mode: Left Sidebar", "command": "dired", "args": { "immediate": true, "other_group": "left"} },
     { "caption": "Browse Mode: Right Sidebar", "command": "dired", "args": { "immediate": true, "other_group": "right"} }
 ]
