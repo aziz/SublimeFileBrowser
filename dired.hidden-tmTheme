@@ -99,6 +99,18 @@
 
 		<dict>
 			<key>name</key>
+			<string>File Extension</string>
+			<key>scope</key>
+			<string>string.name.file.extension.dired</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#919aa3</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
 			<string>Dir Name</string>
 			<key>scope</key>
 			<string>string.name.directory.dired, string.name.project.dired</string>
