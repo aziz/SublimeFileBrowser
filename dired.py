@@ -231,7 +231,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<empty>')
         else:
             name = jump_names().get(path)
-            caption = u"{0} → {1}".format(name, path) if name else path
+            caption = u"{0} → {1}".format(name if ST3 else name.decode('utf8'), path) if name else path
             text = [ caption ]
             text.append(len(caption)*(u'—'))
             if not f or self.show_parent():
@@ -922,7 +922,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
         else: # ST2
             items.append("-n")
             for filename in files:
-                fqn = join(self.path, filename)
+                fqn = join(self.path or u'', filename)
                 items.append(fqn)
 
             if sublime.platform() == 'osx':

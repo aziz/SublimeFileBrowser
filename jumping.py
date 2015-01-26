@@ -46,7 +46,7 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
         # show_quick_panel didn't work with dict_items
         self.new_window = new_window
         self.jump_points = [[n, t] for n, t in jump_points()]
-        self.display_jump_points = [[n, self.display_path(t)] for n, t in jump_points()]
+        self.display_jump_points = [[n if ST3 else n.decode('utf8'), self.display_path(t)] for n, t in jump_points()]
         self.view.window().show_quick_panel(self.display_jump_points, self.on_pick_point, sublime.MONOSPACE_FONT)
 
     def display_path(self, folder):
@@ -66,7 +66,7 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
                 self.view.run_command("dired_open_in_new_window", { "project_folder": [target] })
             else:
                 show(self.view.window(), target, view_id=self.view.id())
-                status_message("Jumping to point '{0}' complete".format(name))
+                status_message(u"Jumping to point '{0}' complete".format(name if ST3 else name.decode('utf8')))
         else:
             # workaround ST3 bug https://github.com/SublimeText/Issues/issues/39
             self.view.window().run_command('hide_overlay')
