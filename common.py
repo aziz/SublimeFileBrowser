@@ -74,7 +74,7 @@ class DiredBaseCommand:
 
         line = self.view.line(pt)
         name_point = self.view.extract_scope(line.b - 1).a
-        if 'string.error.dired' in self.view.scope_name(name_point):
+        if any(s for s in ('extension', 'string.error') if s in self.view.scope_name(name_point)):
             name_point = self.view.extract_scope(name_point - 2).a
         if 'punctuation' in self.view.scope_name(name_point):
             name_point += 2 # fix for filenames w/o dot or whitespace

@@ -90,7 +90,7 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         view.set_name(name)
         view.settings().set('dired_path', path)
     else:
-        goto = path[:~0]
+        goto = path.rstrip(os.sep)
     view.settings().set('dired_rename_mode', False)
     window.focus_view(view)
     view.run_command('dired_refresh', { 'goto': goto, 'inline': inline })
