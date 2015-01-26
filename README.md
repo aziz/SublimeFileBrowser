@@ -204,6 +204,18 @@ If you don't like `⠤` symbol and want to hide it (then you should use keyboard
 { "dired_show_parent": false }
 ```
 
+If you want to see header (underlined full path) on top of file list:
+
+```json
+{ "dired_header": true }
+```
+
+If you want to see full path in tab title and thus in window title if tab is focused:
+
+```json
+{ "dired_show_full_path": true }
+```
+
 ### Hidden files
 By default, FileBrowser shows all files in the browsed directory. Pressing <kbd>h</kbd> toggles the display of hidden files. For all platforms, any file that starts with a `.` is considered hidden; additionally, on Windows, files that have the hidden attribute set are also considered hidden.
 
@@ -242,6 +254,13 @@ If you don't like colors used in FileBrowser just copy [this file](https://githu
 
 ``` json
 { "color_scheme": "Path to your custom color scheme file. e.g. Packages/User/custom_dired.hidden-tmTheme" }
+```
+
+## General tip for Windows users
+DirectWrite rendering gives better Unicode support and better font appearance overall, to enable it add following setting into `Preferences` → `Settings — User`:
+
+``` json
+{ "font_options": ["directwrite"] }
 ```
 
 ## Credit

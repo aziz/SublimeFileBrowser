@@ -230,10 +230,13 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         elif indent:
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<empty>')
         else:
+            header = self.view.settings().get('dired_header', False)
             name = jump_names().get(path)
-            caption = u"{0} → {1}".format(name if ST3 else name.decode('utf8'), path) if name else path
-            text = [ caption ]
-            text.append(len(caption)*(u'—'))
+            caption = u"{0} → {1}".format(name, path) if name else path
+            text = [ caption, len(caption)*(u'—') ] if header else []
+            if self.view.settings().get('dired_show_full_path', False):
+                view_name = self.view.name()[:2]
+                self.view.set_name(u'%s%s (%s)' % (view_name, caption.split(u'→')[0], path))
             if not f or self.show_parent():
                 text.append(PARENT_SYM)
             text.extend(f)
@@ -266,7 +269,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                 else:
                     goto = u"≡ " + goto
                 try:
-                    line = f.index(goto) + (3 if self.show_parent() else 2)
+                    line = f.index(goto) + (2 if header else 0) + (1 if self.show_parent() else 0)
                     pt = self.view.text_point(line, 2)
                 except ValueError:
                     pass

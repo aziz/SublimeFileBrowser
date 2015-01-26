@@ -35,7 +35,7 @@ def jump_targets():
     return load_jump_points()
 
 def jump_names():
-    return dict((t, n) for n, t in load_jump_points().items())
+    return dict((t, n if ST3 else n.decode('utf8')) for n, t in load_jump_points().items())
 
 
 class DiredJumpCommand(TextCommand, DiredBaseCommand):
@@ -139,16 +139,17 @@ class DiredJumpListRenderCommand(TextCommand):
         content = u"Jump to…\n" + u"—" * self.view_width + u"\n\n"
 
         if len(self.names) > 0:
-            self.max_len_names = max([len(n) for n, t in jump_points()])
+            self.max_len_names = max([len(n if ST3 else n.decode('utf8')) for n, _ in jump_points()])
             self.view.settings().set('dired_project_count', len(self.names))
         else:
             content += "Jump list is empty!\n\nAdd a folder to your jump list by pressing P (shift + p)\nwhile you are browing that folder in FileBrowser"
 
         for p in self.jump_points:
-            content += u'★ {0}❯{1}\n'.format(self.display_name(p[0]), self.display_path(p[1]))
+            content += u'★ {0}→{1}\n'.format(self.display_name(p[0]), self.display_path(p[1]))
         return content
 
     def display_name(self, name):
+        name = name if ST3 else name.decode('utf8')
         return name + " " * (self.max_len_names - len(name) + self.col_padding)
 
     def display_path(self, folder):

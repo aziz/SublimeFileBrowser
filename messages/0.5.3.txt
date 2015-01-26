@@ -1,0 +1,18 @@
+0.5.3
+
+• Several new scopes were added
+
+  ¡¡IMPORTANT!! you may face some minor issues with highlighting:
+
+    − if you use Color Highlighter:
+      1. Close all FileBrowser tabs in all Sublime windows
+      2. Remove ‘Packages/User/Color Highlighter/themes/dired.hidden-tmTheme’
+
+    - if you use custom scheme — you have to copy new scopes from default one
+
+
+• Remove header (you can bring it back with { "dired_header": true })
+
+
+• Add setting "dired_show_full_path" (false by default), if true add full path
+  in tab title

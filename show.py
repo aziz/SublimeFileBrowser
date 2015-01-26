@@ -79,12 +79,14 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
     if path == os.sep:
         view_name = os.sep
     else:
-        view_name = basename(path.rstrip(os.sep))
+        path = path.rstrip(os.sep)
+        full_path = view.settings().get('dired_show_full_path', False)
+        view_name = basename(path) + (' (%s)' % (path if full_path else '') if full_path else '')
 
     if ST3:
         name = u"𝌆 {0}".format(view_name)
     else:
-        name = u"{0}".format(view_name)
+        name = u"■ {0}".format(view_name)
 
     if not inline:
         view.set_name(name)

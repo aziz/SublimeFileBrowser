@@ -91,14 +91,12 @@ class DiredBaseCommand:
         Returns a region containing the lines containing filenames.  If there are no filenames
         Region(0,0) is returned.
         """
-        count = self.filecount()
         if with_parent_link:
-            return Region(self.view.text_point(2, 0), self.view.text_point(count+3, 0))
+            all_items = sorted(self.view.find_by_selector('dired.item'))
         else:
-            if self.show_parent():
-                return Region(self.view.text_point(3, 0), self.view.text_point(count+3, 0))
-            else:
-                return Region(self.view.text_point(2, 0), self.view.text_point(count+2, 0))
+            all_items = sorted(self.view.find_by_selector('dired.item.directory') +
+                               self.view.find_by_selector('dired.item.file'))
+        return Region(all_items[0].a, all_items[~0].b)
 
     def get_parent(self, line, text):
         '''
