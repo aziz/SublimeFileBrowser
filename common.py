@@ -46,7 +46,7 @@ class DiredBaseCommand:
         if extreme == "bof":
             ext_region = Region(files.a, files.a)
         else:
-            name_point = self.view.extract_scope(self.view.line(files.b).b - 1).a
+            name_point = self.view.extract_scope(self.view.line(files.b).a + 2).a
             ext_region = Region(name_point, name_point)
         self.view.sel().add(ext_region)
         self.view.show_at_center(ext_region)
