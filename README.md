@@ -16,7 +16,7 @@ Or you can clone this repo into your SublimeText Packages directory and rename i
 
 ## Commands and Keybindings
 
-This plugin does not add any keybindings for opening a new tab in "Browse mode". Although, the commands to do that are available in *Command Palette* but it is recommended to bind <kbd>F1</kbd> to open the current file directory in "Browse mode" with this piece of code (that you can add it to your `Key Bindings - User` file):
+This plugin does not add any keybindings for opening a new tab in *Browse Mode*. Although, the commands to do that are available in *Command Palette* but it is recommended to bind <kbd>F1</kbd> to open the current file directory in *Browse Mode* with this piece of code (that you can add to your `Key Bindings - User` file):
 
 ``` json
 {
@@ -28,9 +28,9 @@ This plugin does not add any keybindings for opening a new tab in "Browse mode".
 
 You also can use optional arguments to tweak behavior:
 
-* `"single_pane": true` — always use a single File Browser view, i.e. prefer to reuse existing one rather than create a new.
-* `"other_group": "left"` (or `"right`) — open File Browser in other group, i.e. like sidebar; if you use `"left"` then all other tabs from left group will be moved into the right one.
-* `"project": true` — always prefer project's directory(s) rather than path of current view.
+* `"single_pane": true` — always use a single File Browser view, i.e. prefer to reuse existing one rather than create a new.
+* `"other_group": "left"` (or `"right`) — open FileBrowser in other group, i.e. like sidebar; if you use `"left"` then all other tabs from left group will be moved into the right one.
+* `"project": true` — always prefer project's directory(s) rather than path of current view.
 
 You can mix these arguments as you like (perhaps, even bind several shortcuts for different cases); e.g. to completely mimic sidebar, it would be:
 
@@ -47,6 +47,7 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 }
 ```
 
+### Commands 
 
 | Commands                                 | Description                                                    |
 | :--------------------------------------- | :------------------------------------------------------------- |
@@ -58,32 +59,17 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | **Browse Mode: Jump List Quick Panel**   | Shows the jump list in quick panel                             |
 
 ### Shortcuts
-
+##### Navigation Shortcuts
 | Command                                               | Shortcut                                   |
 | :---------------------------------------------------- | :----------------------------------------- |
-| Help page                                             | <kbd>?</kbd>                               |
 | Toggle mark                                           | <kbd>m</kbd>                               |
 | Toggle mark and move down                             | <kbd>shift+↓</kbd>                         |
 | Toggle mark and move up                               | <kbd>shift+↑</kbd>                         |
 | Toggle all marks                                      | <kbd>t</kbd>                               |
 | Unmark all                                            | <kbd>u</kbd>                               |
 | Mark by extension                                     | <kbd>\*</kbd>                              |
-| Rename                                                | <kbd>R</kbd>                               |
-| Move                                                  | <kbd>M</kbd>                               |
-| Delete                                                | <kbd>D</kbd>                               |
-| Send to trash                                         | <kbd>S</kbd>                               |
-| Create directory                                      | <kbd>cd</kbd>                              |
-| Create file                                           | <kbd>cf</kbd>                              |
-| Open file/view directory                              | <kbd>o</kbd>                               |
-| Open file in another group                            | <kbd>enter</kbd>                           |
-| Preview file in another group                         | <kbd>shift+enter</kbd>                     |
-| Open all marked items in new tabs                     | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
-| Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |
-| Open in new window                                    | <kbd>w</kbd>                               |
 | Go to parent directory                                | <kbd>backspace</kbd>                       |
 | Go to directory                                       | <kbd>g</kbd>                               |
-| Quick jump to directory                               | <kbd>p</kbd>                               |
-| Create/Edit/Remove jump point                         | <kbd>P</kbd>                               |
 | Go to first                                           | <kbd>⌘+↑</kbd> or <kbd>ctrl+home</kbd>     |
 | Go to last                                            | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>      |
 | Move to previous                                      | <kbd>k</kbd> or <kbd>↑</kbd>               |
@@ -91,26 +77,45 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Expand directory                                      | <kbd>→</kbd>                               |
 | Collapse directory                                    | <kbd>←</kbd>                               |
 | Jump to                                               | <kbd>/</kbd>                               |
+| Quick jump to directory                               | <kbd>p</kbd>                               |
 | Find in files                                         | <kbd>s</kbd>                               |
+
+##### Action Shortcuts
+| Command                                               | Shortcut                                   |
+| :---------------------------------------------------- | :----------------------------------------- |
+| Open file/view directory                              | <kbd>o</kbd>                               |
+| Open file in another group                            | <kbd>enter</kbd>                           |
+| Preview file in another group                         | <kbd>shift+enter</kbd>                     |
+| Open all marked items in new tabs                     | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
+| Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |
+| Open in new window                                    | <kbd>w</kbd>                               |
 | Refresh view                                          | <kbd>r</kbd>                               |
+| Help page                                             | <kbd>?</kbd>                               |
+| Rename                                                | <kbd>R</kbd>                               |
+| Move                                                  | <kbd>M</kbd>                               |
+| Delete                                                | <kbd>D</kbd>                               |
+| Send to trash                                         | <kbd>S</kbd>                               |
+| Create directory                                      | <kbd>cd</kbd>                              |
+| Create file                                           | <kbd>cf</kbd>                              |
+| Create/Edit/Remove jump point                         | <kbd>P</kbd>                               |
 | Toggle hidden files                                   | <kbd>h</kbd>                               |
 | Toggle add directory to project                       | <kbd>f</kbd>                               |
 | Set current directory as only one for the project     | <kbd>F</kbd>                               |
 | Quicklook for Mac or open in default app on other OSs | <kbd>space</kbd>                           |
 
-In **Rename Mode**:
-
+##### *Rename Mode* Shortcuts
 | Command          | Shortcut           |
 | :--------------- | :----------------- |
 | Apply changes    | <kbd>enter</kbd>   |
 | Discard changes  | <kbd>escape</kbd>  |
 
+## Usage
 
 ### Selecting Files and Directories
-You can select files and/or directories by marking them with <kbd>m</kbd>, or <kbd>Shift+up/down</kbd> or just use SublimeText multiple cursor feature and extend your cursor to the line that has those files/directories.
+You can select files and/or directories by marking them with <kbd>m</kbd>, or <kbd>Shift + up/down</kbd> or just use SublimeText multiple cursor feature and extend your cursor to the line that has those files/directories.
 
 ### Search
-Besides incremental search available by <kbd>/</kbd>, you also may use build-in "Goto Symbol…" (<kbd>⌘+r</kbd> or <kbd>ctrl+r</kbd>) for fuzzy search.
+Besides incremental search available by <kbd>/</kbd>, you also may use build-in "Goto Symbol…" (<kbd>⌘+r</kbd> or <kbd>ctrl + r</kbd>) for fuzzy search.
 
 ### "Find in Files…" integration
 Press <kbd>s</kbd> to summon "Find in Files…" panel — if you've marked some files they will fill *Where* field, otherwise it will be filled by current directory path.
@@ -197,24 +202,6 @@ When a jump point is opened in *Browse Mode* pressing <kbd>P</kbd> will also do 
 
 **NOTE**: When a jump point is opened in *Browse Mode* the path in the header is prefixed with name of the jump point.
 
-### Customizing UI
-If you don't like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace` to go to parent directory) you can do it in your user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`) and paste the code below:
-
-``` json
-{ "dired_show_parent": false }
-```
-
-If you want to see header (underlined full path) on top of file list:
-
-```json
-{ "dired_header": true }
-```
-
-If you want to see full path in tab title and thus in window title if tab is focused:
-
-```json
-{ "dired_show_full_path": true }
-```
 
 ### Hidden files
 By default, FileBrowser shows all files in the browsed directory. Pressing <kbd>h</kbd> toggles the display of hidden files. For all platforms, any file that starts with a `.` is considered hidden; additionally, on Windows, files that have the hidden attribute set are also considered hidden.
@@ -233,12 +220,12 @@ You can also customize the patterns used to determine if a file should be hidden
 
 ### Git integration
 In case `git status` returns a colorable output in current directory, the modified and untracked files will be designated by orange and green icons respectively.  
-You can use setting `"vcs_color_blind": true` — untracked files will get vertical line on left side of their icons, modified files will get horizontal line under their icons.  
+You can use setting `"vcs_color_blind": true` — untracked files will get vertical line on left side of their icons, modified files will get horizontal line under their icons.  
 If Git is not presented in your `PATH` you may set `git_path` setting (see example in default settings file).
 
 
 ### Hijacking a new empty window (ST3 only)
-**Filebrowser** can hijack new empty windows and show you a *Browe Mode* or *Jump List View*. That is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText starts and there's no previous windows open. 
+**FileBrowser** can hijack new empty windows and show you a *Browse Mode* or *Jump List View*. That is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText starts and there's no previous windows open. 
 
 This feature is only available for ST3 and is disabled by default. You can activate it by setting `dired_hijack_new_window` to `"jump_list"` or `"dired"` in your user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
 
@@ -249,11 +236,51 @@ To disable this feature set it back to `false` or remove if from your user setti
 ```
 
 
-### Changing color scheme
+## Tweaking Look and Feel
+
+#### Customizing UI Elements
+If you don't like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace` to go to parent directory) you can do it in your user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`) and paste the code below:
+
+``` json
+{ "dired_show_parent": false }
+```
+
+If you want to see header (underlined full path) on top of file list:
+
+```json
+{ "dired_header": true }
+```
+
+If you want to see full path in tab title and thus in window title if tab is focused:
+
+```json
+{ "dired_show_full_path": true }
+```
+
+#### Changing color scheme
 If you don't like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User directory, change colors and paste the code below in your user syntax specific settings file:
 
 ``` json
 { "color_scheme": "Path to your custom color scheme file. e.g. Packages/User/custom_dired.hidden-tmTheme" }
+```
+
+#### Changing font
+Changing the font of sidebar in SublimeText is not that easy! not if you're using FileBrowser as your sidebar. Since it is just a normal Sublime view with a special syntax, you can change the font to whatever font that's available on your system. 
+
+To do that, add the code below (don't forget to change the font name!) to user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+
+``` json
+{ "font_face": "comic sans" }
+```
+
+#### Changing font size
+You normally want the FileBrowser to use a smaller font compared to your normal views. It helps you 
+view more content and also prevent any font size changes when you make your normal views' font bigger or smaller. 
+
+You can change the font size by adding the code below to user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+
+``` json
+{ "font_size": 13 }
 ```
 
 ## General tip for Windows users
