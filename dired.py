@@ -883,8 +883,8 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
     """
     def run(self, edit):
         files = self.get_marked() or self.get_selected()
-        if "⠤" in files:
-            files.remove("⠤")
+        if u"⠤" in files:
+            files.remove(u"⠤")
         if sublime.platform() == 'osx':
             cmd = ["qlmanage", "-p"]
             for filename in files:

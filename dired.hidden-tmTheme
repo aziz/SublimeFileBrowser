@@ -149,7 +149,7 @@
 			<key>name</key>
 			<string>Header Rename Mode Title</string>
 			<key>scope</key>
-			<string>header.dired punctuation.definition.rename_mode</string>
+			<string>punctuation.definition.rename_mode</string>
 			<key>settings</key>
 			<dict>
 				<key>foreground</key>

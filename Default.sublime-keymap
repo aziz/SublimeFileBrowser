@@ -380,7 +380,6 @@
         { "key": "selector", "operator": "equal", "operand": "text.dired" }
       ]
   },
-// search
   {
       "keys": ["s"],
       "command": "dired_find_in_files",
@@ -397,11 +396,37 @@
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": true },
-        { "key": "preceding_text", "operator": "regex_contains", "operand": "≡\\s*$|▸\\s*$|^$|⠤$"}
+        { "key": "preceding_text", "operator": "regex_contains", "operand": "[≡▸▾]\\s*$|^\\s*$|^⠤.*$"}
       ]
   },
   {
       "keys": ["backspace"],
+      "command": "dired_noop",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "header.dired | help.dired" },
+        { "key": "setting.dired_rename_mode", "operand": true }
+      ]
+  },
+  {
+      "keys": ["delete"],
+      "command": "dired_noop",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": true },
+        { "key": "preceding_text", "operator": "regex_contains", "operand": "[≡▸▾]$|^\\s*$|^⠤.*$"}
+      ]
+  },
+  {
+      "keys": ["delete"],
+      "command": "dired_noop",
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": true },
+        { "key": "following_text", "operator": "regex_contains", "operand": "^$"}
+      ]
+  },
+  {
+      "keys": ["delete"],
       "command": "dired_noop",
       "context": [
         { "key": "selector", "operator": "equal", "operand": "header.dired | help.dired" },

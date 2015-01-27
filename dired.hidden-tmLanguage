@@ -47,7 +47,7 @@
 
       <dict>
           <key>match</key>
-          <string>^\s*(≡ )(\S.*?(\.[^\.]+)?)$</string>
+          <string>^\s*(≡ )(\S.*?(\.[^\.\n]+)?)$</string>
           <key>name</key>
           <string>dired.item.file</string>
           <key>captures</key>
@@ -72,9 +72,17 @@
 
       <dict>
           <key>match</key>
-          <string>^⠤$</string>
+          <string>^⠤(\s*\[.+\]){0,1}$</string>
           <key>name</key>
           <string>dired.item.parent_dir</string>
+          <key>captures</key>
+          <dict>
+              <key>1</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.rename_mode.dired</string>
+              </dict>
+          </dict>
       </dict>
 
       <dict>

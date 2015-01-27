@@ -192,12 +192,18 @@ class DiredBaseCommand:
 
 
     def set_ui_in_rename_mode(self, edit):
-        regions = self.view.find_by_selector('text.dired header.dired punctuation.definition.separator.dired')
+        header = self.view.settings().get('dired_header', False)
+        if header:
+            regions = self.view.find_by_selector('text.dired header.dired punctuation.definition.separator.dired')
+        else:
+            regions = self.view.find_by_selector('text.dired dired.item.parent_dir')
         if not regions:
             return
-
         region = regions[0]
         start = region.begin()
         self.view.erase(edit, region)
-        new_text = u"——[RENAME MODE]——" + u"—"*(region.size()-17)
+        if header:
+            new_text = u"——[RENAME MODE]——" + u"—"*(region.size()-17)
+        else:
+            new_text = u"⠤ [RENAME MODE]"
         self.view.insert(edit, start, new_text)

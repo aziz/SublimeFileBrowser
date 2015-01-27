@@ -10,8 +10,6 @@
     <dict>
         <key>showInSymbolList</key>
         <integer>1</integer>
-        <key>symbolTransformation</key>
-        <string>.*</string>
     </dict>
     <key>uuid</key>
     <string>00bd9cb2-a77e-46f9-99f0-555280eb8f4e</string>
