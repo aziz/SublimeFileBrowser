@@ -14,7 +14,7 @@ else:
     import locale
 
 
-RE_FILE = re.compile(r'^([^\\//].*)$')
+RE_FILE = re.compile(r'^(\s*)([^\\//].*)$')
 
 def first(seq, pred):
     # I can't comprehend how this isn't built-in.
@@ -113,7 +113,7 @@ class DiredBaseCommand:
         """
         Returns a list of all filenames in the view.
         """
-        return [ self._remove_ui(RE_FILE.match(self.get_parent(l, self.view.substr(l))).group(1)) for l in self.view.lines(self.fileregion()) ]
+        return [ self._remove_ui(RE_FILE.match(self.get_parent(l, self.view.substr(l))).group(2)) for l in self.view.lines(self.fileregion()) ]
 
 
     def get_selected(self, parent=True):
@@ -128,7 +128,7 @@ class DiredBaseCommand:
                 if fileregion.contains(line):
                     text = self.view.substr(line)
                     if text:
-                        names.add(self._remove_ui(RE_FILE.match(self.get_parent(line, text)).group(1)))
+                        names.add(self._remove_ui(RE_FILE.match(self.get_parent(line, text)).group(2)))
         return sorted(list(names))
 
     def get_marked(self):
@@ -136,7 +136,7 @@ class DiredBaseCommand:
         if self.filecount():
             for region in self.view.get_regions('marked'):
                 lines.extend(self.view.lines(region))
-        return [ self._remove_ui(RE_FILE.match(self.get_parent(line, self.view.substr(line))).group(1)) for line in lines ]
+        return [ self._remove_ui(RE_FILE.match(self.get_parent(line, self.view.substr(line))).group(2)) for line in lines ]
 
 
     def _mark(self, mark=None, regions=None):
@@ -163,14 +163,14 @@ class DiredBaseCommand:
         previous = self.view.get_regions('marked')
         marked = {}
         for r in previous:
-            item = self._remove_ui(RE_FILE.match(self.view.substr(r)).group(1))
+            item = self._remove_ui(RE_FILE.match(self.get_parent(r, self.view.substr(r))).group(2))
             marked[item] = r
 
         for region in regions:
             for line in self.view.lines(region):
                 if filergn.contains(line):
-                    text = self.view.substr(line)
-                    filename = self._remove_ui(RE_FILE.match(text).group(1))
+                    indent, text = RE_FILE.match(self.view.substr(line)).groups()
+                    filename = self._remove_ui(self.get_parent(line, text))
 
                     if mark not in (True, False):
                         newmark = mark(filename in marked, filename)
@@ -179,7 +179,7 @@ class DiredBaseCommand:
                         newmark = mark
 
                     if newmark:
-                        name_region = Region(line.a + 2, line.b) # do not mark UI elements
+                        name_region = Region(line.a + len(indent) + 2, line.b) # do not mark UI elements
                         marked[filename] = name_region
                     else:
                         marked.pop(filename, None)
