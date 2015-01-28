@@ -87,7 +87,7 @@ class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
         name = item and item[0] or self.names.get(self.project_path)
         if not name:
             prompt = 'Create jump point:'
-            name = basename(self.project_path[:-1])
+            name = basename(self.project_path)
         else:
             prompt = 'Edit jump point (clear to Remove):'
         self.view.window().show_input_panel(prompt, name, self.edit_jump_point, None, None)
