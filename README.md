@@ -3,11 +3,11 @@
 
 Ditch sidebar and browse your files in a normal tab with keyboard, like a pro!
 
-![SublimeFileBrowser Screenshot](http://cl.ly/image/152u1c3J3U45/Screen%20Shot%202014-01-24%20at%2011.30.34.png)
+![SublimeFileBrowser Screenshot](http://cl.ly/image/2y1R143k3J1n/Screen%20Shot%202015-01-28%20at%208.22.56%20pm.png)
 
 You can also use it as a sidebar that you can put on right or left side
 
-![SublimeFileBrowser Screenshot2](http://cl.ly/image/0Z2U062k3l3p/Screen%20Shot%202014-01-24%20at%2011.26.53.png)
+![SublimeFileBrowser Screenshot2](http://cl.ly/image/2Y37412n351x/Screen%20Shot%202015-01-28%20at%208.33.28%20pm.png)
 
 ## Installation
 
