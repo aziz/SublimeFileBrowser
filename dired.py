@@ -74,6 +74,10 @@ def plugin_loaded():
     if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
         hijack_window()
 
+    for v in sublime.active_window().views():
+        if v.settings() and v.settings().get("dired_path"):
+            v.run_command("dired_refresh")
+
 if not ST3:
     plugin_loaded()
 
