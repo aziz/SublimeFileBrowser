@@ -36,7 +36,6 @@ else: # ST2 imports
         send2trash = None
 PARENT_SYM = u"⠤"
 
-
 def print(*args, **kwargs):
     """ Redefine print() function; the reason is the inconsistent treatment of
         unicode literals among Python versions used in ST2.
@@ -60,6 +59,23 @@ def sort_nicely(l):
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     l.sort(key=alphanum_key)
+
+
+def hijack_window():
+    settings = sublime.load_settings('dired.sublime-settings')
+    command = settings.get("dired_hijack_new_window")
+    if command:
+        if command == "jump_list":
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list") , 1)
+        else:
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
+
+def plugin_loaded():
+    if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
+        hijack_window()
+
+if not ST3:
+    plugin_loaded()
 
 
 class DiredCommand(WindowCommand):
@@ -317,9 +333,77 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.add_regions('?', untracked, 'item.untracked.dired', '', MARK_OPTIONS)
 
 
+# NAVIGATION #####################################################
+
 class DiredNextLineCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, forward=None):
         self.move(forward)
+
+
+class DiredMoveCommand(TextCommand, DiredBaseCommand):
+    def run(self, edit, **kwargs):
+        if kwargs and kwargs["to"]:
+            self.move_to_extreme(kwargs["to"])
+            return
+        elif kwargs and kwargs["duplicate"]:
+            self.items = self._get_items(self.path)
+            self.cursor = self.view.substr(self.view.line(self.view.sel()[0].a))[2:]
+            self._duplicate(duplicate=kwargs["duplicate"])
+        else:
+            files = self.get_marked() or self.get_selected()
+            if files:
+                prompt.start('Move to:', self.view.window(), self.path, self._move)
+
+    def _get_items(self, path):
+        files = self.get_marked() or self.get_selected()
+        path = normpath(normcase(path))
+        for filename in files:
+            fqn = normpath(normcase(join(self.path, filename)))
+            yield fqn
+
+    def _move(self, path):
+        if not isabs(path):
+            path = join(self.path, path)
+        if not isdir(path):
+            sublime.error_message(u'Not a valid directory: {0}'.format(path))
+            return
+        for fqn in self._get_items(path):
+            if fqn != path:
+                shutil.move(fqn, path)
+        self.view.run_command('dired_refresh')
+
+    def _duplicate(self, duplicate=''):
+        fqn = next(self.items)
+        for i in itertools.count(2):
+            p, n = os.path.split(fqn)
+            cfp = u"{1} {0}.{2}".format(i, join(p, n.split('.')[0]), '.'.join(n.split('.')[1:]))
+            if os.path.isfile(cfp) or os.path.isdir(cfp):
+                pass
+            else:
+                break
+        if duplicate == 'rename':
+            prompt.start('New name:', self.view.window(), os.path.basename(cfp), self._copy_duplicate, rename=(fqn, cfp, self.cursor))
+        else:
+            self._copy_duplicate(fqn, cfp, 0)
+
+    def _copy_duplicate(self, fqn, cfp, int):
+        if isdir(fqn):
+            if not isdir(cfp):
+                shutil.copytree(fqn, cfp)
+            else:
+                print(*("\nSkip! Folder with this name exists already:", cfp), sep='\n', end='\n\n')
+        else:
+            if not isfile(cfp):
+                shutil.copy2(fqn, cfp)
+            else:
+                print(*("\nSkip! File with this name exists already:", cfp), sep='\n', end='\n\n')
+        try:
+            if int == 0:
+                self._duplicate()
+            elif int == 1:
+                self._duplicate(duplicate='rename')
+        except StopIteration:
+            self.view.run_command('dired_refresh', {"goto": self.cursor})
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
@@ -442,38 +526,37 @@ class DiredFold(TextCommand, DiredBaseCommand):
         v.sel().add(Region(name_point, name_point))
 
 
-class DiredCreateCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit, which=None):
-        assert which in ('file', 'directory'), "which: " + which
-
-        # Is there a better way to do this?  Why isn't there some kind of context?  I assume
-        # the command instance is global and really shouldn't have instance information.
-        callback = getattr(self, 'on_done_' + which, None)
-        self.view.window().show_input_panel(which.capitalize() + ':', '', callback, None, None)
-
-    def on_done_file(self, value):
-        self._on_done('file', value)
-
-    def on_done_directory(self, value):
-        self._on_done('directory', value)
-
-    def _on_done(self, which, value):
-        value = value.strip()
-        if not value:
+class DiredUpCommand(TextCommand, DiredBaseCommand):
+    def run(self, edit):
+        parent = dirname(self.path.rstrip(os.sep))
+        if parent != os.sep:
+            parent += os.sep
+        if parent == self.path:
             return
 
-        fqn = join(self.path, value)
-        if exists(fqn):
-            sublime.error_message(u'{0} already exists'.format(fqn))
-            return
+        view_id = (self.view.id() if reuse_view() else None)
+        show(self.view.window(), parent, view_id, goto=basename(self.path.rstrip(os.sep)))
 
-        if which == 'directory':
-            os.makedirs(fqn)
-        else:
-            open(fqn, 'wb')
 
-        self.view.run_command('dired_refresh', {'goto': value})
+class DiredGotoCommand(TextCommand, DiredBaseCommand):
+    """
+    Prompt for a new directory.
+    """
+    def run(self, edit):
+        prompt.start('Goto:', self.view.window(), self.path, self.goto)
 
+    def goto(self, path):
+        show(self.view.window(), path, view_id=self.view.id())
+
+
+class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
+    def run(self, edit):
+        where = ', '.join(join(self.path, p) for p in self.get_marked()) or self.path or ''
+        args = {"panel": "find_in_files", "where": where, "replace": "", "reverse": "false"}
+        sublime.active_window().run_command("show_panel", args)
+
+
+# MARKING ###########################################################
 
 class DiredMarkExtensionCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
@@ -535,11 +618,39 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
             self.move(forward)
 
 
-class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit):
-        where = ', '.join(join(self.path, p) for p in self.get_marked()) or self.path or ''
-        args = {"panel": "find_in_files", "where": where, "replace": "", "reverse": "false"}
-        sublime.active_window().run_command("show_panel", args)
+# MANIPULATION ######################################################
+
+class DiredCreateCommand(TextCommand, DiredBaseCommand):
+    def run(self, edit, which=None):
+        assert which in ('file', 'directory'), "which: " + which
+
+        # Is there a better way to do this?  Why isn't there some kind of context?  I assume
+        # the command instance is global and really shouldn't have instance information.
+        callback = getattr(self, 'on_done_' + which, None)
+        self.view.window().show_input_panel(which.capitalize() + ':', '', callback, None, None)
+
+    def on_done_file(self, value):
+        self._on_done('file', value)
+
+    def on_done_directory(self, value):
+        self._on_done('directory', value)
+
+    def _on_done(self, which, value):
+        value = value.strip()
+        if not value:
+            return
+
+        fqn = join(self.path, value)
+        if exists(fqn):
+            sublime.error_message(u'{0} already exists'.format(fqn))
+            return
+
+        if which == 'directory':
+            os.makedirs(fqn)
+        else:
+            open(fqn, 'wb')
+
+        self.view.run_command('dired_refresh', {'goto': value})
 
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):
@@ -626,72 +737,6 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
         self.view.run_command('dired_refresh')
         if errors:
             sublime.error_message(u'Some files couldn’t be deleted: \n\n' + '\n'.join(errors))
-
-
-class DiredMoveCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit, **kwargs):
-        if kwargs and kwargs["to"]:
-            self.move_to_extreme(kwargs["to"])
-            return
-        elif kwargs and kwargs["duplicate"]:
-            self.items = self._get_items(self.path)
-            self.cursor = self.view.substr(self.view.line(self.view.sel()[0].a))[2:]
-            self._duplicate(duplicate=kwargs["duplicate"])
-        else:
-            files = self.get_marked() or self.get_selected()
-            if files:
-                prompt.start('Move to:', self.view.window(), self.path, self._move)
-
-    def _get_items(self, path):
-        files = self.get_marked() or self.get_selected()
-        path = normpath(normcase(path))
-        for filename in files:
-            fqn = normpath(normcase(join(self.path, filename)))
-            yield fqn
-
-    def _move(self, path):
-        if not isabs(path):
-            path = join(self.path, path)
-        if not isdir(path):
-            sublime.error_message(u'Not a valid directory: {0}'.format(path))
-            return
-        for fqn in self._get_items(path):
-            if fqn != path:
-                shutil.move(fqn, path)
-        self.view.run_command('dired_refresh')
-
-    def _duplicate(self, duplicate=''):
-        fqn = next(self.items)
-        for i in itertools.count(2):
-            p, n = os.path.split(fqn)
-            cfp = u"{1} {0}.{2}".format(i, join(p, n.split('.')[0]), '.'.join(n.split('.')[1:]))
-            if os.path.isfile(cfp) or os.path.isdir(cfp):
-                pass
-            else:
-                break
-        if duplicate == 'rename':
-            prompt.start('New name:', self.view.window(), os.path.basename(cfp), self._copy_duplicate, rename=(fqn, cfp, self.cursor))
-        else:
-            self._copy_duplicate(fqn, cfp, 0)
-
-    def _copy_duplicate(self, fqn, cfp, int):
-        if isdir(fqn):
-            if not isdir(cfp):
-                shutil.copytree(fqn, cfp)
-            else:
-                print(*("\nSkip! Folder with this name exists already:", cfp), sep='\n', end='\n\n')
-        else:
-            if not isfile(cfp):
-                shutil.copy2(fqn, cfp)
-            else:
-                print(*("\nSkip! File with this name exists already:", cfp), sep='\n', end='\n\n')
-        try:
-            if int == 0:
-                self._duplicate()
-            elif int == 1:
-                self._duplicate(duplicate='rename')
-        except StopIteration:
-            self.view.run_command('dired_refresh', {"goto": self.cursor})
 
 
 class DiredRenameCommand(TextCommand, DiredBaseCommand):
@@ -791,27 +836,63 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
         self.view.run_command('dired_refresh', {"goto": goto_file_name})
 
 
-class DiredUpCommand(TextCommand, DiredBaseCommand):
+# HELP ##############################################################
+
+class DiredHelpCommand(TextCommand):
     def run(self, edit):
-        parent = dirname(self.path.rstrip(os.sep))
-        if parent != os.sep:
-            parent += os.sep
-        if parent == self.path:
+        view = self.view.window().new_file()
+        view.set_name("Browse: shortcuts")
+        view.set_scratch(True)
+        view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
+        view.settings().set('line_numbers',False)
+        view.run_command('dired_show_help')
+        sublime.active_window().focus_view(view)
+
+
+class DiredShowHelpCommand(TextCommand):
+    def run(self, edit):
+        shortcuts = join(dirname(__file__), "shortcuts.md")
+        COMMANDS_HELP = open(shortcuts, "r").read()
+        self.view.erase(edit, Region(0, self.view.size()))
+        self.view.insert(edit, 0, COMMANDS_HELP)
+        self.view.sel().clear()
+        self.view.set_read_only(True)
+
+
+# OTHER #############################################################
+
+class DiredToggleHiddenFilesCommand(TextCommand):
+    def run(self, edit):
+        show = self.view.settings().get('dired_show_hidden_files', True)
+        self.view.settings().set('dired_show_hidden_files', not show)
+        self.view.run_command('dired_refresh')
+
+
+class DiredToggleProjectFolder(TextCommand, DiredBaseCommand):
+    def run(self, edit):
+        if not ST3:
             return
+        path = self.path[:-1]
+        data = self.view.window().project_data()
+        data['folders'] = data.get('folders') or {}
+        folders = [f for f in data['folders'] if f['path'] != path]
+        if len(folders) == len(data['folders']):
+            folders.insert(0, { 'path': path })
+        data['folders'] = folders
+        self.view.window().set_project_data(data)
+        self.view.window().run_command('dired_refresh')
 
-        view_id = (self.view.id() if reuse_view() else None)
-        show(self.view.window(), parent, view_id, goto=basename(self.path.rstrip(os.sep)))
 
-
-class DiredGotoCommand(TextCommand, DiredBaseCommand):
-    """
-    Prompt for a new directory.
-    """
+class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
     def run(self, edit):
-        prompt.start('Goto:', self.view.window(), self.path, self.goto)
-
-    def goto(self, path):
-        show(self.view.window(), path, view_id=self.view.id())
+        if not ST3:
+            return
+        msg = u"Set '{0}' as only one project folder (will remove all other folders from project)?".format(self.path)
+        if sublime.ok_cancel_dialog(msg):
+            data = self.view.window().project_data()
+            data['folders'] = [{ 'path': self.path[:-1] }]
+            self.view.window().set_project_data(data)
+            self.view.window().run_command('dired_refresh')
 
 
 class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
@@ -906,66 +987,14 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
             sublime.set_timeout(lambda: sublime.active_window().run_command("toggle_side_bar") , 200)
 
 
-class DiredHelpCommand(TextCommand):
-    def run(self, edit):
-        view = self.view.window().new_file()
-        view.set_name("Browse: shortcuts")
-        view.set_scratch(True)
-        view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
-        view.settings().set('line_numbers',False)
-        view.run_command('dired_show_help')
-        sublime.active_window().focus_view(view)
-
-
-class DiredShowHelpCommand(TextCommand):
-    def run(self, edit):
-        shortcuts = join(dirname(__file__), "shortcuts.md")
-        COMMANDS_HELP = open(shortcuts, "r").read()
-        self.view.erase(edit, Region(0, self.view.size()))
-        self.view.insert(edit, 0, COMMANDS_HELP)
-        self.view.sel().clear()
-        self.view.set_read_only(True)
-
-
-class DiredToggleHiddenFilesCommand(TextCommand):
-    def run(self, edit):
-        show = self.view.settings().get('dired_show_hidden_files', True)
-        self.view.settings().set('dired_show_hidden_files', not show)
-        self.view.run_command('dired_refresh')
-
-
-class DiredToggleProjectFolder(TextCommand, DiredBaseCommand):
-    def run(self, edit):
-        if not ST3:
-            return
-        path = self.path[:-1]
-        data = self.view.window().project_data()
-        data['folders'] = data.get('folders') or {}
-        folders = [f for f in data['folders'] if f['path'] != path]
-        if len(folders) == len(data['folders']):
-            folders.insert(0, { 'path': path })
-        data['folders'] = folders
-        self.view.window().set_project_data(data)
-        self.view.window().run_command('dired_refresh')
-
-
-class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
-    def run(self, edit):
-        if not ST3:
-            return
-        msg = u"Set '{0}' as only one project folder (will remove all other folders from project)?".format(self.path)
-        if sublime.ok_cancel_dialog(msg):
-            data = self.view.window().project_data()
-            data['folders'] = [{ 'path': self.path[:-1] }]
-            self.view.window().set_project_data(data)
-            self.view.window().run_command('dired_refresh')
-
+# EVENT LISTENERS ###################################################
 
 class DiredHijackNewWindow(EventListener):
    def on_window_command(self, window, command_name, args):
         if command_name != "new_window":
             return
         hijack_window()
+
 
 class DiredHideEmptyGroup(EventListener):
     def on_close(self, view):
@@ -1013,18 +1042,3 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
     def on_load(self, view):
         self.on_new(view)
 
-def hijack_window():
-    settings = sublime.load_settings('dired.sublime-settings')
-    command = settings.get("dired_hijack_new_window")
-    if command:
-        if command == "jump_list":
-            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list") , 1)
-        else:
-            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
-
-def plugin_loaded():
-    if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
-        hijack_window()
-
-if not ST3:
-    plugin_loaded()
