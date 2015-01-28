@@ -23,7 +23,7 @@ if ST3:
         import Default.send2trash as send2trash
     except ImportError:
         send2trash = None
-else:
+else: # ST2 imports
     import locale
     from common import RE_FILE, DiredBaseCommand
     import prompt
@@ -36,69 +36,6 @@ else:
         send2trash = None
 PARENT_SYM = u"⠤"
 
-
-# Each dired view stores its path in its local settings as 'dired_path'.
-
-COMMANDS_HELP = """\
-
-Navigation Shortcuts:
-+-------------------------------+--------------------------+
-|            Command            |         Shortcut         |
-+-------------------------------+--------------------------+
-| Toggle mark                   | m                        |
-| Toggle mark and move down     | shift+down               |
-| Toggle mark and move up       | shift+up                 |
-| Toggle all marks              | t                        |
-| Unmark all                    | u                        |
-| Mark by extension             | *                        |
-| Go to parent directory        | backspace                |
-| Go to directory               | g                        |
-| Go to first                   | super+up / ctrl+home     |
-| Go to last                    | super+down / ctrl+end    |
-| Move to previous              | k/up                     |
-| Move to next                  | j/down                   |
-| Expand directory              | right                    |
-| Collapse directory            | left                     |
-| Jump to                       | /                        |
-| Quck jump to directory        | p                        |
-| Find in files                 | s                        |
-+-------------------------------+--------------------------+
-
-Action Shortcuts:
-+-------------------------------+--------------------------+
-|            Command            |         Shortcut         |
-+-------------------------------+--------------------------+
-| Open file/view directory      | o                        |
-| Open file in another group    | enter                    |
-| Preview file in another group | shift+enter              |
-| Open all marked items         | super+enter / ctrl+enter |
-| Open in Finder/Explorer       | \                        |
-| Open in new window            | w                        |
-| Refresh view                  | r                        |
-| Help page                     | ?                        |
-| Rename                        | R                        |
-| Move                          | M                        |
-| Delete                        | D                        |
-| Send to trash                 | S                        |
-| Create directory              | cd                       |
-| Create file                   | cf                       |
-| Create/Edit/Remove jump point | P                        |
-| Toggle hidden files           | h                        |
-| Toggle add folder to project  | f                        |
-| Set current folder as         | F                        |
-| only one for the project      |                          |
-| Quicklook for Mac or open in  | space                    |
-| default app on other OSs      |                          |
-+-------------------------------+--------------------------+
-
-In Rename Mode:
-+-------------------------------+--------------------------+
-|            Command            |         Shortcut         |
-|-------------------------------|--------------------------|
-| Apply changes                 | enter                    |
-| Discard changes               | escape                   |
-+-------------------------------+--------------------------+
-"""
 
 def print(*args, **kwargs):
     """ Redefine print() function; the reason is the inconsistent treatment of
@@ -969,7 +906,6 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
             sublime.set_timeout(lambda: sublime.active_window().run_command("toggle_side_bar") , 200)
 
 
-
 class DiredHelpCommand(TextCommand):
     def run(self, edit):
         view = self.view.window().new_file()
@@ -983,6 +919,8 @@ class DiredHelpCommand(TextCommand):
 
 class DiredShowHelpCommand(TextCommand):
     def run(self, edit):
+        shortcuts = join(dirname(__file__), "shortcuts.md")
+        COMMANDS_HELP = open(shortcuts, "r").read()
         self.view.erase(edit, Region(0, self.view.size()))
         self.view.insert(edit, 0, COMMANDS_HELP)
         self.view.sel().clear()
