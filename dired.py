@@ -23,7 +23,7 @@ if ST3:
         import Default.send2trash as send2trash
     except ImportError:
         send2trash = None
-else: # ST2 imports
+else:  # ST2 imports
     import locale
     from common import RE_FILE, DiredBaseCommand
     import prompt
@@ -35,6 +35,7 @@ else: # ST2 imports
     except ImportError:
         send2trash = None
 PARENT_SYM = u"⠤"
+
 
 def print(*args, **kwargs):
     """ Redefine print() function; the reason is the inconsistent treatment of
@@ -49,8 +50,10 @@ def print(*args, **kwargs):
     sep, end = kwargs.get('sep', ' '), kwargs.get('end', '\n')
     sys.stdout.write(sep.join(s for s in args) + end)
 
+
 def reuse_view():
     return sublime.load_settings('dired.sublime-settings').get('dired_reuse_view', False)
+
 
 def sort_nicely(l):
     """ Sort the given list in the way that humans expect.
@@ -66,9 +69,10 @@ def hijack_window():
     command = settings.get("dired_hijack_new_window")
     if command:
         if command == "jump_list":
-            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list") , 1)
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list"), 1)
         else:
-            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", { "immediate": True}) , 1)
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", {"immediate": True}), 1)
+
 
 def plugin_loaded():
     if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
@@ -1047,4 +1051,3 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
 
     def on_load(self, view):
         self.on_new(view)
-

@@ -274,8 +274,8 @@ To do that, add the code below (don't forget to change the font name!) to user s
 ```
 
 #### Changing font size
-You normally want the FileBrowser to use a smaller font compared to your normal views. It helps you 
-view more content and also prevent any font size changes when you make your normal views' font bigger or smaller. 
+Normally you want the FileBrowser to use a smaller font compared to your normal views. It helps you 
+see more content and also prevents any font size changes when you make your normal view font bigger or smaller. 
 
 You can change the font size by adding the code below to user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
 
