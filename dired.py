@@ -17,6 +17,7 @@ if ST3:
     from .common import RE_FILE, DiredBaseCommand
     from . import prompt
     from .show import show
+    from .show import set_proper_scheme
     from .jumping import jump_names
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
     try:
@@ -28,6 +29,7 @@ else:  # ST2 imports
     from common import RE_FILE, DiredBaseCommand
     import prompt
     from show import show
+    from show import set_proper_scheme
     from jumping import jump_names
     MARK_OPTIONS = 0
     try:
@@ -78,13 +80,28 @@ def plugin_loaded():
     if len(sublime.windows()) == 1 and len(sublime.windows()[0].views()) == 0:
         hijack_window()
 
+    window = sublime.active_window()
     if not ST3:
-        return
-    for v in sublime.active_window().views():
+        global recursive_plugin_loaded
+        # recursion limit is 1000 generally, so it will try to refresh for 100*1000 ms (100 s)
+        # if no active_window in 100 s, then no refresh
+        # if view still loading, refresh fail because view cant be edited
+        if not window or any(view.is_loading() for view in window.views()):
+            recursive_plugin_loaded += 1
+            try:
+                return sublime.set_timeout(plugin_loaded, 100)
+            except RuntimeError:
+                print('\ndired.plugin_loaded run recursively %d time(s); and failed to refresh\n'%recursive_plugin_loaded)
+                return
+
+    for v in window.views():
         if v.settings() and v.settings().get("dired_path"):
             v.run_command("dired_refresh")
+    # if not ST3:
+    #     print('\ndired.plugin_loaded run recursively %d time(s); and call refresh command\n'%recursive_plugin_loaded)
 
 if not ST3:
+    recursive_plugin_loaded = 1
     plugin_loaded()
 
 
@@ -171,7 +188,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
 
     def continue_refreshing(self, edit, path, names, goto=None, indent=''):
         status = u" 𝌆 [?: Help] "
-        path_in_project = any(folder == self.path[:-1] for folder in self.view.window().folders())
+        # if view isnot focused, view.window() may be None
+        window = self.view.window() or sublime.active_window()
+        path_in_project = any(folder == self.path[:-1] for folder in window.folders())
         status += 'Project root, ' if path_in_project else ''
         show_hidden = self.view.settings().get('dired_show_hidden_files', True)
         status += 'Hidden: On' if show_hidden else 'Hidden: Off'
@@ -851,6 +870,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
 class DiredHelpCommand(TextCommand):
     def run(self, edit):
         view = self.view.window().new_file()
+        view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
         view.set_name("Browse: shortcuts")
         view.set_scratch(True)
         view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
@@ -861,8 +881,11 @@ class DiredHelpCommand(TextCommand):
 
 class DiredShowHelpCommand(TextCommand):
     def run(self, edit):
-        shortcuts = join(dirname(__file__), "shortcuts.md")
-        COMMANDS_HELP = open(shortcuts, "r").read()
+        COMMANDS_HELP = sublime.load_resource('Packages/FileBrowser/shortcuts.md') if ST3 else ''
+        if not COMMANDS_HELP:
+            dest = dirname(__file__)
+            shortcuts = join(dest if dest!='.' else join(sublime.packages_path(), 'FileBrowser'), "shortcuts.md")
+            COMMANDS_HELP = open(shortcuts, "r").read()
         self.view.erase(edit, Region(0, self.view.size()))
         self.view.insert(edit, 0, COMMANDS_HELP)
         self.view.sel().clear()
