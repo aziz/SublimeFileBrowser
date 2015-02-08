@@ -224,7 +224,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             text = [ caption, len(caption)*(u'—') ] if header else []
             if self.view.settings().get('dired_show_full_path', False):
                 view_name = self.view.name()[:2]
-                self.view.set_name(u'%s%s (%s)' % (view_name, name or basename(path), path))
+                self.view.set_name(u'%s%s (%s)' % (view_name, name or basename(path), path.rstrip(os.sep)))
             if not f or self.show_parent():
                 text.append(PARENT_SYM)
             text.extend(f)
