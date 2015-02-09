@@ -176,7 +176,18 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.sel = Region(*(int(s) for s in sel)) if sel else None
         print('refresh sel', sel, self.sel, goto, inline)
         try:
-            names = os.listdir(path if not inline else goto)
+            if not inline and path == 'ThisPC\\':
+                path = ''
+                names = []
+                for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+                    disk = '%s:' % s
+                    if isdir(disk):
+                        names.append(disk)
+            else:
+                if goto and goto[~0]==':':
+                    # c:\\ valid path, c: not valid
+                    goto += os.sep
+                names = os.listdir(path if not inline else goto)
         except OSError as e:
             if not inline:
                 self.view.run_command("dired_up")
@@ -203,7 +214,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.set_status("__FileBrowser__", status)
 
         if not show_hidden:
-            names = [name for name in names if not self.is_hidden(name)]
+            names = [name for name in names if not self.is_hidden(name, path, goto, indent)]
         sort_nicely(names)
 
         f = self.ls(path, names, goto=goto if indent else '', indent=indent)
@@ -232,9 +243,8 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             if self.view.settings().get('dired_show_full_path', False):
                 view_name = self.view.name()[:2]
                 print(name, basename(path), path)
-                # XXX: why we need trailling os.sep in the first place!!!!11
                 norm_path = path.rstrip(os.sep)
-                self.view.set_name(u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path))
+                self.view.set_name(u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path) if path else u'%sThis PC'%view_name)
             if not f or self.show_parent():
                 text.append(PARENT_SYM)
             text.extend(f)
@@ -305,7 +315,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                 f.append(name)
         return f
 
-    def is_hidden(self, filename):
+    def is_hidden(self, filename, path, goto, indent):
         tests = self.view.settings().get('dired_hidden_files_patterns', ['.*'])
         if isinstance(tests, str):
             tests = [tests]
@@ -315,7 +325,12 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             return False
         # check for attribute on windows:
         try:
-            attrs = ctypes.windll.kernel32.GetFileAttributesW(join(self.path, filename))
+            if goto and indent:
+                line = self.view.line(self.sel.a)
+                parent = self._remove_ui(self.get_parent(line, goto))
+            else:
+                parent = ''
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(join(path, parent, filename))
             assert attrs != -1
             result = bool(attrs & 2)
         except (AttributeError, AssertionError):
@@ -466,6 +481,12 @@ class DiredSelect(TextCommand, DiredBaseCommand):
             elif len(filenames) == 1 and filenames[0] == PARENT_SYM:
                 self.view.window().run_command("dired_up")
                 return
+            elif len(filenames) == 1 and not exists(fqn):
+                self.view.run_command('dired_fold', {'update': True})
+                self.view.set_read_only(False)
+                self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<Not exists, press r to refresh>')
+                self.view.set_read_only(True)
+                return
             elif len(filenames) > 1 and inline:
                 sels = list(self.view.sel())
                 for i, f in enumerate(reversed(filenames)):
@@ -590,9 +611,12 @@ class DiredFold(TextCommand, DiredBaseCommand):
 class DiredUpCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
         parent = dirname(self.path.rstrip(os.sep))
-        if parent != os.sep:
+        if parent != os.sep and parent[1:] != ':\\':
+            # need to avoid c:\\\\
             parent += os.sep
-        if parent == self.path:
+        if parent == self.path and sublime.platform()=='windows':
+            parent = 'ThisPC'
+        elif parent == self.path:
             return
 
         view_id = (self.view.id() if reuse_view() else None)
@@ -811,7 +835,7 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
 
             self.set_ui_in_rename_mode(edit)
 
-            self.view.set_status("__FileBrowser__", u" 𝌆 [enter: Apply changes] [escape: Discard changes] ")
+            self.view.set_status("__FileBrowser__", u" 𝌆 [enter: Apply changes] [escape: Discard changes] %s" % (u'¡¡¡DO NOT RENAME DISKS!!! you can rename their children though ' if self.path == 'ThisPC\\' else ''))
 
             # Mark the original filename lines so we can make sure they are in the same
             # place.
@@ -886,7 +910,19 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
                     os.unlink(orig[:~0])
                     os.symlink(dest, join(self.path, a)[:~0])
                 else:
-                    os.rename(orig, join(self.path, a))
+                    try:
+                        os.rename(orig, join(self.path, a))
+                    except OSError:
+                        msg = (u'FileBrowser:\n\nError is occured during renaming.\n'
+                               u'Please, fix it and apply changes or cancel renaming.\n\n'
+                               u'\t {0} → {1}\n\n'
+                               u'Don’t rename\n'
+                               u'  • parent and child at the same time\n'
+                               u'  • non-existed file (cancel renaming to refresh)\n'
+                               u'  • file if you’re not owner'
+                               u'  • disk letter on Windows\n'.format(b, a))
+                        sublime.error_message(msg)
+                        return
                 existing.remove(b)
                 existing.add(a)
 
@@ -989,6 +1025,16 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
     open dir/file in external file explorer
     """
     def run(self, edit):
+        if sublime.platform() == 'windows':
+            line = self.view.line(self.view.sel()[0].a)
+            fname = self._remove_ui(self.get_parent(line, self.view.substr(line).strip()))
+            if self.path != 'ThisPC\\':
+                fname = join(self.path, fname)
+            if not ST3:
+                fname = fname.encode(locale.getpreferredencoding(False))
+            if exists(fname):
+                return subprocess.Popen('explorer /select,"%s"'%fname)
+
         self.view.window().run_command("open_dir", {"dir": self.path})
 
 
