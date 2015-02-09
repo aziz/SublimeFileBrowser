@@ -17,7 +17,7 @@
 
       <dict>
           <key>match</key>
-          <string>^\s*([▸▾] )([^\\/]*)(\\|/)?(.*)?$</string>
+          <string>^(\s*)([▸▾] )([^\\/]*)(\\|/)?(.*)?$</string>
           <key>name</key>
           <string>dired.item.directory</string>
           <key>captures</key>
@@ -25,19 +25,24 @@
               <key>1</key>
               <dict>
                   <key>name</key>
-                  <string>punctuation.definition.directory.symbol.dired</string>
+                  <string>indent</string>
               </dict>
               <key>2</key>
               <dict>
                   <key>name</key>
-                  <string>string.name.directory.dired</string>
+                  <string>punctuation.definition.directory.symbol.dired</string>
               </dict>
               <key>3</key>
               <dict>
                   <key>name</key>
-                  <string>punctuation.definition.directory.slash.dired</string>
+                  <string>string.name.directory.dired</string>
               </dict>
               <key>4</key>
+              <dict>
+                  <key>name</key>
+                  <string>punctuation.definition.directory.slash.dired</string>
+              </dict>
+              <key>5</key>
                   <dict>
                       <key>name</key>
                       <string>string.error.dired</string>
@@ -47,7 +52,7 @@
 
       <dict>
           <key>match</key>
-          <string>^\s*(≡ )(\S.*?(\.[^\.\n]+)?)$</string>
+          <string>^(\s*)(≡ )(\S.*?(\.[^\.\n]+)?)$</string>
           <key>name</key>
           <string>dired.item.file</string>
           <key>captures</key>
@@ -55,14 +60,19 @@
               <key>1</key>
               <dict>
                   <key>name</key>
-                  <string>punctuation.definition.file.symbol.dired</string>
+                  <string>indent</string>
               </dict>
               <key>2</key>
               <dict>
                   <key>name</key>
-                  <string>string.name.file.dired</string>
+                  <string>punctuation.definition.file.symbol.dired</string>
               </dict>
               <key>3</key>
+              <dict>
+                  <key>name</key>
+                  <string>string.name.file.dired</string>
+              </dict>
+              <key>4</key>
               <dict>
                   <key>name</key>
                   <string>string.name.file.extension.dired</string>

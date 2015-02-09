@@ -46,15 +46,7 @@
       "command": "dired_select",
       "args": { "inline": true },
       "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.directory" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-      ]
-  },
-  { // Disable right key on files
-      "keys": ["right"],
-      "command": "dired_noop",
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired dired.item.file" },
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
   },

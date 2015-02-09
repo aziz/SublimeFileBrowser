@@ -5,11 +5,8 @@ from __future__ import print_function
 import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand, EventListener
-import os, re, shutil, tempfile, subprocess, itertools, sys, threading, glob, fnmatch
+import os, re, shutil, tempfile, subprocess, itertools, sys, threading, glob
 from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
-
-if sublime.platform() == 'windows':
-    import ctypes
 
 ST3 = int(sublime.version()) >= 3000
 
@@ -55,15 +52,6 @@ def print(*args, **kwargs):
 
 def reuse_view():
     return sublime.load_settings('dired.sublime-settings').get('dired_reuse_view', False)
-
-
-def sort_nicely(l):
-    """ Sort the given list in the way that humans expect.
-    Source: http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
-    """
-    convert = lambda text: int(text) if text.isdigit() else text.lower()
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    l.sort(key=alphanum_key)
 
 
 def hijack_window():
@@ -163,113 +151,106 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     """
     Populates or repopulates a dired view.
     """
-    def run(self, edit, goto=None, inline=False, sel=None):
+    def run(self, edit, goto=None, to_expand=None):
         """
         goto    Optional filename to put the cursor on.
-
-        inline  Treeview, append fnames instead of repopulate view
-                if inline=True, goto containes path for listdir
-
-        sel     [a, b] custom selection to use instead of view.sel()[0]
         """
         path = self.path
-        self.sel = Region(*(int(s) for s in sel)) if sel else None
-        print('refresh sel', sel, self.sel, goto, inline)
-        try:
-            if not inline and path == 'ThisPC\\':
-                path = ''
-                names = []
-                for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-                    disk = '%s:' % s
-                    if isdir(disk):
-                        names.append(disk)
+        self.sel = None
+        expanded = self.view.find_all(u'^\s*▾') if not goto else []
+        names = []
+        if path == 'ThisPC\\':
+            path = ''
+            for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+                disk = '%s:' % s
+                if isdir(disk):
+                    names.append(disk)
+        if expanded or to_expand:
+            self.re_populate_view(edit, path, names, expanded, to_expand)
+        else:
+            if not path:
+                self.continue_refreshing(edit, path, names)
             else:
-                if goto and goto[~0]==':':
-                    # c:\\ valid path, c: not valid
-                    goto += os.sep
-                names = os.listdir(path if not inline else goto)
+                self.populate_view(edit, path, names, goto)
+
+    def re_populate_view(self, edit, path, names, expanded, to_expand):
+        root = path
+        for i, r in enumerate(expanded):
+            line = self.view.line(r)
+            full_name = self._remove_ui(self.get_parent(line, self.view.substr(line)))
+            expanded[i] = full_name.rstrip(os.sep)
+        expanded.extend(to_expand or [])
+        if any(e for e in expanded if e == path.rstrip(os.sep)):
+            # e.g. c:\ was expanded and user press enter on it
+            return self.populate_view(edit, path, names, goto=None)
+        self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
+        tree = self.traverse_tree(root, root, '', names, expanded)
+        if tree:
+            self.set_status()
+            text, _ = self.set_title(path)
+            if root and self.show_parent():
+                text.extend(PARENT_SYM)
+            text.extend(tree)
+
+            marked = set(self.get_marked())
+            sels   = self.get_selected()
+
+            self.view.set_read_only(False)
+            self.view.erase(edit, Region(0, self.view.size()))
+            self.view.insert(edit, 0, '\n'.join(text))
+            self.view.set_read_only(True)
+
+            fileregion = self.fileregion()
+            count = len(self.view.lines(fileregion)) if fileregion else 0
+            self.view.settings().set('dired_count', count)
+
+            self.restore_marks(marked)
+            self.restore_sels(sels)
+
+            CallVCS(edit, self.view, path)
+        else:
+            return self.populate_view(edit, path, names, goto=None)
+
+
+    def populate_view(self, edit, path, names, goto):
+        try:
+            if goto and goto[~0]==':':
+                # c:\\ valid path, c: not valid
+                goto += os.sep
+            names = os.listdir(path)
         except OSError as e:
-            if not inline:
-                self.view.run_command("dired_up")
+            error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
+            self.view.run_command("dired_up")
             self.view.set_read_only(False)
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b,
-                             '\t<%s>' % str(e).split(':')[0]
-                             .replace('[Error 5] ', 'Access denied'))
+                             '\t<%s>' % error)
             self.view.set_read_only(True)
         else:
-            git = self.view.settings().get('git_path', '')
-            if git:  # empty string disable git integration
-                self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, names, git))
-                self.vcs_thread.start()
-            self.continue_refreshing(edit, path, names, goto, indent='\t' if inline else '')
+            self.continue_refreshing(edit, path, names, goto)
+            CallVCS(edit, self.view, path)
 
     def continue_refreshing(self, edit, path, names, goto=None, indent=''):
-        status = u" 𝌆 [?: Help] "
-        # if view isnot focused, view.window() may be None
-        window = self.view.window() or sublime.active_window()
-        path_in_project = any(folder == self.path[:-1] for folder in window.folders())
-        status += 'Project root, ' if path_in_project else ''
-        show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-        status += 'Hidden: On' if show_hidden else 'Hidden: Off'
-        self.view.set_status("__FileBrowser__", status)
+        self.set_status()
 
-        if not show_hidden:
-            names = [name for name in names if not self.is_hidden(name, path, goto, indent)]
-        sort_nicely(names)
-
-        f = self.ls(path, names, goto=goto if indent else '', indent=indent)
+        f = self.prepare_filelist(names, path, goto, indent)
 
         marked = set(self.get_marked())
 
+        text, header = self.set_title(path)
+        if path and (not f or self.show_parent()):
+            text.append(PARENT_SYM)
+        text.extend(f)
+
         self.view.set_read_only(False)
-
-        if indent:
-            line = self.view.line(self.sel if self.sel!=None else self.view.sel()[0])
-            print(self.sel, self.view.line(self.sel), line)
-            name_point = self.view.extract_scope(line.b - 1).a
-        if indent and f:
-            icon_region = Region(name_point - 2, name_point - 1)
-            self.view.replace(edit, icon_region, u'▾')
-            self.view.insert(edit, line.b, '\n'+'\n'.join(f))
-            dired_count = self.view.settings().get('dired_count', 0)
-            self.view.settings().set('dired_count', int(dired_count) + len(f))
-        elif indent:
-            self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<empty>')
-        else:
-            header = self.view.settings().get('dired_header', False)
-            name = jump_names().get(path)
-            caption = u"{0} → {1}".format(name, path) if name else path
-            text = [ caption, len(caption)*(u'—') ] if header else []
-            if self.view.settings().get('dired_show_full_path', False):
-                view_name = self.view.name()[:2]
-                print(name, basename(path), path)
-                norm_path = path.rstrip(os.sep)
-                self.view.set_name(u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path) if path else u'%sThis PC'%view_name)
-            if not f or self.show_parent():
-                text.append(PARENT_SYM)
-            text.extend(f)
-
-            self.view.erase(edit, Region(0, self.view.size()))
-            self.view.insert(edit, 0, '\n'.join(text))
-            self.view.settings().set('dired_count', len(f))
-
-        if marked:
-            # Even if we have the same filenames, they may have moved so we have to manually
-            # find them again.
-            regions = []
-            for line in self.view.lines(self.fileregion()):
-                filename = self._remove_ui(RE_FILE.match(self.view.substr(line)).group(1))
-                if filename in marked:
-                    name_region = Region(line.a + 2, line.b) # do not mark UI elements
-                    regions.append(name_region)
-            self.view.add_regions('marked', regions, 'dired.marked', '', MARK_OPTIONS)
-        else:
-            self.view.erase_regions('marked')
-
+        self.view.erase(edit, Region(0, self.view.size()))
+        self.view.insert(edit, 0, '\n'.join(text))
+        self.view.settings().set('dired_count', len(f))
         self.view.set_read_only(True)
 
+        self.restore_marks(marked)
+
         # Place the cursor.
-        if f and not indent:
+        if f:
             pt = self.fileregion(with_parent_link=True).a
             if goto:
                 if isdir(join(path, goto)) and not goto.endswith(os.sep):
@@ -285,9 +266,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
             self.view.show_at_center(Region(pt, 0))
-        elif self.sel != None:
-            return
-        elif not f and not indent: # empty folder?
+        elif not f: # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
@@ -296,97 +275,64 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.sel().add(Region(name_point, name_point))
             self.view.show_at_center(name_point)
 
-    def ls(self, path, names, goto='', indent=''):
-        f = []
-        tab = self.view.settings().get('tab_size')
-        line = self.view.line(self.view.sel()[0].a)
-        content = self.view.substr(line).replace('\t', ' '*tab)
-        ind = re.compile('^(\s*)').match(content).group(1)
-        level = indent * int((len(ind) / tab) + 1) if ind else indent
-        # generating dirs list first
-        for name in names:
-            if isdir(join(path, goto, name)):
-                name = ''.join([level, u"▸ ", name, os.sep])
-                f.append(name)
-        # generating files list
-        for name in names:
-            if not isdir(join(path, goto, name)):
-                name = ''.join([level, u"≡ ", name])
-                f.append(name)
-        return f
-
-    def is_hidden(self, filename, path, goto, indent):
-        tests = self.view.settings().get('dired_hidden_files_patterns', ['.*'])
-        if isinstance(tests, str):
-            tests = [tests]
-        if any(fnmatch.fnmatch(filename, pattern) for pattern in tests):
-            return True
-        if sublime.platform() != 'windows':
-            return False
-        # check for attribute on windows:
-        try:
-            if goto and indent:
-                line = self.view.line(self.sel.a)
-                parent = self._remove_ui(self.get_parent(line, goto))
-            else:
-                parent = ''
-            attrs = ctypes.windll.kernel32.GetFileAttributesW(join(path, parent, filename))
-            assert attrs != -1
-            result = bool(attrs & 2)
-        except (AttributeError, AssertionError):
-            result = False
-        return result
-
-    def vcs_check(self, edit, path, names, git='git'):
-        if any(c for c in '~*?[]' if c in git):
-            match = glob.glob(os.path.expanduser(git))
-            if match:
-                git = match[0]
-            else:
-                sublime.error_message('FileBrowser:\n'
-                    'It seems like you use wildcards in "git_path": "%s".\n'
-                    'But the pattern cannot be found, please, fix it '
-                    'or use absolute path without wildcards.' % git)
-
-        shell = True if sublime.platform()=='windows' else False
-        try:
-            p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
-            git_output = p.communicate()[0]
-            p = subprocess.Popen([git, 'rev-parse', '--show-toplevel'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
-            root = p.communicate()[0].decode('utf-8').strip('\n')
-        except:
-            pass # cant catch it, perhaps Im missing something obvious :/
+    def traverse_tree(self, root, path, indent, tree, expanded):
+        if not path:
+            # special case for ThisPC, path is empty string
+            files = [u'%s\\'%d for d in tree]
+            tree  = []
         else:
-            if git_output:
-                git_output = str(git_output, 'utf-8').split('\x00') if ST3 else git_output.split('\00')
-                self.changed_items = dict((i[3:], i[1]) for i in git_output if i != '')
-                sublime.set_timeout(lambda p=path, r=root: self.vcs_colorized(p, r), 1)
+            # basename return funny results for c:\\ so it is tricky
+            b = os.path.basename(os.path.abspath(path)) or path.rstrip(os.sep)
+            if root != path and b != os.path.basename(root.rstrip(os.sep)):
+                tree.append(indent[:-1] + u'▾ ' + b + os.sep)
+            if not self.show_hidden:
+                files = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
+            else:
+                files = os.listdir(path)
+        self.sort_nicely(files)
+        if tree and not files:
+            # expanding empty folder, so notify that it is empty
+            tree[~0] += '\t<empty>'
+        for f in files:
+            new_path = join(path, f)
+            check = isdir(new_path)
+            if check and new_path.replace(root, '', 1).strip(os.sep) in expanded:
+                self.traverse_tree(root, new_path, indent + '\t', tree, expanded)
+            elif check:
+                tree.append(u'%s▸ %s%s' % (indent, f, os.sep if f[~0] != os.sep else ''))
+            else:
+                continue
+        for f in files:
+            if not os.path.isdir(os.path.join(path, f)):
+                tree.append(indent + u'≡ ' + f)
+        return tree
 
-    def vcs_colorized(self, path, root):
-        rgns, modified, untracked = [], [], []
-        path = normpath(path)
-        files_regions = dict((normpath(join(path, f)), r) for f, r in zip(self.get_all(), self.view.split_by_newlines(self.fileregion())))
-        colorblind = self.view.settings().get('vcs_color_blind', False)
-        for fn in self.changed_items.keys():
-            full_fn = normpath(join(root, fn if ST3 else unicode(fn, 'utf-8')))
-            r = files_regions.get(full_fn, 0)
-            if r:
-                content = self.view.substr(r)
-                indent  = len(re.match(r'^(\s*)', content).group(1))
-                icon = r.a + indent
-                r = Region(icon, icon + (1 if not colorblind else 0))
-                rgns.append((r, self.changed_items[fn]))
-        for r, status in rgns:
-            if status == 'M':
-                modified.append(r)
-            elif status == '?':
-                untracked.append(r)
-        if colorblind:
-            self.view.add_regions('M', modified, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE)
-            self.view.add_regions('?', untracked, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY)
+    def set_status(self):
+        status = u" 𝌆 [?: Help] "
+        # if view isnot focused, view.window() may be None
+        window = self.view.window() or sublime.active_window()
+        path_in_project = any(folder == self.path[:-1] for folder in window.folders())
+        status += 'Project root, ' if path_in_project else ''
+        show_hidden = self.view.settings().get('dired_show_hidden_files', True)
+        status += 'Hidden: On' if show_hidden else 'Hidden: Off'
+        self.view.set_status("__FileBrowser__", status)
+
+    def set_title(self, path):
+        header    = self.view.settings().get('dired_header', False)
+        name      = jump_names().get(path or self.path)
+        caption   = u"{0} → {1}".format(name, path) if name else path or self.path
+        text      = [ caption, len(caption)*(u'—') ] if header else []
+        view_name = self.view.name()[:2]
+        if not path:
+            title = u'%s%s' % (view_name, name or 'This PC')
         else:
-            self.view.add_regions('M', modified, 'item.modified.dired', '', MARK_OPTIONS)
-            self.view.add_regions('?', untracked, 'item.untracked.dired', '', MARK_OPTIONS)
+            norm_path = path.rstrip(os.sep)
+            if self.view.settings().get('dired_show_full_path', False):
+                title = u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path)
+            else:
+                title = u'%s%s' % (view_name, name or basename(norm_path))
+        self.view.set_name(title)
+        return (text, header)
 
 
 # NAVIGATION #####################################################
@@ -465,36 +411,29 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
 class DiredSelect(TextCommand, DiredBaseCommand):
     def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0, inline=0):
         path = self.path
-        filenames = self.get_selected() if not new_view else self.get_marked() or self.get_selected()
+        if inline:
+            filenames = self.get_marked() or self.get_selected(parent=False)
+            if len(filenames) == 1 and filenames[0][~0] == os.sep:
+                return self.expand_single_folder(edit, path, filenames[0])
+            elif filenames:
+                # working with several selections at once is very tricky,
+                # thus for reliability we should recreate the entire tree
+                # despite it is slower
+                self.view.run_command('dired_refresh', {'to_expand': [f.rstrip(os.sep) for f in filenames]})
+                return
+            else:
+                return sublime.status_message('Item cannot be expanded')
+
+        filenames = self.get_selected() if not (new_view or inline) else self.get_marked() or self.get_selected()
 
         # If reuse view is turned on and the only item is a directory, refresh the existing view.
         if not new_view and reuse_view():
             fqn = join(path, filenames[0])
-            if inline and '<empty>' == fqn[~6:]:
-                return
             if len(filenames) == 1 and isdir(fqn):
-                if inline:
-                    # if directory was unfolded, then it’ll be folded and unfolded again
-                    self.view.run_command('dired_fold', {'update': True})
-                show(self.view.window(), fqn, view_id=self.view.id(), inline=inline, sel=self.view.sel()[0])
+                show(self.view.window(), fqn, view_id=self.view.id())
                 return
             elif len(filenames) == 1 and filenames[0] == PARENT_SYM:
                 self.view.window().run_command("dired_up")
-                return
-            elif len(filenames) == 1 and not exists(fqn):
-                self.view.run_command('dired_fold', {'update': True})
-                self.view.set_read_only(False)
-                self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<Not exists, press r to refresh>')
-                self.view.set_read_only(True)
-                return
-            elif len(filenames) > 1 and inline:
-                sels = list(self.view.sel())
-                for i, f in enumerate(reversed(filenames)):
-                    fqn = join(path, f)
-                    print(fqn, sels[~i])
-                    if isdir(fqn):
-                        # self.view.run_command('dired_fold', {'sel': sels[~i], 'update': True})
-                        show(self.view.window(), fqn, view_id=self.view.id(), inline=inline, sel=sels[~i])
                 return
 
         if other_group or preview or and_close:
@@ -503,7 +442,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
             nag = self.view.window().active_group()
         w = self.view.window()
         for filename in filenames:
-            fqn = join(path, filename.replace('<empty>', '').rstrip())
+            fqn = join(path, filename)
             if exists(fqn): # ignore 'item <error>'
                 if isdir(fqn):
                     show(w, fqn, ignore_existing=new_view)
@@ -538,6 +477,31 @@ class DiredSelect(TextCommand, DiredBaseCommand):
             group = nag - 1
         return group
 
+    def expand_single_folder(self, edit, path, filename):
+        marked = set(self.get_marked())
+        sels   = self.get_selected()
+        self.view.run_command('dired_fold', {'update': True})
+        sel    = self.view.get_regions('marked')[0] if marked else list(self.view.sel())[0]
+        line   = self.view.line(sel)
+        fqn    = join(path, filename)
+        if isdir(fqn):
+            self.sel = sel
+            try:
+                names = os.listdir(fqn)
+            except OSError as e:
+                error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
+                replacement = '%s\t<%s>' % (self.view.substr(line), error)
+            else:
+                replacement = self.prepare_treeview(names, self.path, fqn, '\t')
+        else:
+            replacement = '%s\t<%s>' % (self.view.substr(line), 'Not exists, press r to refresh')
+        self.view.set_read_only(False)
+        self.view.replace(edit, line, replacement)
+        self.view.set_read_only(True)
+        self.restore_marks(marked)
+        self.restore_sels(sels)
+        CallVCS(edit, self.view, path)
+
 
 class DiredFold(TextCommand, DiredBaseCommand):
     u'''
@@ -557,19 +521,28 @@ class DiredFold(TextCommand, DiredBaseCommand):
         (a) if directory was unfolded (as in 1.a) — erase that region, so then
             it’ll be filled (basically it is like update/refresh), also set dired_count;
         (b) directory was folded (as in 1.b) — do nothing
-
-    sel     one region, to support multicursor
     '''
-    def run(self, edit, sel=None, update=''):
-        v    = self.view
+    def run(self, edit, update=''):
+        v = self.view
+        self.marked = None
+        self.seled  = self.get_selected()
+        marks       = self.view.get_regions('marked')
+        virt_sels   = []
 
-        if sel != None:
-            line = v.line((sel or v.sel()[0]).a)
+        if marks:
+            for m in marks:
+                if 'directory' in self.view.scope_name(m.a):
+                    virt_sels.append(Region(m.a, m.a))
+            self.marked = list(set(self.get_marked()))
+        sels = virt_sels
+
+        lines = [v.line(s.a) for s in reversed(sels or list(v.sel()))]
+        for line in lines:
             self.fold(edit, v, line, update)
-        else:
-            lines = [v.line(s.a) for s in reversed(list(v.sel()))]
-            for line in lines:
-                self.fold(edit, v, line, update)
+        if self.marked:
+            self.restore_marks(self.marked)
+        if self.seled:
+            self.restore_sels(self.seled)
 
     def fold(self, edit, v, line, update):
         current_region = v.indented_region(line.b)
@@ -577,35 +550,44 @@ class DiredFold(TextCommand, DiredBaseCommand):
         is_folder      = 'directory' in v.scope_name(line.a)
         folded_subfolder = update and (next_region.contains(line) or next_region.empty() or next_region.contains(current_region))
         folded_folder    = update and current_region.empty() and next_region.empty()
-        file_item_in_root  = not is_folder and current_region.empty()
+        file_item_in_root = not is_folder and current_region.empty()
 
-        if folded_subfolder or folded_folder or file_item_in_root:
-            # folding is not supposed to happen, so we exit
-            return
+        if v.substr(line).endswith('<empty>'):
+            indented_region = v.extract_scope(line.b - 1)
+        elif folded_subfolder or folded_folder or file_item_in_root:
+            return  # folding is not supposed to happen, so we exit
         elif update or (is_folder and not next_region.empty() and not next_region.contains(line)):
             indented_region = next_region
         elif not current_region.empty():
             indented_region = current_region
             line = v.line(indented_region.a - 2)
         else:
-            # this is not supposed to happen, but it does sometimes
-            return
-        name_point  = v.extract_scope(line.b - 1).a
-        icon_region = Region(name_point - 2, name_point - 1)
+            return  # this is not supposed to happen, but it does sometimes
+        name_point  = v.extract_scope(line.a).b
+        if 'name' in v.scope_name(name_point):
+            icon_region = Region(name_point - 2, name_point - 1)
+        else:
+            icon_region = Region(line.a, line.a + 1)
 
-        dired_count = v.settings().get('dired_count', 0)
-        v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
+        # do not set count on empty folder
+        if not line.contains(indented_region):
+            dired_count = v.settings().get('dired_count', 0)
+            v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
+            if indented_region.b == v.size():
+                # MUST avoid new line at eof
+                indented_region = Region(indented_region.a - 1, indented_region.b)
 
-        if indented_region.b == v.size(): # MUST avoid new line at eof
-            indented_region = Region(indented_region.a - 1, indented_region.b)
+        if self.marked or self.seled:
+            folded_name = self._remove_ui(self.get_parent(line, self.view.substr(line)))
+            if self.marked:
+                self.marked.append(folded_name)
+            elif self.seled:
+                self.seled.append(folded_name)
 
         v.set_read_only(False)
         v.replace(edit, icon_region, u'▸')
         v.erase(edit, indented_region)
         v.set_read_only(True)
-
-        # v.sel().clear()
-        # v.sel().add(Region(name_point, name_point))
 
 
 class DiredUpCommand(TextCommand, DiredBaseCommand):
@@ -617,6 +599,9 @@ class DiredUpCommand(TextCommand, DiredBaseCommand):
         if parent == self.path and sublime.platform()=='windows':
             parent = 'ThisPC'
         elif parent == self.path:
+            return
+        elif self.path == 'ThisPC\\':
+            self.view.run_command('dired_refresh')
             return
 
         view_id = (self.view.id() if reuse_view() else None)
@@ -851,10 +836,7 @@ class DiredRenameCancelCommand(TextCommand, DiredBaseCommand):
         self.view.settings().erase('rename')
         self.view.settings().set('color_scheme', 'Packages/FileBrowser/dired.hidden-tmTheme')
         self.view.settings().set('dired_rename_mode', False)
-        goto_file_name = self.get_selected()[0]
-        if goto_file_name.endswith(os.sep):
-            goto_file_name = goto_file_name[0:-1]
-        self.view.run_command('dired_refresh', {"goto": goto_file_name})
+        self.view.run_command('dired_refresh')
 
 
 class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
@@ -929,11 +911,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
         self.view.erase_regions('rename')
         self.view.settings().erase('rename')
         self.view.settings().set('dired_rename_mode', False)
-        self.view.settings().set('color_scheme', 'Packages/FileBrowser/dired.hidden-tmTheme')
-        goto_file_name = self.get_selected()[0]
-        if goto_file_name.endswith(os.sep):
-            goto_file_name = goto_file_name[0:-1]
-        self.view.run_command('dired_refresh', {"goto": goto_file_name})
+        self.view.run_command('dired_refresh')
 
 
 # HELP ##############################################################
@@ -1025,17 +1003,22 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
     open dir/file in external file explorer
     """
     def run(self, edit):
+        path = self.path
         if sublime.platform() == 'windows':
             line = self.view.line(self.view.sel()[0].a)
             fname = self._remove_ui(self.get_parent(line, self.view.substr(line).strip()))
-            if self.path != 'ThisPC\\':
-                fname = join(self.path, fname)
+            if path != 'ThisPC\\':
+                fname = join(path, fname)
             if not ST3:
                 fname = fname.encode(locale.getpreferredencoding(False))
             if exists(fname):
                 return subprocess.Popen('explorer /select,"%s"'%fname)
+            if path == 'ThisPC\\':
+                return subprocess.Popen('explorer /select,"C:"')
 
-        self.view.window().run_command("open_dir", {"dir": self.path})
+        if not exists(path):
+            return sublime.status_message(u'Directory doesn’t exist “%s”' % path)
+        self.view.window().run_command("open_dir", {"dir": path})
 
 
 class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
@@ -1168,3 +1151,72 @@ class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
                 system_args = dict({"event": args["event"]}.items())
                 system_args.update(dict(args["args"].items()))
                 self.view.run_command(system_command, system_args)
+
+
+# TOOLS ############################
+
+class CallVCS(DiredBaseCommand):
+    '''
+    this should be placed in common.py probably, but for some reason
+    it doesnt work this way, so place it in main file for now
+    '''
+    def __init__(self, edit, view, path):
+        self.view = view
+        self.call_git(edit, path)
+
+    def call_git(self, edit, path):
+        git = self.view.settings().get('git_path', '')
+        if git:  # empty string disable git integration
+            self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, git))
+            self.vcs_thread.start()
+
+    def vcs_check(self, edit, path, git='git'):
+        if any(c for c in '~*?[]' if c in git):
+            match = glob.glob(os.path.expanduser(git))
+            if match:
+                git = match[0]
+            else:
+                sublime.error_message('FileBrowser:\n'
+                    'It seems like you use wildcards in "git_path": "%s".\n'
+                    'But the pattern cannot be found, please, fix it '
+                    'or use absolute path without wildcards.' % git)
+
+        shell = True if sublime.platform()=='windows' else False
+        try:
+            p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
+            git_output = p.communicate()[0]
+            p = subprocess.Popen([git, 'rev-parse', '--show-toplevel'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
+            root = p.communicate()[0].decode('utf-8').strip('\n')
+        except:
+            pass # cant catch it, perhaps Im missing something obvious :/
+        else:
+            if git_output:
+                git_output = str(git_output, 'utf-8').split('\x00') if ST3 else git_output.split('\00')
+                changed_items = dict((i[3:], i[1]) for i in git_output if i != '')
+                sublime.set_timeout(lambda e=edit, p=path, r=root, c=changed_items: self.vcs_colorized(e, p, r, c), 1)
+
+    def vcs_colorized(self, edit, path, root, changed_items):
+        rgns, modified, untracked = [], [], []
+        path = normpath(path)
+        files_regions = dict((normpath(join(path, f)), r) for f, r in zip(self.get_all(), self.view.split_by_newlines(self.fileregion())))
+        colorblind = self.view.settings().get('vcs_color_blind', False)
+        for fn in changed_items.keys():
+            full_fn = normpath(join(root, fn if ST3 else unicode(fn, 'utf-8')))
+            r = files_regions.get(full_fn, 0)
+            if r:
+                content = self.view.substr(r)
+                indent  = len(re.match(r'^(\s*)', content).group(1))
+                icon = r.a + indent
+                r = Region(icon, icon + (1 if not colorblind else 0))
+                rgns.append((r, changed_items[fn]))
+        for r, status in rgns:
+            if status == 'M':
+                modified.append(r)
+            elif status == '?':
+                untracked.append(r)
+        if colorblind:
+            self.view.add_regions('M', modified, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE)
+            self.view.add_regions('?', untracked, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY)
+        else:
+            self.view.add_regions('M', modified, 'item.modified.dired', '', MARK_OPTIONS)
+            self.view.add_regions('?', untracked, 'item.untracked.dired', '', MARK_OPTIONS)

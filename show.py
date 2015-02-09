@@ -22,7 +22,7 @@ def set_proper_scheme(view):
         view.settings().set('color_scheme', sublime.load_settings('dired.sublime-settings').get('color_scheme'))
 
 
-def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, inline=False, sel=None, other_group=''):
+def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, other_group=''):
     """
     Determines the correct view to use, creating one if necessary, and prepares it.
     """
@@ -91,13 +91,8 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
     else:
         name = u"■ {0}".format(view_name)
 
-    if not inline:
-        view.set_name(name)
-        view.settings().set('dired_path', path)
-    else:
-        goto = path.rstrip(os.sep)
+    view.set_name(name)
+    view.settings().set('dired_path', path)
     view.settings().set('dired_rename_mode', False)
     window.focus_view(view)
-    print('show sel', sel)
-    view.run_command('dired_refresh', { 'goto': goto, 'inline': inline, 'sel': sel if sel==None else [sel.a, sel.b] })
-    print('show sel', sel)
+    view.run_command('dired_refresh', { 'goto': goto })
