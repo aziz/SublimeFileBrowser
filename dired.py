@@ -163,12 +163,18 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     """
     Populates or repopulates a dired view.
     """
-    def run(self, edit, goto=None, inline=False):
+    def run(self, edit, goto=None, inline=False, sel=None):
         """
-        goto
-            Optional filename to put the cursor on.
+        goto    Optional filename to put the cursor on.
+
+        inline  Treeview, append fnames instead of repopulate view
+                if inline=True, goto containes path for listdir
+
+        sel     [a, b] custom selection to use instead of view.sel()[0]
         """
         path = self.path
+        self.sel = Region(*(int(s) for s in sel)) if sel else None
+        print('refresh sel', sel, self.sel, goto, inline)
         try:
             names = os.listdir(path if not inline else goto)
         except OSError as e:
@@ -207,7 +213,8 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.set_read_only(False)
 
         if indent:
-            line = self.view.line(self.view.sel()[0])
+            line = self.view.line(self.sel if self.sel!=None else self.view.sel()[0])
+            print(self.sel, self.view.line(self.sel), line)
             name_point = self.view.extract_scope(line.b - 1).a
         if indent and f:
             icon_region = Region(name_point - 2, name_point - 1)
@@ -218,17 +225,16 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         elif indent:
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<empty>')
         else:
-            header    = self.view.settings().get('dired_header', False)
-            name      = jump_names().get(path or self.path)
-            caption   = u"{0} → {1}".format(name, path) if name else path
-            text      = [ caption, len(caption)*(u'—') ] if header else []
-            view_name = self.view.name()[:2]
-            norm_path = path.rstrip(os.sep)
+            header = self.view.settings().get('dired_header', False)
+            name = jump_names().get(path)
+            caption = u"{0} → {1}".format(name, path) if name else path
+            text = [ caption, len(caption)*(u'—') ] if header else []
             if self.view.settings().get('dired_show_full_path', False):
-                title = u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path)
-            else:
-                title = u'%s%s' % (view_name, name or basename(norm_path))
-            self.view.set_name(title)
+                view_name = self.view.name()[:2]
+                print(name, basename(path), path)
+                # XXX: why we need trailling os.sep in the first place!!!!11
+                norm_path = path.rstrip(os.sep)
+                self.view.set_name(u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path))
             if not f or self.show_parent():
                 text.append(PARENT_SYM)
             text.extend(f)
@@ -269,6 +275,8 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
             self.view.show_at_center(Region(pt, 0))
+        elif self.sel != None:
+            return
         elif not f and not indent: # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
@@ -453,10 +461,19 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 if inline:
                     # if directory was unfolded, then it’ll be folded and unfolded again
                     self.view.run_command('dired_fold', {'update': True})
-                show(self.view.window(), fqn, view_id=self.view.id(), inline=inline)
+                show(self.view.window(), fqn, view_id=self.view.id(), inline=inline, sel=self.view.sel()[0])
                 return
             elif len(filenames) == 1 and filenames[0] == PARENT_SYM:
                 self.view.window().run_command("dired_up")
+                return
+            elif len(filenames) > 1 and inline:
+                sels = list(self.view.sel())
+                for i, f in enumerate(reversed(filenames)):
+                    fqn = join(path, f)
+                    print(fqn, sels[~i])
+                    if isdir(fqn):
+                        # self.view.run_command('dired_fold', {'sel': sels[~i], 'update': True})
+                        show(self.view.window(), fqn, view_id=self.view.id(), inline=inline, sel=sels[~i])
                 return
 
         if other_group or preview or and_close:
@@ -519,10 +536,21 @@ class DiredFold(TextCommand, DiredBaseCommand):
         (a) if directory was unfolded (as in 1.a) — erase that region, so then
             it’ll be filled (basically it is like update/refresh), also set dired_count;
         (b) directory was folded (as in 1.b) — do nothing
+
+    sel     one region, to support multicursor
     '''
-    def run(self, edit, update=''):
+    def run(self, edit, sel=None, update=''):
         v    = self.view
-        line = v.line(v.sel()[0].a)
+
+        if sel != None:
+            line = v.line((sel or v.sel()[0]).a)
+            self.fold(edit, v, line, update)
+        else:
+            lines = [v.line(s.a) for s in reversed(list(v.sel()))]
+            for line in lines:
+                self.fold(edit, v, line, update)
+
+    def fold(self, edit, v, line, update):
         current_region = v.indented_region(line.b)
         next_region    = v.indented_region(line.b + 2)
         is_folder      = 'directory' in v.scope_name(line.a)
@@ -555,8 +583,8 @@ class DiredFold(TextCommand, DiredBaseCommand):
         v.erase(edit, indented_region)
         v.set_read_only(True)
 
-        v.sel().clear()
-        v.sel().add(Region(name_point, name_point))
+        # v.sel().clear()
+        # v.sel().add(Region(name_point, name_point))
 
 
 class DiredUpCommand(TextCommand, DiredBaseCommand):
