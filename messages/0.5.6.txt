@@ -1,0 +1,13 @@
+0.5.6
+
+• Fix regression which affects several internals (jumping list, search for view)
+
+  Vova is to blame, he is sorry and heartly asking apologies.
+
+  ¡¡IMPORTANT!! Before you continue, please, open console
+                (ctrl+` or View → Show Console)
+                and execute following command:
+
+                    view.run_command('sublime_file_browser_fix_up_paths')
+
+  Thank you for patience.

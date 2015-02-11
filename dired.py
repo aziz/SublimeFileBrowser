@@ -218,13 +218,17 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         elif indent:
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b, '\t<empty>')
         else:
-            header = self.view.settings().get('dired_header', False)
-            name = jump_names().get(path)
-            caption = u"{0} → {1}".format(name, path) if name else path
-            text = [ caption, len(caption)*(u'—') ] if header else []
+            header    = self.view.settings().get('dired_header', False)
+            name      = jump_names().get(path or self.path)
+            caption   = u"{0} → {1}".format(name, path) if name else path
+            text      = [ caption, len(caption)*(u'—') ] if header else []
+            view_name = self.view.name()[:2]
+            norm_path = path.rstrip(os.sep)
             if self.view.settings().get('dired_show_full_path', False):
-                view_name = self.view.name()[:2]
-                self.view.set_name(u'%s%s (%s)' % (view_name, name or basename(path), path.rstrip(os.sep)))
+                title = u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path)
+            else:
+                title = u'%s%s' % (view_name, name or basename(norm_path))
+            self.view.set_name(title)
             if not f or self.show_parent():
                 text.append(PARENT_SYM)
             text.extend(f)
