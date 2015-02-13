@@ -52,7 +52,8 @@
   "highlight_line": true,
   "margin": 0,
   "tab_size": 3,
-  "rulers": []
+  "rulers": [],
+  "caret_extra_width": 0 // extra caret width causes partially hidden chars
   // "font_face": "comic sans",
   // "font_size": 13,
 }

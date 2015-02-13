@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>name</key>
+  <string>Browse</string>
+  <key>settings</key>
+  <array>
+    <dict>
+      <key>settings</key>
+      <dict>
+        <key>background</key>
+        <string>#d9dee5</string>
+        <key>foreground</key>
+        <string>#222222</string>
+        <key>caret</key>
+        <string>#E99023</string>
+        <key>gutter</key>
+        <string>#d9dee5</string>
+        <key>invisibles</key>
+        <string>#88222233</string>
+        <key>lineHighlight</key>
+        <string>#367cc000</string>
+        <key>selection</key>
+        <string>#22222233</string>
+        <key>selectionBorder</key>
+        <string>#22222233</string>
+        <key>inactiveSelection</key>
+        <string>#22222219</string>
+        <key>shadow</key>
+        <string>#d9dee5</string>
+        <key>shadowWidth</key>
+        <string>16</string>
+
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>File/Dir Symbols</string>
+      <key>scope</key>
+      <string>punctuation.definition.directory.symbol.dired, punctuation.definition.file.symbol.dired, dired.item.parent_dir</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#7c8692</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>Dir Slash</string>
+      <key>scope</key>
+      <string>punctuation.definition.directory.slash.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#919aa388</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>File Extension</string>
+      <key>scope</key>
+      <string>string.name.file.extension.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#919aa3</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>Dir Name</string>
+      <key>scope</key>
+      <string>string.name.directory.dired, string.name.project.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>fontStyle</key>
+        <string>bold</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>Header</string>
+      <key>scope</key>
+      <string>header.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#707e8b</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>Header punctuations</string>
+      <key>scope</key>
+      <string>header.dired punctuation.definition.separator.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#6f798733</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>Header Rename Mode Title</string>
+      <key>scope</key>
+      <string>punctuation.definition.rename_mode</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#E99023</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>Error</string>
+      <key>scope</key>
+      <string>string.error.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#aa0000</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>VCS Modified</string>
+      <key>scope</key>
+      <string>item.modified.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>background</key>
+        <string>#d9dee0</string>
+        <key>foreground</key>
+        <string>#F09609</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>VCS Untracked</string>
+      <key>scope</key>
+      <string>item.untracked.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>background</key>
+        <string>#d9dee0</string>
+        <key>foreground</key>
+        <string>#00c406</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key>
+      <string>VCS Colorblind</string>
+      <key>scope</key>
+      <string>item.colorblind.dired</string>
+      <key>settings</key>
+      <dict>
+        <key>background</key>
+        <string>#000000</string>
+      </dict>
+    </dict>
+
+  </array>
+  <key>uuid</key>
+  <string>07379361-ce49-4e6c-a03f-26378a7a2131</string>
+</dict>
+</plist>
+

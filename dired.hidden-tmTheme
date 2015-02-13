@@ -14,15 +14,13 @@
 				<key>foreground</key>
 				<string>#222222</string>
 				<key>caret</key>
-				<string>#367cc0</string>
+				<string>#367cc055</string>
+				<key>lineHighlight</key>
+				<string>#367cc055</string>
 				<key>gutter</key>
 				<string>#d9dee5</string>
-
 				<key>invisibles</key>
 				<string>#88222233</string>
-				<key>lineHighlight</key>
-				<string>#367cc033</string>
-
 				<key>selection</key>
 				<string>#22222233</string>
 				<key>selectionBorder</key>

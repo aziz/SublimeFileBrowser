@@ -778,6 +778,7 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
             # Store the original filenames so we can compare later.
             self.view.settings().set('rename', self.get_all())
             self.view.settings().set('dired_rename_mode', True)
+            self.view.settings().set('color_scheme', 'Packages/FileBrowser/dired-rename-mode.hidden-tmTheme')
             self.view.set_read_only(False)
 
             self.set_ui_in_rename_mode(edit)
@@ -796,6 +797,7 @@ class DiredRenameCancelCommand(TextCommand, DiredBaseCommand):
     """
     def run(self, edit):
         self.view.settings().erase('rename')
+        self.view.settings().set('color_scheme', 'Packages/FileBrowser/dired.hidden-tmTheme')
         self.view.settings().set('dired_rename_mode', False)
         goto_file_name = self.get_selected()[0]
         if goto_file_name.endswith(os.sep):
@@ -863,6 +865,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
         self.view.erase_regions('rename')
         self.view.settings().erase('rename')
         self.view.settings().set('dired_rename_mode', False)
+        self.view.settings().set('color_scheme', 'Packages/FileBrowser/dired.hidden-tmTheme')
         goto_file_name = self.get_selected()[0]
         if goto_file_name.endswith(os.sep):
             goto_file_name = goto_file_name[0:-1]
