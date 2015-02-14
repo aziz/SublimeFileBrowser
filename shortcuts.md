@@ -1,3 +1,10 @@
+General Shortcuts:
++-------------------------------+--------------------------+
+|            Command            |         Shortcut         |
++-------------------------------+--------------------------+
+| Help page                     | ?                        |
+| Refresh view                  | r                        |
++-------------------------------+--------------------------+
 
 Navigation Shortcuts:
 +-------------------------------+--------------------------+
@@ -18,7 +25,7 @@ Navigation Shortcuts:
 | Expand directory              | right                    |
 | Collapse directory            | left                     |
 | Jump to                       | /                        |
-| Quck jump to directory        | p                        |
+| Quick jump to directory       | p                        |
 | Find in files                 | s                        |
 +-------------------------------+--------------------------+
 
@@ -32,8 +39,6 @@ Action Shortcuts:
 | Open all marked items         | super+enter / ctrl+enter |
 | Open in Finder/Explorer       | \                        |
 | Open in new window            | w                        |
-| Refresh view                  | r                        |
-| Help page                     | ?                        |
 | Rename                        | R                        |
 | Move                          | M                        |
 | Delete                        | D                        |
