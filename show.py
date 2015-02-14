@@ -12,10 +12,15 @@ if ST3:
 else:
     from common import first
 
+
 def set_proper_scheme(view):
     # Since we cannot create file with syntax, there is moment when view has no settings,
     # but it is activated, so some plugins (e.g. Color Highlighter) set wrong color scheme
-    view.settings().set('color_scheme', sublime.load_settings('dired.sublime-settings').get('color_scheme'))
+    if view.settings().get('dired_rename_mode'):
+        view.settings().set('color_scheme', 'Packages/FileBrowser/dired-rename-mode.hidden-tmTheme')
+    else:
+        view.settings().set('color_scheme', sublime.load_settings('dired.sublime-settings').get('color_scheme'))
+
 
 def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, inline=False, other_group=''):
     """
@@ -34,7 +39,7 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         # See if a view for this path already exists.
         same_path = lambda v: v.settings().get('dired_path') == path
         # See if any reusable view exists in case of single_pane argument
-        any_path  = lambda v: v.score_selector(0, "text.dired") > 0
+        any_path = lambda v: v.score_selector(0, "text.dired") > 0
         view = first(window.views(), any_path if single_pane else same_path)
 
     if other_group:
@@ -52,9 +57,9 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
 
     nag = window.active_group()
     if other_group:
-        group = 0 if other_group=='left' else 1
+        group = 0 if other_group == 'left' else 1
         if window.num_groups() == 1:
-            cols = [0.0, 0.3, 1.0] if other_group=='left' else [0.0, 0.66, 1.0]
+            cols = [0.0, 0.3, 1.0] if other_group == 'left' else [0.0, 0.66, 1.0]
             window.set_layout({"cols": cols, "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
         elif view:
             groups = window.num_groups()
@@ -93,4 +98,4 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         goto = path.rstrip(os.sep)
     view.settings().set('dired_rename_mode', False)
     window.focus_view(view)
-    view.run_command('dired_refresh', { 'goto': goto, 'inline': inline })
+    view.run_command('dired_refresh', {'goto': goto, 'inline': inline})
