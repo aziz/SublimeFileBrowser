@@ -236,6 +236,11 @@ To disable this feature set it back to `false` or remove if from your user setti
 ```
 
 
+### Using Mouse!
+We believe keeping your hands on keyboard and not moving them away to reach the mouse or track-pad will increase your productivity. Despite this, there might be situations where using a mouse to click on a file is easier or you might be in transition to becoming a keyboard ninja and still prefer the mouse by habit. 
+For these situations, you can just double click a file or directory to open them. 
+Although we stand firm with our belief, we're *liberals*! :)
+
 ## Tweaking Look and Feel
 
 #### Customizing UI Elements
