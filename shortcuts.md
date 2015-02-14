@@ -2,7 +2,7 @@ General Shortcuts:
 +-------------------------------+--------------------------+
 |            Command            |         Shortcut         |
 +-------------------------------+--------------------------+
-| Help page                     | ?                        |
+| Shortcuts page                | ?                        |
 | Refresh view                  | r                        |
 +-------------------------------+--------------------------+
 
@@ -17,7 +17,6 @@ Navigation Shortcuts:
 | Unmark all                    | u                        |
 | Mark by extension             | *                        |
 | Go to parent directory        | backspace                |
-| Go to directory               | g                        |
 | Go to first                   | super+up / ctrl+home     |
 | Go to last                    | super+down / ctrl+end    |
 | Move to previous              | k/up                     |
@@ -25,6 +24,7 @@ Navigation Shortcuts:
 | Expand directory              | right                    |
 | Collapse directory            | left                     |
 | Jump to                       | /                        |
+| Go to directory               | g                        |
 | Quick jump to directory       | p                        |
 | Find in files                 | s                        |
 +-------------------------------+--------------------------+
@@ -33,12 +33,6 @@ Action Shortcuts:
 +-------------------------------+--------------------------+
 |            Command            |         Shortcut         |
 +-------------------------------+--------------------------+
-| Open file/view directory      | o                        |
-| Open file in another group    | enter                    |
-| Preview file in another group | shift+enter              |
-| Open all marked items         | super+enter / ctrl+enter |
-| Open in Finder/Explorer       | \                        |
-| Open in new window            | w                        |
 | Rename                        | R                        |
 | Move                          | M                        |
 | Delete                        | D                        |
@@ -47,6 +41,13 @@ Action Shortcuts:
 | Create file                   | cf                       |
 | Create/Edit/Remove jump point | P                        |
 | Toggle hidden files           | h                        |
+| Open file/view directory      | o                        |
+| Open in Finder/Explorer       | \                        |
+| Open in new window            | w                        |
+| Open file in another group    | enter                    |
+| Open all marked items         | super+enter / ctrl+enter |
+| Open file in preview          | shift+enter              |
+| (a.k.a transient) mode        |                          |
 | Toggle add folder to project  | f                        |
 | Set current folder as         | F                        |
 | only one for the project      |                          |
