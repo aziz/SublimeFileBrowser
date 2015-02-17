@@ -693,11 +693,17 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
 class DiredCreateCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, which=None):
         assert which in ('file', 'directory'), "which: " + which
+        relative_path = self.get_selected(parent=False)
+        if relative_path:
+            relative_path = relative_path[0]
+            if relative_path[~0] != os.sep:
+                relative_path = os.path.split(relative_path)[0] + os.sep
 
         # Is there a better way to do this?  Why isn't there some kind of context?  I assume
         # the command instance is global and really shouldn't have instance information.
         callback = getattr(self, 'on_done_' + which, None)
-        self.view.window().show_input_panel(which.capitalize() + ':', '', callback, None, None)
+        pv = self.view.window().show_input_panel(which.capitalize() + ':', relative_path, callback, None, None)
+        pv.run_command('move_to', {'to': 'eol', 'extend': False})
 
     def on_done_file(self, value):
         self._on_done('file', value)
