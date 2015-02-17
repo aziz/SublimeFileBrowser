@@ -70,19 +70,13 @@ class DiredBaseCommand:
 
         for s in sels:
             pt = s.a
-            first = pt
-            second = third = None
             if files.contains(pt):
                 # Try moving by one line.
                 line = self.view.line(pt)
                 pt = forward and (line.b + 1) or (line.a - 1)
-                second = pt
             if not files.contains(pt):
                 # Not (or no longer) in the list of files, so move to the closest edge.
                 pt = (pt > files.b) and files.b or files.a
-                third = pt
-
-            # sublime.status_message(', '.join([str(first), str(second), str(third)]))
 
             line = self.view.line(pt)
             scope = self.view.scope_name(line.a)
@@ -92,7 +86,6 @@ class DiredBaseCommand:
                 name_point = line.a + (2 if not 'parent_dir' in scope else 0)
             new_sels.append(name_point)
 
-        sublime.status_message(str(new_sels))
         self.view.sel().clear()
         for n in new_sels:
             self.view.sel().add(Region(n, n))

@@ -726,7 +726,7 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
         else:
             open(fqn, 'wb')
 
-        self.view.run_command('dired_refresh', {'goto': value})
+        self.view.run_command('dired_refresh')
 
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):
