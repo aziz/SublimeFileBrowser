@@ -741,10 +741,10 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
             if trash:
                 need_confirm = self.view.settings().get('dired_confirm_send2trash')
             if trash and not send2trash:
-                msg = u"Cannot send to trash.\nPermanently " + msg.replace('D', 'd', 1)
+                msg = u"Cannot delete to trash.\nPermanently " + msg.replace('D', 'd', 1)
                 trash = False
             elif trash and need_confirm:
-                msg = msg.replace('Delete', 'Send to trash', 1)
+                msg = msg.replace('Delete', 'Delete to trash', 1)
 
             if trash and send2trash:
                 if not need_confirm or (need_confirm and sublime.ok_cancel_dialog(msg)):

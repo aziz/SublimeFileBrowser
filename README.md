@@ -97,8 +97,8 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Open in new window                                    | <kbd>w</kbd>                               |
 | Rename                                                | <kbd>R</kbd>                               |
 | Move                                                  | <kbd>M</kbd>                               |
-| Delete                                                | <kbd>D</kbd>                               |
-| Send to trash                                         | <kbd>S</kbd>                               |
+| Delete to trash                                       | <kbd>D</kbd>                               |
+| Delete (does not send to trash)                       | <kbd>alt+shift+d</kbd>                     |
 | Create directory                                      | <kbd>cd</kbd>                              |
 | Create file                                           | <kbd>cf</kbd>                              |
 | Create/Edit/Remove jump point                         | <kbd>P</kbd>                               |
