@@ -94,7 +94,7 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Preview file in another group                         | <kbd>shift+enter</kbd>                     |
 | Open all marked items in new tabs                     | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
 | Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |
-| Open in new window                                    | <kbd>w</kbd>                               |
+| Open in new window                                    | <kbd>W</kbd>                               |
 | Rename                                                | <kbd>R</kbd>                               |
 | Move                                                  | <kbd>M</kbd>                               |
 | Delete to trash                                       | <kbd>D</kbd>                               |

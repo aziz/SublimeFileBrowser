@@ -260,7 +260,7 @@
     ]
   },
   {
-    "keys": ["w"],
+    "keys": ["W"],
     "command": "dired_open_in_new_window",
     "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
