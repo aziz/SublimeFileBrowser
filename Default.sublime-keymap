@@ -36,6 +36,7 @@
   {
       "keys": ["o"],
       "command": "dired_select",
+      "args": { "inline": true, "toggle": true },
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }

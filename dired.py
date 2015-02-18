@@ -151,9 +151,17 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     """
     Populates or repopulates a dired view.
     """
-    def run(self, edit, goto=None, to_expand=None):
+    def run(self, edit, goto=None, to_expand=None, toggle=None):
         """
-        goto    Optional filename to put the cursor on.
+        goto
+            Optional filename to put the cursor on; used only from "dired_up"
+
+        to_expand
+            List of relative paths for direcories which shall be expanded
+
+        toggle
+            If true, marked/selected directories shall switch state,
+            i.e. expand/collapse
         """
         path = self.path
         self.sel = None
@@ -166,20 +174,24 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                 if isdir(disk):
                     names.append(disk)
         if expanded or to_expand:
-            self.re_populate_view(edit, path, names, expanded, to_expand)
+            self.re_populate_view(edit, path, names, expanded, to_expand, toggle)
         else:
             if not path:
                 self.continue_refreshing(edit, path, names)
             else:
                 self.populate_view(edit, path, names, goto)
 
-    def re_populate_view(self, edit, path, names, expanded, to_expand):
+    def re_populate_view(self, edit, path, names, expanded, to_expand, toggle):
         root = path
         for i, r in enumerate(expanded):
             line = self.view.line(r)
             full_name = self._remove_ui(self.get_parent(line, self.view.substr(line)))
             expanded[i] = full_name.rstrip(os.sep)
-        expanded.extend(to_expand or [])
+        if toggle and to_expand:
+            merged = list(set(expanded + to_expand))
+            expanded = [e for e in merged if not (e in expanded and e in to_expand)]
+        else:
+            expanded.extend(to_expand or [])
         if any(e for e in expanded if e == path.rstrip(os.sep)):
             # e.g. c:\ was expanded and user press enter on it
             return self.populate_view(edit, path, names, goto=None)
@@ -262,10 +274,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                     pt = self.view.text_point(line, 2)
                 except ValueError:
                     pass
-
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
-            self.view.show_at_center(Region(pt, 0))
+            self.view.show_at_center(Region(pt, pt))
         elif not f: # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
@@ -285,10 +296,14 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             b = os.path.basename(os.path.abspath(path)) or path.rstrip(os.sep)
             if root != path and b != os.path.basename(root.rstrip(os.sep)):
                 tree.append(indent[:-1] + u'▾ ' + b + os.sep)
-            if not self.show_hidden:
-                files = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
-            else:
-                files = os.listdir(path)
+            try:
+                if not self.show_hidden:
+                    files = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
+                else:
+                    files = os.listdir(path)
+            except OSError as e:
+                tree[~0] += '\t<%s>' % str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
+                return
         self.sort_nicely(files)
         if tree and not files:
             # expanding empty folder, so notify that it is empty
@@ -409,17 +424,17 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
-    def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0, inline=0):
+    def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0, inline=0, toggle=0):
         path = self.path
         if inline:
             filenames = self.get_marked() or self.get_selected(parent=False)
             if len(filenames) == 1 and filenames[0][~0] == os.sep:
-                return self.expand_single_folder(edit, path, filenames[0])
+                return self.expand_single_folder(edit, path, filenames[0], toggle)
             elif filenames:
                 # working with several selections at once is very tricky,
                 # thus for reliability we should recreate the entire tree
                 # despite it is slower
-                self.view.run_command('dired_refresh', {'to_expand': [f.rstrip(os.sep) for f in filenames]})
+                self.view.run_command('dired_refresh', {'to_expand': [f.rstrip(os.sep) for f in filenames], 'toggle': toggle})
                 return
             else:
                 return sublime.status_message('Item cannot be expanded')
@@ -477,9 +492,18 @@ class DiredSelect(TextCommand, DiredBaseCommand):
             group = nag - 1
         return group
 
-    def expand_single_folder(self, edit, path, filename):
+    def expand_single_folder(self, edit, path, filename, toggle):
         marked = set(self.get_marked())
         sels   = self.get_selected()
+
+        if toggle:
+            line = self.view.line(self.view.get_regions('marked')[0] if marked else
+                                  list(self.view.sel())[0])
+            content = self.view.substr(line).lstrip()[0]
+            if content == u'▾':
+                self.view.run_command('dired_fold')
+                return
+
         self.view.run_command('dired_fold', {'update': True})
         sel    = self.view.get_regions('marked')[0] if marked else list(self.view.sel())[0]
         line   = self.view.line(sel)
