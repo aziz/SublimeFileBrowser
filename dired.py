@@ -1147,17 +1147,30 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
         self.on_new(view)
 
 
-class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
-    def run_(self, view, args):
-        s = self.view.settings()
-        if s.get("dired_path") and not s.get("dired_rename_mode"):
-            self.view.run_command("dired_select", {"other_group": True})
-        else:
-            system_command = args["command"] if "command" in args else None
-            if system_command:
-                system_args = dict({"event": args["event"]}.items())
-                system_args.update(dict(args["args"].items()))
-                self.view.run_command(system_command, system_args)
+if ST3:
+    class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
+        def run_(self, view, args):
+            s = self.view.settings()
+            if s.get("dired_path") and not s.get("dired_rename_mode"):
+                self.view.run_command("dired_select", {"other_group": True})
+            else:
+                system_command = args["command"] if "command" in args else None
+                if system_command:
+                    system_args = dict({"event": args["event"]}.items())
+                    system_args.update(dict(args["args"].items()))
+                    self.view.run_command(system_command, system_args)
+else:
+    class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
+        def run_(self, args):
+            s = self.view.settings()
+            if s.get("dired_path") and not s.get("dired_rename_mode"):
+                self.view.run_command("dired_select", {"other_group": True})
+            else:
+                system_command = args["command"] if "command" in args else None
+                if system_command:
+                    system_args = dict({"event": args["event"]}.items())
+                    system_args.update(dict(args["args"].items()))
+                    self.view.run_command(system_command, system_args)
 
 
 # TOOLS ############################
