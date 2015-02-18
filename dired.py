@@ -929,6 +929,7 @@ class DiredHelpCommand(TextCommand):
         view.set_name("Browse: shortcuts")
         view.set_scratch(True)
         view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
+        view.settings().set('syntax','Packages/FileBrowser/dired-help.hidden-tmLanguage')
         view.settings().set('line_numbers',False)
         view.run_command('dired_show_help')
         sublime.active_window().focus_view(view)

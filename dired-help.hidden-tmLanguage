@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>name</key>
+    <string>dired help</string>
+    <key>scopeName</key>
+    <string>text.dired_help</string>
+    <key>patterns</key>
+    <array>
+
+      <dict>
+          <key>match</key>
+          <string>^.+:$</string>
+          <key>name</key>
+          <string>dired.help.header</string>
+      </dict>
+
+      <dict>
+          <key>match</key>
+          <string>^[\+-]+$</string>
+          <key>name</key>
+          <string>dired.table.punctuations</string>
+      </dict>
+
+      <dict>
+          <key>match</key>
+          <string>^\s*(\|)\s*(Command)\s*(\|)\s*(Shortcut)\s*(\|)\s*$</string>
+          <key>name</key>
+          <string>dired.table.th</string>
+          <key>captures</key>
+          <dict>
+              <key>1</key>
+              <dict>
+                  <key>name</key>
+                  <string>dired.table.punctuations</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                  <key>name</key>
+                  <string>title</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                  <key>name</key>
+                  <string>dired.table.punctuations</string>
+              </dict>
+              <key>4</key>
+              <dict>
+                  <key>name</key>
+                  <string>title</string>
+              </dict>
+              <key>5</key>
+              <dict>
+                  <key>name</key>
+                  <string>dired.table.punctuations</string>
+              </dict>
+          </dict>
+      </dict>
+
+      <dict>
+          <key>match</key>
+          <string>^\s*(\|)\s*(.+?)\s*(\|)\s*(?:(\S+?)(?:\sor\s)?(\S+?)?)?\s*(\|)\s*$</string>
+          <key>name</key>
+          <string>dired.table.tr</string>
+          <key>captures</key>
+          <dict>
+              <key>1</key>
+              <dict>
+                  <key>name</key>
+                  <string>dired.table.punctuations</string>
+              </dict>
+              <key>2</key>
+              <dict>
+                  <key>name</key>
+                  <string>command_desc</string>
+              </dict>
+              <key>3</key>
+              <dict>
+                  <key>name</key>
+                  <string>dired.table.punctuations</string>
+              </dict>
+              <key>4</key>
+              <dict>
+                  <key>name</key>
+                  <string>command_shortcut</string>
+              </dict>
+              <key>5</key>
+              <dict>
+                  <key>name</key>
+                  <string>command_shortcut</string>
+              </dict>
+              <key>6</key>
+              <dict>
+                  <key>name</key>
+                  <string>dired.table.punctuations</string>
+              </dict>
+          </dict>
+      </dict>
+
+    </array>
+</dict>
+</plist>

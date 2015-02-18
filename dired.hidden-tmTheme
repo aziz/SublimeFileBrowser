@@ -171,23 +171,23 @@
 
 		<dict>
 			<key>name</key>
-			<string>Help</string>
+			<string>Help: Header</string>
 			<key>scope</key>
-			<string>help.dired</string>
+			<string>dired.help.header</string>
 			<key>settings</key>
 			<dict>
-				<key>background</key>
-				<string>#f5f7f8</string>
+				<key>fontStyle</key>
+				<string>bold</string>
 				<key>foreground</key>
-				<string>#687481</string>
+				<string>#707e8b</string>
 			</dict>
 		</dict>
 
 		<dict>
 			<key>name</key>
-			<string>Help punctuations</string>
+			<string>Help: Table punctuations</string>
 			<key>scope</key>
-			<string>punctuations.help.dired</string>
+			<string>dired.table.punctuations</string>
 			<key>settings</key>
 			<dict>
 				<key>foreground</key>
@@ -197,25 +197,37 @@
 
 		<dict>
 			<key>name</key>
-			<string>Help shortcut punctuations</string>
+			<string>Help: Table header</string>
 			<key>scope</key>
-			<string>punctuations.shortcut.help.dired</string>
+			<string>dired.table.th title</string>
 			<key>settings</key>
 			<dict>
 				<key>foreground</key>
-				<string>#68748166</string>
+				<string>#707e8b</string>
 			</dict>
 		</dict>
 
 		<dict>
 			<key>name</key>
-			<string>Help shortcut</string>
+			<string>Help: Shortcut</string>
 			<key>scope</key>
-			<string>key.shortcut.help.dired</string>
+			<string>dired.table.tr command_shortcut</string>
 			<key>settings</key>
 			<dict>
+				<key>foreground</key>
+				<string>#2A7793</string>
 				<key>fontStyle</key>
 				<string>bold</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help: Command Description</string>
+			<key>scope</key>
+			<string>dired.table.tr command_desc</string>
+			<key>settings</key>
+			<dict>
 				<key>foreground</key>
 				<string>#000000</string>
 			</dict>
