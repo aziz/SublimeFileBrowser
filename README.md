@@ -80,8 +80,8 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Go to last                                            | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>      |
 | Move to previous                                      | <kbd>k</kbd> or <kbd>↑</kbd>               |
 | Move to next                                          | <kbd>j</kbd> or <kbd>↓</kbd>               |
-| Expand directory                                      | <kbd>→</kbd>                               |
-| Collapse directory                                    | <kbd>←</kbd>                               |
+| Expand directory                                      | <kbd>l</kbd> or <kbd>→</kbd>               |
+| Collapse directory                                    | <kbd>h</kbd> or <kbd>←</kbd>               |
 | Jump to                                               | <kbd>/</kbd>                               |
 | Quick jump to directory                               | <kbd>p</kbd>                               |
 | Find in files                                         | <kbd>s</kbd>                               |

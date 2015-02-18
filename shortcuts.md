@@ -21,8 +21,8 @@ Navigation Shortcuts:
 | Go to last                    | super+down / ctrl+end    |
 | Move to previous              | k/up                     |
 | Move to next                  | j/down                   |
-| Expand directory              | right                    |
-| Collapse directory            | left                     |
+| Expand directory              | l/right                  |
+| Collapse directory            | h/left                   |
 | Jump to                       | /                        |
 | Go to directory               | g                        |
 | Quick jump to directory       | p                        |
