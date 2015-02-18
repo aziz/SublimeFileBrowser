@@ -40,7 +40,7 @@ Action Shortcuts:
 | Create directory              | cd                       |
 | Create file                   | cf                       |
 | Create/Edit/Remove jump point | P                        |
-| Toggle hidden files           | h                        |
+| Toggle hidden files           | H                        |
 | Open file/view directory      | o                        |
 | Open in Finder/Explorer       | \                        |
 | Open in new window            | w                        |

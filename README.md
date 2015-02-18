@@ -59,6 +59,12 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | **Browse Mode: Jump List Quick Panel**   | Shows the jump list in quick panel                             |
 
 ### Shortcuts
+##### General Shortcuts
+| Command          | Shortcut     |
+| :--------------- | :----------- |
+| Shortcuts page   | <kbd>?</kbd> |
+| Refresh view     | <kbd>r</kbd> |
+
 ##### Navigation Shortcuts
 | Command                                               | Shortcut                                   |
 | :---------------------------------------------------- | :----------------------------------------- |
@@ -89,8 +95,6 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Open all marked items in new tabs                     | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
 | Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |
 | Open in new window                                    | <kbd>w</kbd>                               |
-| Refresh view                                          | <kbd>r</kbd>                               |
-| Help page                                             | <kbd>?</kbd>                               |
 | Rename                                                | <kbd>R</kbd>                               |
 | Move                                                  | <kbd>M</kbd>                               |
 | Delete                                                | <kbd>D</kbd>                               |
@@ -98,7 +102,7 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Create directory                                      | <kbd>cd</kbd>                              |
 | Create file                                           | <kbd>cf</kbd>                              |
 | Create/Edit/Remove jump point                         | <kbd>P</kbd>                               |
-| Toggle hidden files                                   | <kbd>h</kbd>                               |
+| Toggle hidden files                                   | <kbd>H</kbd>                               |
 | Toggle add directory to project                       | <kbd>f</kbd>                               |
 | Set current directory as only one for the project     | <kbd>F</kbd>                               |
 | Quicklook for Mac or open in default app on other OSs | <kbd>space</kbd>                           |

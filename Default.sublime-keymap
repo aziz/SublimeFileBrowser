@@ -275,7 +275,7 @@
     ]
   },
   {
-    "keys": ["h"],
+    "keys": ["H"],
     "command": "dired_toggle_hidden_files",
     "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
