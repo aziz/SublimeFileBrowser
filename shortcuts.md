@@ -14,6 +14,7 @@ Navigation Shortcuts:
 | Move to next                  | j or down                 |
 | Expand directory              | l or right                |
 | Collapse directory            | h or left                 |
+| Toggle expand/collapse        | o                         |
 | Go to parent directory        | backspace                 |
 | Go to first                   | super+up or ctrl+home     |
 | Go to last                    | super+down or ctrl+end    |
@@ -41,7 +42,6 @@ Action Shortcuts:
 | Create file                   | cf                        |
 | Create/Edit/Remove jump point | P                         |
 | Toggle hidden files           | H                         |
-| Open file/view directory      | o                         |
 | Open in Finder/Explorer       | \                         |
 | Open in new window            | W                         |
 | Open file in another group    | enter                     |

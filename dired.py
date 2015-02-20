@@ -1171,6 +1171,8 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
         self.on_new(view)
 
 
+# MOUSE INTERATIONS ################################################
+
 if ST3:
     class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
         def run_(self, view, args):

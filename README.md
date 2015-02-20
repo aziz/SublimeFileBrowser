@@ -68,33 +68,28 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 ##### Navigation Shortcuts
 | Command                                               | Shortcut                                   |
 | :---------------------------------------------------- | :----------------------------------------- |
+| Move to previous                                      | <kbd>k</kbd> or <kbd>↑</kbd>               |
+| Move to next                                          | <kbd>j</kbd> or <kbd>↓</kbd>               |
+| Expand directory                                      | <kbd>l</kbd> or <kbd>→</kbd>               |
+| Collapse directory                                    | <kbd>h</kbd> or <kbd>←</kbd>               |
+| Toggle expand/collapse                                | <kbd>o</kbd>                               |
+| Go to parent directory                                | <kbd>backspace</kbd>                       |
+| Go to first                                           | <kbd>⌘+↑</kbd> or <kbd>ctrl+home</kbd>     |
+| Go to last                                            | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>      |
+| Jump to                                               | <kbd>/</kbd>                               |
+| Go to directory                                       | <kbd>g</kbd>                               |
+| Quick jump to directory                               | <kbd>p</kbd>                               |
+| Find in files                                         | <kbd>s</kbd>                               |
 | Toggle mark                                           | <kbd>m</kbd>                               |
 | Toggle mark and move down                             | <kbd>shift+↓</kbd>                         |
 | Toggle mark and move up                               | <kbd>shift+↑</kbd>                         |
 | Toggle all marks                                      | <kbd>t</kbd>                               |
 | Unmark all                                            | <kbd>u</kbd>                               |
 | Mark by extension                                     | <kbd>\*</kbd>                              |
-| Go to parent directory                                | <kbd>backspace</kbd>                       |
-| Go to directory                                       | <kbd>g</kbd>                               |
-| Go to first                                           | <kbd>⌘+↑</kbd> or <kbd>ctrl+home</kbd>     |
-| Go to last                                            | <kbd>⌘+↓</kbd> or <kbd>ctrl+end</kbd>      |
-| Move to previous                                      | <kbd>k</kbd> or <kbd>↑</kbd>               |
-| Move to next                                          | <kbd>j</kbd> or <kbd>↓</kbd>               |
-| Expand directory                                      | <kbd>l</kbd> or <kbd>→</kbd>               |
-| Collapse directory                                    | <kbd>h</kbd> or <kbd>←</kbd>               |
-| Jump to                                               | <kbd>/</kbd>                               |
-| Quick jump to directory                               | <kbd>p</kbd>                               |
-| Find in files                                         | <kbd>s</kbd>                               |
 
 ##### Action Shortcuts
 | Command                                               | Shortcut                                   |
 | :---------------------------------------------------- | :----------------------------------------- |
-| Open file/view directory                              | <kbd>o</kbd>                               |
-| Open file in another group                            | <kbd>enter</kbd>                           |
-| Preview file in another group                         | <kbd>shift+enter</kbd>                     |
-| Open all marked items in new tabs                     | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
-| Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |
-| Open in new window                                    | <kbd>W</kbd>                               |
 | Rename                                                | <kbd>R</kbd>                               |
 | Move                                                  | <kbd>M</kbd>                               |
 | Delete to trash                                       | <kbd>D</kbd>                               |
@@ -103,8 +98,13 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Create file                                           | <kbd>cf</kbd>                              |
 | Create/Edit/Remove jump point                         | <kbd>P</kbd>                               |
 | Toggle hidden files                                   | <kbd>H</kbd>                               |
+| Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |
+| Open in new window                                    | <kbd>W</kbd>                               |
+| Open file in another group                            | <kbd>enter</kbd>                           |
+| Open all marked items in new tabs                     | <kbd>⌘+enter</kbd> / <kbd>ctrl+enter</kbd> |
+| Preview file in another group                         | <kbd>shift+enter</kbd>                     |
 | Toggle add directory to project                       | <kbd>f</kbd>                               |
-| Set current directory as only one for the project     | <kbd>F</kbd>                               |
+| Set current directory as the only one for the project | <kbd>F</kbd>                               |
 | Quicklook for Mac or open in default app on other OSs | <kbd>space</kbd>                           |
 
 ##### *Rename Mode* Shortcuts
