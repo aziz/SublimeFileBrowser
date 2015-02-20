@@ -113,10 +113,17 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Apply changes    | <kbd>enter</kbd>   |
 | Discard changes  | <kbd>escape</kbd>  |
 
+**NOTE**: All these keyboard shortcuts can be customized in your own key-binding file. Open the 
+default key-bindings file (`Preferences` → `Package Settings` → `FileBrowser` → `Keybinding — Default`)
+and copy the ones you want to change to your `Keybinding — User` file.
+
 ## Usage
 
 ### Selecting Files and Directories
 You can select files and/or directories by marking them with <kbd>m</kbd>, or <kbd>Shift + up/down</kbd> or just use SublimeText multiple cursor feature and extend your cursor to the line that has those files/directories.
+
+You can expand or collapse a directory (or multiple directories using marking or multiple cursors) by pressing <kbd>o</kbd>. 
+<kbd>l</kbd> or <kbd>→</kbd> will also expand directories inline and <kbd>h</kbd> or <kbd>←</kbd> will collapse.
 
 ### Search
 Besides incremental search available by <kbd>/</kbd>, you also may use build-in "Goto Symbol…" (<kbd>⌘+r</kbd> or <kbd>ctrl + r</kbd>) for fuzzy search.
@@ -137,7 +144,7 @@ Add the following code in your user key bindings file:
 
 ```json
 {
-  "keys": ["o"],
+  "keys": ["enter"],
   "command": "dired_select", "args": {"and_close": true},
   "context": [
     { "key": "selector", "operator": "equal", "operand": "text.dired" },
@@ -193,7 +200,7 @@ Jump List View can be browsed using the <kbd>up</kbd>/<kbd>down</kbd> or <kbd>j<
 
 ##### Jump List in a new empty window e.g. Hijacking (ST3 only)
 You can also configure FileBrower to automatically open *Jump List View*  in new empty windows. That is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText starts and there's no previous windows open. 
-To do this you need to add the code below to your user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`)
+To do this you need to add the code below to your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`)
 
 ```json
 { "dired_hijack_new_window": "jump_list" }
@@ -231,7 +238,7 @@ If Git is not presented in your `PATH` you may set `git_path` setting (see examp
 ### Hijacking a new empty window (ST3 only)
 **FileBrowser** can hijack new empty windows and show you a *Browse Mode* or *Jump List View*. That is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText starts and there's no previous windows open. 
 
-This feature is only available for ST3 and is disabled by default. You can activate it by setting `dired_hijack_new_window` to `"jump_list"` or `"dired"` in your user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+This feature is only available for ST3 and is disabled by default. You can activate it by setting `dired_hijack_new_window` to `"jump_list"` or `"dired"` in your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
 
 To disable this feature set it back to `false` or remove if from your user settings file.
 
@@ -248,7 +255,7 @@ Although we stand firm with our belief, we're *liberals*! :)
 ## Tweaking Look and Feel
 
 #### Customizing UI Elements
-If you don't like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace` to go to parent directory) you can do it in your user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`) and paste the code below:
+If you don't like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace` to go to parent directory) you can do it in your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`) and paste the code below:
 
 ``` json
 { "dired_show_parent": false }
@@ -267,7 +274,7 @@ If you want to see full path in tab title and thus in window title if tab is foc
 ```
 
 #### Changing color scheme
-If you don't like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User directory, change colors and paste the code below in your user syntax specific settings file:
+If you don't like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User directory, change colors and paste the code below in your user settings file:
 
 ``` json
 { "color_scheme": "Path to your custom color scheme file. e.g. Packages/User/custom_dired.hidden-tmTheme" }
@@ -276,7 +283,7 @@ If you don't like colors used in FileBrowser just copy [this file](https://githu
 #### Changing font
 Changing the font of sidebar in SublimeText is not that easy! not if you're using FileBrowser as your sidebar. Since it is just a normal Sublime view with a special syntax, you can change the font to whatever font that's available on your system. 
 
-To do that, add the code below (don't forget to change the font name!) to user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+To do that, add the code below (don't forget to change the font name!) to user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
 
 ``` json
 { "font_face": "comic sans" }
@@ -286,11 +293,14 @@ To do that, add the code below (don't forget to change the font name!) to user s
 Normally you want the FileBrowser to use a smaller font compared to your normal views. It helps you 
 see more content and also prevents any font size changes when you make your normal view font bigger or smaller. 
 
-You can change the font size by adding the code below to user syntax specific settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+You can change the font size by adding the code below to user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
 
 ``` json
 { "font_size": 13 }
 ```
+
+#### Changing nested directories indentation
+The amount of indentation for nested directories is controlled by `tab_size`. By default FileBrowser is using a tab_size of 3 but you can customize it in your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
 
 ## General tip for Windows users
 DirectWrite rendering gives better Unicode support and better font appearance overall, to enable it add following setting into `Preferences` → `Settings — User`:
