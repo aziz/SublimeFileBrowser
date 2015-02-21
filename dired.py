@@ -473,7 +473,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                         v = w.open_file(fqn)
                         if other_group:
                             w.focus_view(dired_view)
-                            w.set_view_index(v, self._other_group(w, nag), 0)
+                            w.set_view_index(v, self._other_group(w, nag), self._index_for_new_view(w, nag))
                             w.focus_view(v)
         if and_close:
             w.focus_view(dired_view)
@@ -491,6 +491,10 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         else:
             group = nag - 1
         return group
+
+    def _index_for_new_view(self, w, group):
+        _group, active_v_idx = w.get_view_index(w.active_view_in_group(self._other_group(w, group)))
+        return (active_v_idx + 1)
 
     def expand_single_folder(self, edit, path, filename, toggle):
         marked = set(self.get_marked())
@@ -1165,13 +1169,13 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
     def on_new(self, view):
         if not self.MOVE:
             return
-
         w = sublime.active_window()
         if w.num_groups() < 2:
             return
-
         if any(v for v in w.views_in_group(0) if 'dired' in v.scope_name(0)):
-            sublime.set_timeout(lambda: w.set_view_index(view, 1, 0), 1)
+            if w.active_group() == 0:
+                _group, active_view_index_in_other_group = w.get_view_index(w.active_view_in_group(1))
+                sublime.set_timeout(lambda: w.set_view_index(view, 1, active_view_index_in_other_group + 1), 1)
 
     def on_load(self, view):
         self.on_new(view)
