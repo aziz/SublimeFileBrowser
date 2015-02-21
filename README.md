@@ -11,12 +11,15 @@ You can also use it as a sidebar that you can put on right or left side
 
 ## Installation
 
-You can install via [Sublime Package Control](http://wbond.net/sublime_packages/package_control)  
+You can install via [Sublime Package Control](http://wbond.net/sublime_packages/package_control)
 Or you can clone this repo into your SublimeText Packages directory and rename it to `FileBrowser`
 
 ## Commands and Keybindings
 
-This plugin does not add any keybindings for opening a new tab in *Browse Mode*. Although, the commands to do that are available in *Command Palette* but it is recommended to bind <kbd>F1</kbd> to open the current file directory in *Browse Mode* with this piece of code (that you can add to your `Key Bindings - User` file):
+This plugin does not add any keybindings for opening a new tab in *Browse Mode*. Although, the
+commands to do that are available in *Command Palette* but it is recommended to bind <kbd>F1</kbd>
+to open the current file directory in *Browse Mode* with this piece of code (that you can add to
+your `Key Bindings - User` file):
 
 ``` json
 {
@@ -28,11 +31,14 @@ This plugin does not add any keybindings for opening a new tab in *Browse Mode*.
 
 You also can use optional arguments to tweak behavior:
 
-* `"single_pane": true` — always use a single File Browser view, i.e. prefer to reuse existing one rather than create a new.
-* `"other_group": "left"` (or `"right`) — open FileBrowser in other group, i.e. like sidebar; if you use `"left"` then all other tabs from left group will be moved into the right one.
+* `"single_pane": true` — always use a single File Browser view, i.e. prefer to reuse existing one
+  rather than create a new.
+* `"other_group": "left"` (or `"right`) — open FileBrowser in other group, i.e. like sidebar; if
+  you use `"left"` then all other tabs from left group will be moved into the right one.
 * `"project": true` — always prefer project's directory(s) rather than path of current view.
 
-You can mix these arguments as you like (perhaps, even bind several shortcuts for different cases); e.g. to completely mimic sidebar, it would be:
+You can mix these arguments as you like (perhaps, even bind several shortcuts for different cases);
+e.g. to completely mimic sidebar, it would be:
 
 ``` json
 {
@@ -47,7 +53,7 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 }
 ```
 
-### Commands 
+### Commands
 
 | Commands                                 | Description                                                    |
 | :--------------------------------------- | :------------------------------------------------------------- |
@@ -113,31 +119,41 @@ You can mix these arguments as you like (perhaps, even bind several shortcuts fo
 | Apply changes    | <kbd>enter</kbd>   |
 | Discard changes  | <kbd>escape</kbd>  |
 
-**NOTE**: All these keyboard shortcuts can be customized in your own key-binding file. Open the 
-default key-bindings file (`Preferences` → `Package Settings` → `FileBrowser` → `Keybinding — Default`)
-and copy the ones you want to change to your `Keybinding — User` file.
+**NOTE**: All these keyboard shortcuts can be customized in your own key-binding file. Open the
+          default key-bindings file (`Preferences` → `Package Settings` → `FileBrowser` →
+          `Keybinding — Default`) and copy the ones you want to change to your `Keybinding — User`
+          file.
 
 ## Usage
 
 ### Selecting Files and Directories
-You can select files and/or directories by marking them with <kbd>m</kbd>, or <kbd>Shift + up/down</kbd> or just use SublimeText multiple cursor feature and extend your cursor to the line that has those files/directories.
+You can select files and/or directories by marking them with <kbd>m</kbd>, or <kbd>Shift + ↑/↓</kbd>
+or just use SublimeText multiple cursor feature and extend your cursor to the line that has those
+files/directories.
 
-You can expand or collapse a directory (or multiple directories using marking or multiple cursors) by pressing <kbd>o</kbd>. 
-<kbd>l</kbd> or <kbd>→</kbd> will also expand directories inline and <kbd>h</kbd> or <kbd>←</kbd> will collapse.
+You can expand or collapse a directory (or multiple directories using marking or multiple cursors)
+by pressing <kbd>o</kbd>. <kbd>l</kbd> or <kbd>→</kbd> will also expand directories inline and
+<kbd>h</kbd> or <kbd>←</kbd> will collapse.
 
 ### Search
-Besides incremental search available by <kbd>/</kbd>, you also may use build-in "Goto Symbol…" (<kbd>⌘+r</kbd> or <kbd>ctrl + r</kbd>) for fuzzy search.
+Besides incremental search available by <kbd>/</kbd>, you also may use build-in "Goto Symbol…"
+(<kbd>⌘+r</kbd> or <kbd>ctrl + r</kbd>) for fuzzy search.
 
 ### "Find in Files…" integration
-Press <kbd>s</kbd> to summon "Find in Files…" panel — if you've marked some files they will fill *Where* field, otherwise it will be filled by current directory path.
+Press <kbd>s</kbd> to summon "Find in Files…" panel — if you've marked some files they will fill
+*Where* field, otherwise it will be filled by current directory path.
 
 ### Rename Mode
-The rename command puts the view into **rename mode**. The view is made editable so files can be renamed directly in the view using all of your SublimeText tools: multiple cursors, search and replace, etc.
+The rename command puts the view into **rename mode**. The view is made editable so files can be
+renamed directly in the view using all of your SublimeText tools: multiple cursors, search and
+replace, etc.
 
-After you are done with editing press <kbd>enter</kbd> to commit your changes or <kbd>escape</kbd> to cancel them.
+After you are done with editing press <kbd>enter</kbd> to commit your changes or <kbd>escape</kbd>
+to cancel them.
 
 ### Open in new window
-Selecting a couple of files and/or directories (either by marking them or using the normal multiple cursor feature of SublimeText) and pressing <kbd>w</kbd> will open them in a new window.
+Selecting a couple of files and/or directories (either by marking them or using the normal multiple
+cursor feature of SublimeText) and pressing <kbd>w</kbd> will open them in a new window.
 
 ### Close FileBrowser when files have been opened
 Add the following code in your user key bindings file:
@@ -155,7 +171,8 @@ Add the following code in your user key bindings file:
 
 ### Jump List & Jump Points
 #### Adding Jump Points
-While in *Browse Mode*, you can press <kbd>P</kbd>(Shift + p) to add the current directory to your *Jump List*, we call it a *Jump Point*. It's like Bookmarks or Favorites in other file managers. 
+While in *Browse Mode*, you can press <kbd>P</kbd>(Shift + p) to add the current directory to your
+*Jump List*, we call it a *Jump Point*. It's like Bookmarks or Favorites in other file managers.
 
 #### Viewing Jump List
 There are several ways to view your Jump list:
@@ -165,10 +182,12 @@ While in *Browse Mode*, you can press <kbd>p</kbd> to view the *Jump List* in a 
 
 ![SublimeFileBrowser Jump List is quick panel](http://cl.ly/image/132X1K0C0P0h/Screen%20Shot%202015-01-25%20at%203.49.42%20pm.png)
 
-**NOTE**: This command does NOT create a new window or project. it lets you jump quickly to a particular location. 
+**NOTE**: This command does NOT create a new window or project. it lets you jump quickly to a
+          particular location.
 
 ##### Jump List in a Quick Panel from anywhere
-Bring up *Command Palette* and search for `Browse Mode: Jump List Quick Panel` (typing `bmq` should find it for you).
+Bring up *Command Palette* and search for `Browse Mode: Jump List Quick Panel` (typing `bmq` should
+find it for you).
 If you want to save some key stokes you can add the following code in your user key bindings file:
 
 ```json
@@ -181,11 +200,12 @@ If you want to save some key stokes you can add the following code in your user 
 
 You can change `f3` in the above code to your custom keyboard shortcut.
 
-**NOTE**: This command creates a new window and open that directory in Sublime. It also opens a Browse Mode view as sidebar.
+**NOTE**: This command creates a new window and open that directory in Sublime. It also opens a
+          Browse Mode view as sidebar.
 
 ##### Jump List View
-Bring up *Command Palette* and search for `Browse Mode: Jump List` (typing `bmj` should find it for you).
-This command will open a *Jump List View* that looks like this:
+Bring up *Command Palette* and search for `Browse Mode: Jump List` (typing `bmj` should find it for
+you). This command will open a *Jump List View* that looks like this:
 
 ![SublimeFileBrowser Jump List View](http://cl.ly/image/1e3W1c07311Y/Screen%20Shot%202015-01-25%20at%203.56.45%20pm.png)
 
@@ -196,26 +216,34 @@ If you want to save some key stokes you can add the following code in your user 
 ```
 
 You can change `f3` in the above code to your custom keyboard shortcut.
-Jump List View can be browsed using the <kbd>up</kbd>/<kbd>down</kbd> or <kbd>j</kbd>/<kbd>k</kbd>. Pressing <kbd>enter</kbd> on a jump point will open it in a new window with a Browse Mode view as sidebar.
+Jump List View can be browsed using the <kbd>up</kbd>/<kbd>down</kbd> or <kbd>j</kbd>/<kbd>k</kbd>.
+Pressing <kbd>enter</kbd> on a jump point will open it in a new window with a Browse Mode view as
+sidebar.
 
 ##### Jump List in a new empty window e.g. Hijacking (ST3 only)
-You can also configure FileBrower to automatically open *Jump List View*  in new empty windows. That is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText starts and there's no previous windows open. 
-To do this you need to add the code below to your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`)
+You can also configure FileBrower to automatically open *Jump List View*  in new empty windows.
+That is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText
+starts and there's no previous windows open.
+To do this you need to add the code below to your user settings file (`Preferences` →
+`Package Settings` → `FileBrowser` → `Settings — User`)
 
 ```json
 { "dired_hijack_new_window": "jump_list" }
 ```
 
 #### Edit/Delete Jump points
-When you are in *Jump List View* pressing <kbd>P</kbd> (Shift + p) allow you to rename or delete (by clearing the name) the jump point that is currently highlighted. 
+When you are in *Jump List View* pressing <kbd>P</kbd> (Shift + p) allow you to rename or delete
+(by clearing the name) the jump point that is currently highlighted.
 
-When a jump point is opened in *Browse Mode* pressing <kbd>P</kbd> will also do the same. 
+When a jump point is opened in *Browse Mode* pressing <kbd>P</kbd> will also do the same.
 
-**NOTE**: When a jump point is opened in *Browse Mode* the path in the header is prefixed with name of the jump point.
-
+**NOTE**: When a jump point is opened in *Browse Mode* the path in the header is prefixed with name
+of the jump point.
 
 ### Hidden files
-By default, FileBrowser shows all files in the browsed directory. Pressing <kbd>h</kbd> toggles the display of hidden files. For all platforms, any file that starts with a `.` is considered hidden; additionally, on Windows, files that have the hidden attribute set are also considered hidden.
+By default, FileBrowser shows all files in the browsed directory. Pressing <kbd>h</kbd> toggles the
+display of hidden files. For all platforms, any file that starts with a `.` is considered hidden;
+additionally, on Windows, files that have the hidden attribute set are also considered hidden.
 
 To set FileBrowser to hide hidden files by default, add the following to your settings:
 
@@ -223,22 +251,31 @@ To set FileBrowser to hide hidden files by default, add the following to your se
 { "dired_show_hidden_files": false }
 ```
 
-You can also customize the patterns used to determine if a file should be hidden with the `dired_hidden_files_patterns` setting, which should be either a single pattern string or a list of such patterns:
+You can also customize the patterns used to determine if a file should be hidden with the
+`dired_hidden_files_patterns` setting, which should be either a single pattern string or a list of
+such patterns:
 
 ``` json
 { "dired_hidden_files_patterns": [".*", "__pycache__", "*.pyc"] }
 ```
 
 ### Git integration
-In case `git status` returns a colorable output in current directory, the modified and untracked files will be designated by orange and green icons respectively.  
-You can use setting `"vcs_color_blind": true` — untracked files will get vertical line on left side of their icons, modified files will get horizontal line under their icons.  
-If Git is not presented in your `PATH` you may set `git_path` setting (see example in default settings file).
+In case `git status` returns a colorable output in current directory, the modified and untracked
+files will be designated by orange and green icons respectively.
+You can use setting `"vcs_color_blind": true` — untracked files will get vertical line on left side
+of their icons, modified files will get horizontal line under their icons.
+If Git is not presented in your `PATH` you may set `git_path` setting (see example in default
+settings file).
 
 
 ### Hijacking a new empty window (ST3 only)
-**FileBrowser** can hijack new empty windows and show you a *Browse Mode* or *Jump List View*. That is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText starts and there's no previous windows open. 
+**FileBrowser** can hijack new empty windows and show you a *Browse Mode* or *Jump List View*. That
+is when you run the `new_window` command (through menu or using shortcuts) or when SublimeText
+starts and there's no previous windows open.
 
-This feature is only available for ST3 and is disabled by default. You can activate it by setting `dired_hijack_new_window` to `"jump_list"` or `"dired"` in your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+This feature is only available for ST3 and is disabled by default. You can activate it by setting
+`dired_hijack_new_window` to `"jump_list"` or `"dired"` in your user settings file (`Preferences` →
+`Package Settings` → `FileBrowser` → `Settings — User`).
 
 To disable this feature set it back to `false` or remove if from your user settings file.
 
@@ -248,14 +285,19 @@ To disable this feature set it back to `false` or remove if from your user setti
 
 
 ### Using Mouse!
-We believe keeping your hands on keyboard and not moving them away to reach the mouse or track-pad will increase your productivity. Despite this, there might be situations where using a mouse to click on a file is easier or you might be in transition to becoming a keyboard ninja and still prefer the mouse by habit. 
-For these situations, you can just double click a file or directory to open them. 
+We believe keeping your hands on keyboard and not moving them away to reach the mouse or track-pad
+will increase your productivity. Despite this, there might be situations where using a mouse to
+click on a file is easier or you might be in transition to becoming a keyboard ninja and still
+prefer the mouse by habit.
+For these situations, you can just double click a file or directory to open them.
 Although we stand firm with our belief, we're *liberals*! :)
 
 ## Tweaking Look and Feel
 
 #### Customizing UI Elements
-If you don't like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace` to go to parent directory) you can do it in your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`) and paste the code below:
+If you don't like `⠤` symbol and want to hide it (then you should use keyboard binding `backspace`
+to go to parent directory) you can do it in your user settings file (`Preferences` →
+`Package Settings` → `FileBrowser` → `Settings — User`) and paste the code below:
 
 ``` json
 { "dired_show_parent": false }
@@ -274,36 +316,46 @@ If you want to see full path in tab title and thus in window title if tab is foc
 ```
 
 #### Changing color scheme
-If you don't like colors used in FileBrowser just copy [this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme) to your User directory, change colors and paste the code below in your user settings file:
+If you don't like colors used in FileBrowser just copy
+[this file](https://github.com/aziz/SublimeFileBrowser/blob/master/dired.hidden-tmTheme)
+to your User directory, change colors and paste the code below in your user settings file:
 
 ``` json
 { "color_scheme": "Path to your custom color scheme file. e.g. Packages/User/custom_dired.hidden-tmTheme" }
 ```
 
 #### Changing font
-Changing the font of sidebar in SublimeText is not that easy! not if you're using FileBrowser as your sidebar. Since it is just a normal Sublime view with a special syntax, you can change the font to whatever font that's available on your system. 
+Changing the font of sidebar in SublimeText is not that easy! not if you're using FileBrowser as
+your sidebar. Since it is just a normal Sublime view with a special syntax, you can change the font
+to whatever font that's available on your system.
 
-To do that, add the code below (don't forget to change the font name!) to user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+To do that, add the code below (don't forget to change the font name!) to user settings file
+(`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
 
 ``` json
 { "font_face": "comic sans" }
 ```
 
 #### Changing font size
-Normally you want the FileBrowser to use a smaller font compared to your normal views. It helps you 
-see more content and also prevents any font size changes when you make your normal view font bigger or smaller. 
+Normally you want the FileBrowser to use a smaller font compared to your normal views. It helps you
+see more content and also prevents any font size changes when you make your normal view font bigger
+or smaller.
 
-You can change the font size by adding the code below to user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+You can change the font size by adding the code below to user settings file (`Preferences` →
+`Package Settings` → `FileBrowser` → `Settings — User`).
 
 ``` json
 { "font_size": 13 }
 ```
 
 #### Changing nested directories indentation
-The amount of indentation for nested directories is controlled by `tab_size`. By default FileBrowser is using a tab_size of 3 but you can customize it in your user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+The amount of indentation for nested directories is controlled by `tab_size`. By default FileBrowser
+is using a tab_size of 3 but you can customize it in your user settings file (`Preferences` →
+`Package Settings` → `FileBrowser` → `Settings — User`).
 
 ## General tip for Windows users
-DirectWrite rendering gives better Unicode support and better font appearance overall, to enable it add following setting into `Preferences` → `Settings — User`:
+DirectWrite rendering gives better Unicode support and better font appearance overall, to enable it
+add following setting into `Preferences` → `Settings — User`:
 
 ``` json
 { "font_options": ["directwrite"] }
@@ -311,7 +363,8 @@ DirectWrite rendering gives better Unicode support and better font appearance ov
 
 ## Credit
 
-This is a fork of the awesome [dired plugin](https://github.com/mkleehammer/dired) by [Michael Kleehammer](https://github.com/mkleehammer)
+This is a fork of the awesome [dired plugin](https://github.com/mkleehammer/dired) by
+[Michael Kleehammer](https://github.com/mkleehammer)
 
 #### License
 See the LICENSE file
