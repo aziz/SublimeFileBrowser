@@ -722,6 +722,8 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
             relative_path = relative_path[0]
             if relative_path[~0] != os.sep:
                 relative_path = os.path.split(relative_path)[0] + os.sep
+            if relative_path == os.sep:
+                relative_path = ""
 
         # Is there a better way to do this?  Why isn't there some kind of context?  I assume
         # the command instance is global and really shouldn't have instance information.
