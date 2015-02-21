@@ -1,0 +1,10 @@
+0.6.0
+
+• FEATURE: Expanding and collapsing multiple directories at the same time
+• FEATURE: Remembering expanded directories when refreshing
+• FEATURE: Double click can open files and directories
+• IMPROVEMENT: Hides cursor in non-rename mode
+• IMPROVEMENT: Better syntax highlighting for shortcuts page
+• CHANGED: Some shortcuts are changed please refer to README or press ? on a
+           FileBrowser view.
+• Also fixed multiple bugs. please refer to the github repo for more details
