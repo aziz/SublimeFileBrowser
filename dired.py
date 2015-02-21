@@ -657,7 +657,11 @@ class DiredMarkExtensionCommand(TextCommand, DiredBaseCommand):
         filergn = self.fileregion()
         if filergn.empty():
             return
-        ext = self.view.substr(self.view.line(self.view.sel()[0].a)).split('.')[-1]
+        current_item = self.view.substr(self.view.line(self.view.sel()[0].a))
+        if current_item.endswith('/') or current_item == PARENT_SYM:
+            ext = ''
+        else:
+            ext = current_item.split('.')[-1]
         pv = self.view.window().show_input_panel('Extension:', ext, self.on_done, None, None)
         pv.run_command("select_all")
 
