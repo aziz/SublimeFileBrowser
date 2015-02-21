@@ -198,6 +198,31 @@
   //   ]
   // },
   {
+    "keys": ["ctrl+c"],
+    "command": "dired_copy_files",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["ctrl+x"],
+    "command": "dired_copy_files",
+    "args":{"cut": true},
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["ctrl+v"],
+    "command": "dired_paste_files",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
       "keys": ["*"],
       "command": "dired_mark_extension",
       "context": [

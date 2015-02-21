@@ -334,16 +334,6 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                 tree.append(indent + u'≡ ' + f)
         return tree
 
-    def set_status(self):
-        status = u" 𝌆 [?: Help] "
-        # if view isnot focused, view.window() may be None
-        window = self.view.window() or sublime.active_window()
-        path_in_project = any(folder == self.path[:-1] for folder in window.folders())
-        status += 'Project root, ' if path_in_project else ''
-        show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-        status += 'Hidden: On' if show_hidden else 'Hidden: Off'
-        self.view.set_status("__FileBrowser__", status)
-
     def set_title(self, path):
         header    = self.view.settings().get('dired_header', False)
         name      = jump_names().get(path or self.path)
@@ -973,6 +963,48 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
         self.view.run_command('dired_refresh')
 
 
+class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
+    def run(self, edit, cut=False):
+        if sublime.platform() != 'windows':
+            return sublime.status_message('Not implemented')
+        path      = self.path if self.path != 'ThisPC\\' else ''
+        filenames = self.get_marked() or self.get_selected(parent=False)
+        settings  = sublime.load_settings('dired.sublime-settings')
+        if cut:
+            existed = settings.get('dired_to_move', [])
+            existed.extend([join(path, f) for f in filenames] if filenames else [])
+            settings.set('dired_to_move', list(set(existed)))
+        else:
+            existed = settings.get('dired_to_copy', [])
+            existed.extend([join(path, f) for f in filenames] if filenames else [])
+            settings.set('dired_to_copy', list(set(existed)))
+        sublime.save_settings('dired.sublime-settings')
+        self.set_status()
+
+
+class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
+    def run(self, edit, cut=False):
+        s = self.view.settings()
+        sources_move = s.get('dired_to_move', [])
+        sources_copy = s.get('dired_to_copy', [])
+        if not (sources_move or sources_copy):
+            return sublime.status_message('Nothing to paste')
+
+        path = self.path if self.path != 'ThisPC\\' else ''
+        relative_path = self.get_selected(parent=False) or ''
+        if relative_path:
+            relative_path = relative_path[0]
+            if relative_path[~0] != os.sep:
+                relative_path = os.path.split(relative_path)[0] + os.sep
+            if relative_path == os.sep:
+                relative_path = ""
+        destination = join(path, relative_path) or path
+        if sublime.platform() == 'windows':
+            return call_SHFileOperationW(self.view, sources_move, sources_copy, destination)
+        else:
+            return sublime.status_message('Not implemented')
+
+
 # HELP ##############################################################
 
 class DiredHelpCommand(TextCommand):
@@ -1330,3 +1362,54 @@ class CallVCS(DiredBaseCommand):
         else:
             self.view.add_regions('M', modified, 'item.modified.dired', '', MARK_OPTIONS)
             self.view.add_regions('?', untracked, 'item.untracked.dired', '', MARK_OPTIONS)
+
+
+class call_SHFileOperationW(object):
+    def __init__(self, view, sources_move, sources_copy, destination):
+        self.view = view
+        if sources_move:
+            self.shfow_m_thread = threading.Thread(target=self.caller, args=(1, sources_move, destination))
+            self.shfow_m_thread.start()
+        if sources_copy:
+            # if user paste files in the same folder where they are then
+            # it shall duplicate these files w/o asking anything
+            dups = [p for p in sources_copy if os.path.split(p.rstrip(os.sep))[0] == destination.rstrip(os.sep)]
+            if dups:
+                self.shfow_d_thread = threading.Thread(target=self.caller, args=(2, dups, destination, True))
+                self.shfow_d_thread.start()
+                sources_copy = [p for p in sources_copy if p not in dups]
+                if sources_copy:
+                    self.shfow_c_thread = threading.Thread(target=self.caller, args=(2, sources_copy, destination))
+                    self.shfow_c_thread.start()
+            else:
+                self.shfow_c_thread = threading.Thread(target=self.caller, args=(2, sources_copy, destination))
+                self.shfow_c_thread.start()
+
+    def clear_settings(self):
+        sublime.load_settings('dired.sublime-settings').set('dired_to_move', [])
+        sublime.load_settings('dired.sublime-settings').set('dired_to_copy', [])
+        sublime.save_settings('dired.sublime-settings')
+        self.view.run_command('dired_refresh')
+
+    def caller(self, mode, sources, destination, duplicate=False):
+        '''mode is int either 1 (move) or 2 (copy)'''
+        import ctypes
+        if ST3:
+            from Default.send2trash.plat_win import SHFILEOPSTRUCTW
+        else:
+            from send2trash.plat_win import SHFILEOPSTRUCTW
+        fFlags = 8 if duplicate else 0
+        SHFileOperationW = ctypes.windll.shell32.SHFileOperationW
+        SHFileOperationW.argtypes = [ctypes.POINTER(SHFILEOPSTRUCTW)]
+        pFrom = u'\x00'.join(sources) + u'\x00'
+        pTo   = u'%s\x00' % destination
+        args  = SHFILEOPSTRUCTW(wFunc  = ctypes.wintypes.UINT(mode),
+                                pFrom  = ctypes.wintypes.LPCWSTR(pFrom),
+                                pTo    = ctypes.wintypes.LPCWSTR(pTo),
+                                fFlags = fFlags,
+                                fAnyOperationsAborted = ctypes.wintypes.BOOL())
+        out = SHFileOperationW(ctypes.byref(args))
+        if not out:  # 0 == success
+            sublime.set_timeout(self.clear_settings, 1)
+
+

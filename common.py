@@ -227,6 +227,22 @@ class DiredBaseCommand:
             new_text = u"⠤ [RENAME MODE]"
         self.view.insert(edit, start, new_text)
 
+    def set_status(self):
+        # if view isnot focused, view.window() may be None
+        window          = self.view.window() or sublime.active_window()
+        path_in_project = any(folder == self.path[:-1] for folder in window.folders())
+        settings        = self.view.settings()
+        show_hidden     = settings.get('dired_show_hidden_files', True)
+        copied_items    = settings.get('dired_to_copy', [])
+        cut_items       = settings.get('dired_to_move', [])
+        status = u" 𝌆 [?: Help] {0}Hidden: {1}{2}{3}".format(
+            'Project root, ' if path_in_project else '',
+            'On' if show_hidden else 'Off',
+            ', copied(%d)' % len(copied_items) if copied_items else '',
+            ', cut(%d)' % len(cut_items) if cut_items else ''
+        )
+        self.view.set_status("__FileBrowser__", status)
+
     def sort_nicely(self, names):
         """ Sort the given list in the way that humans expect.
         Source: http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
