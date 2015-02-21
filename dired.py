@@ -451,11 +451,16 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 self.view.window().run_command("dired_up")
                 return
 
+        w = self.view.window()
         if other_group or preview or and_close:
-            # we need group number of FB view, hence twice check for other_group
             dired_view = self.view
             nag = self.view.window().active_group()
-        w = self.view.window()
+            if not and_close:
+                target_group = self._other_group(w, nag)
+                # set_view_index and focus are not very reliable
+                # just focus target_group should do what we want
+                w.focus_group(target_group)
+
         for filename in filenames:
             fqn = join(path, filename)
             if exists(fqn): # ignore 'item <error>'
@@ -463,24 +468,21 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                     show(w, fqn, ignore_existing=new_view)
                 else:
                     if preview:
-                        w.focus_group(self._other_group(w, nag))
-                        v = w.open_file(fqn, sublime.TRANSIENT)
-                        w.set_view_index(v, self._other_group(w, nag), 0)
-                        w.focus_group(nag)
+                        w.open_file(fqn, sublime.TRANSIENT)
                         w.focus_view(dired_view)
-                        break # preview is possible for a single file only
+                        return  # preview is possible for a single file only
                     else:
                         v = w.open_file(fqn)
-                        if other_group:
-                            w.focus_view(dired_view)
-                            w.set_view_index(v, self._other_group(w, nag), self._index_for_new_view(w, nag))
-                            w.focus_view(v)
         if and_close:
             w.focus_view(dired_view)
             w.run_command("close")
             w.focus_view(v)
 
     def _other_group(self, w, nag):
+        '''
+        creates new group if need and return index of the group where files
+        shall be opened
+        '''
         groups = w.num_groups()
         if groups == 1:
             w.set_layout({"cols": [0.0, 0.3, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
@@ -491,10 +493,6 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         else:
             group = nag - 1
         return group
-
-    def _index_for_new_view(self, w, group):
-        _group, active_v_idx = w.get_view_index(w.active_view_in_group(self._other_group(w, group)))
-        return (active_v_idx + 1)
 
     def expand_single_folder(self, edit, path, filename, toggle):
         marked = set(self.get_marked())
@@ -1174,8 +1172,16 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
             return
         if any(v for v in w.views_in_group(0) if 'dired' in v.scope_name(0)):
             if w.active_group() == 0:
-                _group, active_view_index_in_other_group = w.get_view_index(w.active_view_in_group(1))
-                sublime.set_timeout(lambda: w.set_view_index(view, 1, active_view_index_in_other_group + 1), 1)
+                # at this point views are exist, so we cannot avoid the use of
+                # set_view_index, but ST2 return None if group has no views
+                # ST3 return None if group has active image’s view
+                avig1 = w.active_view_in_group(1)
+                if avig1:
+                    _group, active_view_index_in_other_group = w.get_view_index(avig1)
+                    index = active_view_index_in_other_group + 1
+                else:
+                    index = 0
+                sublime.set_timeout(lambda: w.set_view_index(view, 1, index), 1)
 
     def on_load(self, view):
         self.on_new(view)
