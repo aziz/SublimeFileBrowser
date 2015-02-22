@@ -252,7 +252,9 @@ class DiredBaseCommand:
                 f.append(name)
         return f
 
-    def is_hidden(self, filename, path, goto='', indent=''):
+    def is_hidden(self, filename, path, goto=''):
+        if not (path or goto):  # special case for ThisPC
+            return False
         tests = self.view.settings().get('dired_hidden_files_patterns', ['.*'])
         if isinstance(tests, str):
             tests = [tests]
@@ -262,12 +264,7 @@ class DiredBaseCommand:
             return False
         # check for attribute on windows:
         try:
-            if goto and indent:
-                line = self.view.line(self.sel.a)
-                parent = self._remove_ui(self.get_parent(line, goto))
-            else:
-                parent = ''
-            attrs = ctypes.windll.kernel32.GetFileAttributesW(join(path, parent, filename))
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(join(path, goto, filename))
             assert attrs != -1
             result = bool(attrs & 2)
         except (AttributeError, AssertionError):
@@ -277,7 +274,7 @@ class DiredBaseCommand:
     def prepare_filelist(self, names, path, goto, indent):
         show_hidden = self.view.settings().get('dired_show_hidden_files', True)
         if not show_hidden:
-            names = [name for name in names if not self.is_hidden(name, path, goto, indent)]
+            names = [name for name in names if not self.is_hidden(name, path, goto)]
         self.sort_nicely(names)
         f = self.ls(path, names, goto=goto if indent else '', indent=indent)
         return f

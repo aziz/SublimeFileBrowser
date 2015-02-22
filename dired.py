@@ -244,7 +244,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     def continue_refreshing(self, edit, path, names, goto=None, indent=''):
         self.set_status()
 
-        f = self.prepare_filelist(names, path, goto, indent)
+        f = self.prepare_filelist(names, path, '', '')
 
         marked = set(self.get_marked())
 
@@ -518,7 +518,8 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
                 replacement = '%s\t<%s>' % (self.view.substr(line), error)
             else:
-                replacement = self.prepare_treeview(names, self.path, fqn, '\t')
+                path = self.path if self.path != 'ThisPC\\' else ''
+                replacement = self.prepare_treeview(names, path, fqn, '\t')
         else:
             replacement = '%s\t<%s>' % (self.view.substr(line), 'Not exists, press r to refresh')
         self.view.set_read_only(False)
