@@ -619,20 +619,21 @@ class DiredFold(TextCommand, DiredBaseCommand):
 
 class DiredUpCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
-        parent = dirname(self.path.rstrip(os.sep))
+        path = self.path
+        parent = dirname(path.rstrip(os.sep))
         if parent != os.sep and parent[1:] != ':\\':
             # need to avoid c:\\\\
             parent += os.sep
-        if parent == self.path and sublime.platform()=='windows':
+        if parent == path and sublime.platform()=='windows':
             parent = 'ThisPC'
-        elif parent == self.path:
+        elif parent == path:
             return
-        elif self.path == 'ThisPC\\':
+        elif path == 'ThisPC\\':
             self.view.run_command('dired_refresh')
             return
 
         view_id = (self.view.id() if reuse_view() else None)
-        show(self.view.window(), parent, view_id, goto=basename(self.path.rstrip(os.sep)))
+        show(self.view.window(), parent, view_id, goto=basename(path.rstrip(os.sep)))
 
 
 class DiredGotoCommand(TextCommand, DiredBaseCommand):
@@ -648,8 +649,14 @@ class DiredGotoCommand(TextCommand, DiredBaseCommand):
 
 class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
-        where = ', '.join(join(self.path, p) for p in self.get_marked()) or self.path or ''
-        args = {"panel": "find_in_files", "where": where, "replace": "", "reverse": "false"}
+        path = self.path
+        if path == 'ThisPC\\':
+            path  = ''
+            items = self.get_marked() or self.get_selected()
+        else:
+            items = self.get_marked()
+        where = ', '.join(join(path, p) for p in items) or path or ''
+        args  = {"panel": "find_in_files", "where": where, "replace": "", "reverse": "false"}
         sublime.active_window().run_command("show_panel", args)
 
 
@@ -949,6 +956,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
 
         self.view.erase_regions('rename')
         self.view.settings().erase('rename')
+        self.view.settings().set('color_scheme', 'Packages/FileBrowser/dired.hidden-tmTheme')
         self.view.settings().set('dired_rename_mode', False)
         self.view.run_command('dired_refresh')
 
@@ -993,8 +1001,8 @@ class DiredToggleHiddenFilesCommand(TextCommand):
 class DiredToggleProjectFolder(TextCommand, DiredBaseCommand):
     def run(self, edit):
         if not ST3:
-            return
-        path = self.path[:-1]
+            return sublime.status_message('This feature is available only in Sublime Text 3')
+        path = self.path.rstrip(os.sep)
         data = self.view.window().project_data()
         data['folders'] = data.get('folders') or {}
         folders = [f for f in data['folders'] if f['path'] != path]
@@ -1008,11 +1016,12 @@ class DiredToggleProjectFolder(TextCommand, DiredBaseCommand):
 class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
     def run(self, edit):
         if not ST3:
-            return
-        msg = u"Set '{0}' as only one project folder (will remove all other folders from project)?".format(self.path)
+            return sublime.status_message('This feature is available only in Sublime Text 3')
+        path = self.path.rstrip(os.sep)
+        msg = u"Set '{0}' as only one project folder (will remove all other folders from project)?".format(path)
         if sublime.ok_cancel_dialog(msg):
             data = self.view.window().project_data()
-            data['folders'] = [{ 'path': self.path[:-1] }]
+            data['folders'] = [{ 'path': path }]
             self.view.window().set_project_data(data)
             self.view.window().run_command('dired_refresh')
 
@@ -1022,20 +1031,24 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
     quick look current file in mac or open in default app on other OSs
     """
     def run(self, edit):
-        files = self.get_marked() or self.get_selected()
-        if u"⠤" in files:
-            files.remove(u"⠤")
-        if sublime.platform() == 'osx':
+        files = self.get_marked() or self.get_selected(parent=False)
+        if not files:
+            return sublime.status_message('Nothing chosen')
+        p = sublime.platform()
+        if p == 'osx':
             cmd = ["qlmanage", "-p"]
             for filename in files:
                 fqn = join(self.path, filename)
                 cmd.append(fqn)
             subprocess.call(cmd)
         else:
-            import webbrowser
+            if p == 'windows':
+                launch = lambda f: os.startfile(f)
+            else:
+                launch = lambda f: subprocess.call(['xdg-open', f])
             for filename in files:
                 fqn = join(self.path, filename)
-                webbrowser.open_new_tab(fqn)
+                launch(fqn)
 
 
 class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
@@ -1081,7 +1094,10 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                 fqn = join(self.path, filename)
                 items.append(fqn)
 
-            subprocess.Popen(items, cwd=self.path)
+            if sublime.platform() == 'windows':
+                subprocess.Popen(items)
+            else:
+                subprocess.Popen(items, cwd=self.path)
 
         else: # ST2
             items.append("-n")
@@ -1104,12 +1120,12 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                 shell = True if sys.getwindowsversion()[2] < 9200 else False
                 items = [i.encode(locale.getpreferredencoding(False)) if sys.getwindowsversion()[2] == 9200 else i for i in items]
                 try:
-                    subprocess.Popen(['subl'] + items, cwd=self.path, shell=shell)
+                    subprocess.Popen(['subl'] + items, shell=shell)
                 except:
                     try:
-                        subprocess.Popen(['sublime'] + items, cwd=self.path, shell=shell)
+                        subprocess.Popen(['sublime'] + items, shell=shell)
                     except:
-                        subprocess.Popen(['sublime_text.exe'] + items, cwd=self.path, shell=shell)
+                        subprocess.Popen(['sublime_text.exe'] + items, shell=shell)
             else:
                 try:
                     subprocess.Popen(['subl'] + items, cwd=self.path)
@@ -1188,7 +1204,7 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
         self.on_new(view)
 
 
-# MOUSE INTERATIONS ################################################
+# MOUSE INTERATIONS #################################################
 
 if ST3:
     class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
@@ -1216,7 +1232,7 @@ else:
                     self.view.run_command(system_command, system_args)
 
 
-# TOOLS ############################
+# TOOLS #############################################################
 
 class CallVCS(DiredBaseCommand):
     '''
