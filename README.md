@@ -151,6 +151,23 @@ replace, etc.
 After you are done with editing press <kbd>enter</kbd> to commit your changes or <kbd>escape</kbd>
 to cancel them.
 
+### Cut, copy and paste files
+You can move and copy files/folders. Shortcuts are quite standard: <kbd>x</kbd>, <kbd>c</kbd>, 
+<kbd>v</kbd> with <kbd>⌘</kbd> or <kbd>ctrl</kbd>.
+
+You can copy and/or cut as many items and from many locations as you like — status-bar will show 
+amounts of copied and cut items.  
+If you change your mind — <kbd>⌘+z</kbd> or <kbd>ctrl+z</kbd> will clear both lists. _Note_, those
+lists are stored in FileBrowser settings file, so you can edit it by hand if need.  
+As soon as you paste, each item will be either copied or moved into folder under cursor.
+
+On Windows all operations will be done via system API with all its features (renaming semantics, 
+interactive overwrite, progress-bar, pause/cancel, and so on).
+
+On other OSes all operations will be done via Python API, which is not that cool, but you will see 
+a vague progress in status-bar and can choose what to do in case of conflicts (overwrite, duplicate, 
+skip), however, there are some restrictions, e.g. folders cannot be overwritten or merged.
+
 ### Open in new window
 Selecting a couple of files and/or directories (either by marking them or using the normal multiple
 cursor feature of SublimeText) and pressing <kbd>w</kbd> will open them in a new window.

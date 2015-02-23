@@ -965,25 +965,30 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
 
 class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, cut=False):
-        if sublime.platform() != 'windows':
-            return sublime.status_message('Not implemented')
         path      = self.path if self.path != 'ThisPC\\' else ''
         filenames = self.get_marked() or self.get_selected(parent=False)
+        if not filenames:
+            return sublime.status_message('Nothing chosen')
         settings  = sublime.load_settings('dired.sublime-settings')
-        if cut:
-            existed = settings.get('dired_to_move', [])
-            existed.extend([join(path, f) for f in filenames] if filenames else [])
-            settings.set('dired_to_move', list(set(existed)))
-        else:
-            existed = settings.get('dired_to_copy', [])
-            existed.extend([join(path, f) for f in filenames] if filenames else [])
-            settings.set('dired_to_copy', list(set(existed)))
+        copy_list = settings.get('dired_to_copy', [])
+        cut_list  = settings.get('dired_to_move', [])
+        # copied item shall not be added into cut list, and vice versa
+        for f in filenames:
+            full_fn = join(path, f)
+            if cut:
+                if not full_fn in copy_list:
+                    cut_list.append(full_fn)
+            else:
+                if not full_fn in cut_list:
+                    copy_list.append(full_fn)
+        settings.set('dired_to_move', list(set(cut_list)))
+        settings.set('dired_to_copy', list(set(copy_list)))
         sublime.save_settings('dired.sublime-settings')
         self.set_status()
 
 
 class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit, cut=False):
+    def run(self, edit):
         s = self.view.settings()
         sources_move = s.get('dired_to_move', [])
         sources_copy = s.get('dired_to_copy', [])
@@ -1002,7 +1007,15 @@ class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
         if sublime.platform() == 'windows':
             return call_SHFileOperationW(self.view, sources_move, sources_copy, destination)
         else:
-            return sublime.status_message('Not implemented')
+            return call_SystemAgnosticFileOperation(self.view, sources_move, sources_copy, destination)
+
+
+class DiredClearCopyCutList(TextCommand):
+    def run(self, edit):
+        sublime.load_settings('dired.sublime-settings').set('dired_to_move', [])
+        sublime.load_settings('dired.sublime-settings').set('dired_to_copy', [])
+        sublime.save_settings('dired.sublime-settings')
+        self.view.run_command('dired_refresh')
 
 
 # HELP ##############################################################
@@ -1365,6 +1378,7 @@ class CallVCS(DiredBaseCommand):
 
 
 class call_SHFileOperationW(object):
+    '''call Windows API for file operations'''
     def __init__(self, view, sources_move, sources_copy, destination):
         self.view = view
         if sources_move:
@@ -1385,19 +1399,12 @@ class call_SHFileOperationW(object):
                 self.shfow_c_thread = threading.Thread(target=self.caller, args=(2, sources_copy, destination))
                 self.shfow_c_thread.start()
 
-    def clear_settings(self):
-        sublime.load_settings('dired.sublime-settings').set('dired_to_move', [])
-        sublime.load_settings('dired.sublime-settings').set('dired_to_copy', [])
-        sublime.save_settings('dired.sublime-settings')
-        self.view.run_command('dired_refresh')
-
     def caller(self, mode, sources, destination, duplicate=False):
         '''mode is int either 1 (move) or 2 (copy)'''
         import ctypes
-        if ST3:
-            from Default.send2trash.plat_win import SHFILEOPSTRUCTW
-        else:
-            from send2trash.plat_win import SHFILEOPSTRUCTW
+        if ST3: from Default.send2trash.plat_win import SHFILEOPSTRUCTW
+        else:   from send2trash.plat_win import SHFILEOPSTRUCTW
+
         fFlags = 8 if duplicate else 0
         SHFileOperationW = ctypes.windll.shell32.SHFileOperationW
         SHFileOperationW.argtypes = [ctypes.POINTER(SHFILEOPSTRUCTW)]
@@ -1410,6 +1417,142 @@ class call_SHFileOperationW(object):
                                 fAnyOperationsAborted = ctypes.wintypes.BOOL())
         out = SHFileOperationW(ctypes.byref(args))
         if not out:  # 0 == success
-            sublime.set_timeout(self.clear_settings, 1)
+            sublime.set_timeout(lambda: self.view.run_command('dired_clear_copy_cut_list'), 1)
+        else:  # probably user cancel op., or sth went wrong; keep settings
+            sublime.set_timeout(lambda: self.view.run_command('dired_refresh'), 1)
 
 
+class call_SystemAgnosticFileOperation(object):
+    '''file operations using Python standard library'''
+    def __init__(self, view, sources_move, sources_copy, destination):
+        self.view    = view
+        self.window  = view.window()
+        self.threads = []
+        self.errors  = {}
+
+        if sources_move:
+            self.caller('move', sources_move, destination)
+        if sources_copy:
+            # if user paste files in the same folder where they are then
+            # it shall duplicate these files w/o asking anything
+            dups = [p for p in sources_copy if os.path.split(p.rstrip(os.sep))[0] == destination.rstrip(os.sep)]
+            if dups:
+                self.caller('copy', dups, destination, duplicate=True)
+                sources_copy = [p for p in sources_copy if p not in dups]
+                if sources_copy:
+                    self.caller('copy', sources_copy, destination)
+            else:
+                self.caller('copy', sources_copy, destination)
+
+        msg = u'FileBrowser:\n\nSome files exist already, Cancel to skip all, OK to overwrite or rename.\n\n\t%s' % '\n\t'.join(self.errors.keys())
+        if self.errors and sublime.ok_cancel_dialog(msg):
+            t, f = self.errors.popitem()
+            self.actions = [['Overwrite', 'Folder cannot be overwritten'],
+                            ['Duplicate', 'Item will be renamed automatically']]
+            self.show_quick_panel(self.actions + [[u'from %s' % f, 'Skip'], [u'to   %s' % t, 'Skip']],
+                                  lambda i: self.user_input(i, f, t))
+        self.start_threads()
+
+    def start_threads(self):
+        if self.threads:
+            for t in self.threads:
+                t.start()
+            self.progress_bar(self.threads)
+
+    def show_quick_panel(self, options, done):
+        sublime.set_timeout(lambda: self.window.show_quick_panel(options, done, sublime.MONOSPACE_FONT), 10)
+        return
+
+    def user_input(self, i, name, new_name):
+        if i == 0:
+            self._setup_dir_or_file('copy', name, new_name, overwrite=True)
+        if i == 1:
+            self._setup_dir_or_file('copy', name, new_name, duplicate=True)
+        if self.errors:
+            t, f = self.errors.popitem()
+            self.show_quick_panel(self.actions + [[u'from %s' % f, 'Skip'], [u'to   %s' % t, 'Skip']],
+                                  lambda i: self.user_input(i, f, t))
+        else:
+            self.start_threads()
+
+    def caller(self, mode, sources, destination, duplicate=False, overwrite=False):
+        for fqn in sources:
+            new_name = join(destination, basename(fqn.rstrip(os.sep)))
+            self._setup_dir_or_file(mode, fqn, new_name, duplicate, overwrite)
+
+    def _setup_dir_or_file(self, mode, fqn, new_name, duplicate=False, overwrite=False):
+        if duplicate:
+            for i in itertools.count(2):
+                path, name = os.path.split(new_name)
+                split_name = name.split('.')
+                parts = len(split_name)
+                if parts == 1 or isdir(fqn):
+                    cfp = u"{1} — {0}".format(i, new_name)
+                else:
+                    # leading space may cause problems, e.g.
+                    # good: 'name — 2.ext'
+                    # good: '— 2.ext'
+                    # bad:  ' — 2.ext'
+                    fn  = '.'.join(split_name[:~0])
+                    new = (u'%s ' % fn) if fn else ''
+                    cfp = u"{1}— {0}.{2}".format(i, join(path, new), split_name[~0])
+                if not os.path.exists(cfp):
+                    new_name = cfp
+                    break
+        if mode == 'move':
+            if fqn != dirname(new_name):
+                if not exists(new_name):
+                    self._init_thread('move', fqn, new_name)
+                else:
+                    self.errors.update({str(new_name): fqn})
+        if mode == 'copy':
+            if isdir(fqn):
+                if not isdir(new_name) or overwrite:
+                    self._init_thread('dir', fqn, new_name)
+                else:
+                    self.errors.update({str(new_name): fqn})
+            else:
+                if not isfile(new_name) or overwrite:
+                    self._init_thread('file', fqn, new_name)
+                else:
+                    self.errors.update({str(new_name): fqn})
+
+    def _init_thread(self, mode, source_name, new_name):
+        t = threading.Thread(target=self._do, args=(mode, source_name, new_name))
+        t.setName(new_name if ST3 else new_name.encode('utf8'))
+        self.threads.append(t)
+
+    def _do(self, mode, source_name, new_name):
+        try:
+            if mode == 'move': shutil.move(source_name, new_name)
+            if mode == 'dir' : shutil.copytree(source_name, new_name)
+            if mode == 'file': shutil.copy2(source_name, new_name)
+        except shutil.Error as e:
+            m = e.args[0]
+            if isinstance(m, list):
+                sublime.error_message(u'FileBrowser:\n\n%s' % u'\n'.join([i[~0] for i in m]))
+            else:
+                sublime.error_message(u'FileBrowser:\n\n%s' % e)
+        except Exception as e: # just in case
+            sublime.error_message(u'FileBrowser:\n\n%s' % str([e]))
+
+
+    def progress_bar(self, threads, i=0, dir=1):
+        next_threads = []
+        for thread in threads:
+            if thread.is_alive():
+                next_threads.append(thread)
+        threads = next_threads
+        if threads:
+            # This animates a little activity indicator in the status area
+            before = i % 8
+            after = (7) - before
+            if not after:  dir = -1
+            if not before: dir = 1
+            i += dir
+            self.view.set_status('__FileBrowser__', u'Please wait%s…%sWriting %s' %
+                                 (' ' * before, ' ' * after, u', '.join([t.name if ST3 else t.name.decode('utf8') for t in threads])))
+            sublime.set_timeout(lambda: self.progress_bar(threads, i, dir), 100)
+            return
+        else:
+            self.view.run_command('dired_clear_copy_cut_list')

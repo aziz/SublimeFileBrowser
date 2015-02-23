@@ -206,7 +206,24 @@
     ]
   },
   {
+    "keys": ["super+c"],
+    "command": "dired_copy_files",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
     "keys": ["ctrl+x"],
+    "command": "dired_copy_files",
+    "args":{"cut": true},
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["super+x"],
     "command": "dired_copy_files",
     "args":{"cut": true},
     "context": [
@@ -217,6 +234,30 @@
   {
     "keys": ["ctrl+v"],
     "command": "dired_paste_files",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["super+v"],
+    "command": "dired_paste_files",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["ctrl+z"],
+    "command": "dired_clear_copy_cut_list",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["super+z"],
+    "command": "dired_clear_copy_cut_list",
     "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
