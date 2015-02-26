@@ -219,7 +219,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.restore_marks(marked)
             self.restore_sels(sels)
 
-            CallVCS(edit, self.view, path)
+            CallVCS(self.view, path)
         else:
             return self.populate_view(edit, path, names, goto=None)
 
@@ -239,7 +239,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.set_read_only(True)
         else:
             self.continue_refreshing(edit, path, names, goto)
-            CallVCS(edit, self.view, path)
+            CallVCS(self.view, path)
 
     def continue_refreshing(self, edit, path, names, goto=None, indent=''):
         self.set_status()
@@ -527,7 +527,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         self.view.set_read_only(True)
         self.restore_marks(marked)
         self.restore_sels(sels)
-        CallVCS(edit, self.view, path)
+        CallVCS(self.view, path)
 
 
 class DiredFold(TextCommand, DiredBaseCommand):
@@ -1239,26 +1239,39 @@ class CallVCS(DiredBaseCommand):
     this should be placed in common.py probably, but for some reason
     it doesnt work this way, so place it in main file for now
     '''
-    def __init__(self, edit, view, path):
+    def __init__(self, view, path):
         self.view = view
-        self.call_git(edit, path)
+        self.vcs_state = dict(path=path)
+        self.view.erase_regions('M')
+        self.view.erase_regions('?')
+        self.call_git(path)
+        self.watch_threads()
 
-    def call_git(self, edit, path):
+    def watch_threads(self):
+        if not 'git' in self.vcs_state:
+            sublime.set_timeout(self.watch_threads, 100)
+            return
+        if 'changed_items' in self.vcs_state:
+            self.vcs_colorized(self.vcs_state['changed_items'])
+
+    def call_git(self, path):
         git = self.view.settings().get('git_path', '')
         if git:  # empty string disable git integration
-            self.vcs_thread = threading.Thread(target=self.vcs_check, args=(edit, path, git))
+            self.vcs_thread = threading.Thread(target=self.vcs_check, args=(path, git))
             self.vcs_thread.start()
+        else:
+            self.vcs_state.update(git=False)
 
-    def vcs_check(self, edit, path, git='git'):
+    def vcs_check(self, path, git='git'):
         if any(c for c in '~*?[]' if c in git):
             match = glob.glob(os.path.expanduser(git))
             if match:
                 git = match[0]
             else:
-                sublime.error_message('FileBrowser:\n'
-                    'It seems like you use wildcards in "git_path": "%s".\n'
-                    'But the pattern cannot be found, please, fix it '
-                    'or use absolute path without wildcards.' % git)
+                sublime.error_message(u'FileBrowser:\n'
+                    u'It seems like you use wildcards in\n\n"git_path": "%s".\n\n'
+                    u'But the pattern cannot be found, please, fix it '
+                    u'or use absolute path without wildcards.' % git)
 
         shell = True if sublime.platform()=='windows' else False
         try:
@@ -1267,32 +1280,35 @@ class CallVCS(DiredBaseCommand):
             p = subprocess.Popen([git, 'rev-parse', '--show-toplevel'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
             root = p.communicate()[0].decode('utf-8').strip('\n')
         except:
-            pass # cant catch it, perhaps Im missing something obvious :/
+            # on Windows exception is not being raised if cwd is not None and shell=True
+            self.vcs_state.update(git=False)
         else:
             if git_output:
                 git_output = str(git_output, 'utf-8').split('\x00') if ST3 else git_output.split('\00')
-                changed_items = dict((i[3:], i[1]) for i in git_output if i != '')
-                sublime.set_timeout(lambda e=edit, p=path, r=root, c=changed_items: self.vcs_colorized(e, p, r, c), 1)
+                changed_items = dict((join(root, i[3:] if ST3 else unicode(i[3:], 'utf-8')), i[1]) for i in git_output if i != '')
+                self.vcs_state.update(git=True, changed_items=changed_items)
+            else:
+                self.vcs_state.update(git=False)
 
-    def vcs_colorized(self, edit, path, root, changed_items):
-        rgns, modified, untracked = [], [], []
-        path = normpath(path)
+    def vcs_colorized(self, changed_items):
+        modified, untracked = [], []
+        path = normpath(self.vcs_state['path'])
         files_regions = dict((normpath(join(path, f)), r) for f, r in zip(self.get_all(), self.view.split_by_newlines(self.fileregion())))
         colorblind = self.view.settings().get('vcs_color_blind', False)
+        offset = 1 if not colorblind else 0
         for fn in changed_items.keys():
-            full_fn = normpath(join(root, fn if ST3 else unicode(fn, 'utf-8')))
+            full_fn = normpath(fn)
             r = files_regions.get(full_fn, 0)
             if r:
                 content = self.view.substr(r)
                 indent  = len(re.match(r'^(\s*)', content).group(1))
-                icon = r.a + indent
-                r = Region(icon, icon + (1 if not colorblind else 0))
-                rgns.append((r, changed_items[fn]))
-        for r, status in rgns:
-            if status == 'M':
-                modified.append(r)
-            elif status == '?':
-                untracked.append(r)
+                icon    = r.a + indent
+                r       = Region(icon, icon + offset)
+                status  = changed_items[fn]
+                if status == 'M':
+                    modified.append(r)
+                elif status == '?':
+                    untracked.append(r)
         if colorblind:
             self.view.add_regions('M', modified, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE)
             self.view.add_regions('?', untracked, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY)
