@@ -1285,7 +1285,9 @@ class CallVCS(DiredBaseCommand):
         else:
             if git_output:
                 git_output = str(git_output, 'utf-8').split('\x00') if ST3 else git_output.split('\00')
-                changed_items = dict((join(root, i[3:] if ST3 else unicode(i[3:], 'utf-8')), i[1]) for i in git_output if i != '')
+                new_values = dict((join(root, i[3:] if ST3 else unicode(i[3:], 'utf-8')), i[1]) for i in git_output if i != '')
+                changed_items = self.vcs_state.get('changed_items', {})
+                changed_items.update(new_values)
                 self.vcs_state.update(git=True, changed_items=changed_items)
             else:
                 self.vcs_state.update(git=False)
