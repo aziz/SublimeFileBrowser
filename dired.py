@@ -731,7 +731,7 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
 class DiredCreateCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, which=None):
         assert which in ('file', 'directory'), "which: " + which
-        relative_path = self.get_selected(parent=False)
+        relative_path = self.get_selected(parent=False) or ""
         if relative_path:
             relative_path = relative_path[0]
             if relative_path[~0] != os.sep:
