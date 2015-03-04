@@ -98,8 +98,8 @@ class DiredBaseCommand:
 
     def fileregion(self, with_parent_link=False):
         """
-        Returns a region containing the lines containing filenames.  If there are no filenames
-        Region(0,0) is returned.
+        Returns a region containing the lines containing filenames.
+        If there are no filenames None is returned.
         """
         if with_parent_link:
             all_items = sorted(self.view.find_by_selector('dired.item'))
@@ -137,6 +137,8 @@ class DiredBaseCommand:
         """
         names = set()
         fileregion = self.fileregion(with_parent_link=parent)
+        if not fileregion:
+            return None
         for sel in self.view.sel():
             lines = self.view.lines(sel)
             for line in lines:
