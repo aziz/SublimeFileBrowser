@@ -104,8 +104,13 @@ class DiredCommand(WindowCommand):
             if len(folders) == 1:
                 path = folders[0]
             elif folders:
-                folders = [ [basename(f), f] for f in folders]
-                self.window.show_quick_panel(folders, lambda i: self._show_folder(i, path, goto, single_pane, other_group))
+                names = [basename(f) for f in folders]
+                longest_name = max([len(n) for n in names])
+                for i, f in enumerate(folders):
+                    name     = names[i]
+                    offset   = ' ' * (longest_name - len(name) + 1)
+                    names[i] = u'%s%s%s' % (name, offset, self.display_path(f))
+                self.window.show_quick_panel(names, lambda i: self._show_folder(i, path, goto, single_pane, other_group), sublime.MONOSPACE_FONT)
                 return
         if immediate:
             show(self.window, path, goto=goto, single_pane=single_pane, other_group=other_group)
@@ -145,6 +150,13 @@ class DiredCommand(WindowCommand):
 
         # Use the user's home directory.
         return (os.path.expanduser('~'), None)
+
+    def display_path(self, folder):
+        display = folder
+        home = os.path.expanduser("~")
+        if folder.startswith(home):
+            display = folder.replace(home, "~", 1)
+        return display
 
 
 class DiredRefreshCommand(TextCommand, DiredBaseCommand):
@@ -1057,21 +1069,22 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
     """
     def run(self, edit):
         path = self.path
-        if sublime.platform() == 'windows':
-            line = self.view.line(self.view.sel()[0].a)
-            fname = self._remove_ui(self.get_parent(line, self.view.substr(line).strip()))
-            if path != 'ThisPC\\':
-                fname = join(path, fname)
+        files = self.get_selected(parent=False)
+        fname = join(path, files[0] if files else '')
+        p, f  = os.path.split(fname.rstrip(os.sep))
+
+        if not exists(fname):
+            return sublime.status_message(u'Directory doesn’t exist “%s”' % path)
+
+        if sublime.platform() == 'windows' and path == 'ThisPC\\':
             if not ST3:
                 fname = fname.encode(locale.getpreferredencoding(False))
-            if exists(fname):
-                return subprocess.Popen('explorer /select,"%s"'%fname)
-            if path == 'ThisPC\\':
-                return subprocess.Popen('explorer /select,"C:"')
+            return subprocess.Popen('explorer /select,"%s"' % fname)
 
-        if not exists(path):
-            return sublime.status_message(u'Directory doesn’t exist “%s”' % path)
-        self.view.window().run_command("open_dir", {"dir": path})
+        if files:
+            self.view.window().run_command("open_dir", {"dir": p, "file": f})
+        else:
+            self.view.window().run_command("open_dir", {"dir": path})
 
 
 class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
