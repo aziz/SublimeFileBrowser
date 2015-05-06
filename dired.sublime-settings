@@ -37,6 +37,11 @@
   // false: a new view is created.
   "dired_reuse_view": true,
 
+  // Automatically disable Vintageous to avoid keybindings incompatibilities;
+  // note it is Vintageous setting, if it does not work you should report into
+  // appropriate repository https://github.com/guillermooo/Vintageous/issues
+  "__vi_external_disable": true,
+
   // The rest of these settings are normal sublime settings to
   // make FileBrowser views look more like a file browser than an editor
   // This plugin does not change font and font size, but it's
