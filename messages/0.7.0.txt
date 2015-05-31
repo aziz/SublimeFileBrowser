@@ -1,0 +1,24 @@
+0.7.0
+
+• Cut, copy and paste files&folders
+
+  Shortcuts are standard: x, c, v with ⌘ or ctrl.
+
+  You can copy and/or cut as many items and from many locations as you like —
+  status-bar will show amounts of copied and cut items.
+
+  Paths will be stored in settings file, so you can edit it by hand if need.
+  Or to clear both lists press ⌘+z or ctrl+z.
+
+  As soon as you paste, each item will be either copied or moved into folder
+  under cursor, so it is possible to copy a folder into itself, be careful.
+  Pasting copied items into same location where they were will _silently_
+  duplicate them.
+
+  On Windows all operations will be done via system API with all its features:
+  renaming semantics, interactive overwrite, progress-bar, pause/cancel, etc.
+
+  On other OSes all operations will be done via Python API:
+  you will see a vague progress in status-bar and can choose what to do
+  in case of conflicts (overwrite, duplicate, skip), however, there are some
+  restrictions, e.g. folders cannot be overwritten or merged.
