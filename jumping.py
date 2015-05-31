@@ -12,10 +12,12 @@ if ST3:
     from .common import DiredBaseCommand
     from . import prompt
     from .show import show
+    from .show import set_proper_scheme
 else:
     from common import DiredBaseCommand
     import prompt
     from show import show
+    from show import set_proper_scheme
 
 
 def load_jump_points():
@@ -183,7 +185,7 @@ class DiredJumpListCommand(TextCommand):
         view.set_name("FileBrowser: Jump List")
         view.set_scratch(True)
         view.set_syntax_file('Packages/FileBrowser/dired_jumplist.hidden-tmLanguage')
-        view.settings().set('color_scheme','Packages/FileBrowser/dired.hidden-tmTheme')
+        set_proper_scheme(view)
         view.settings().set('line_numbers', False)
         view.settings().set('draw_centered', True)
         view.run_command('dired_jump_list_render')
