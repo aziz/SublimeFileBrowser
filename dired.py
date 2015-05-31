@@ -1029,6 +1029,7 @@ class DiredHelpCommand(TextCommand):
         set_proper_scheme(view)
         view.settings().set('syntax','Packages/FileBrowser/dired-help.hidden-tmLanguage')
         view.settings().set('line_numbers',False)
+        view.settings().set('rulers',[])
         view.run_command('dired_show_help')
         sublime.active_window().focus_view(view)
 
