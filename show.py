@@ -16,10 +16,15 @@ else:
 def set_proper_scheme(view):
     # Since we cannot create file with syntax, there is moment when view has no settings,
     # but it is activated, so some plugins (e.g. Color Highlighter) set wrong color scheme
+
+    dired_settings = None
+
     if view.settings().get('dired_rename_mode'):
-        view.settings().set('color_scheme', 'Packages/FileBrowser/dired-rename-mode.hidden-tmTheme')
+        dired_settings = sublime.load_settings('dired-rename-mode.sublime-settings')
     else:
-        view.settings().set('color_scheme', sublime.load_settings('dired.sublime-settings').get('color_scheme'))
+        dired_settings = sublime.load_settings('dired.sublime-settings')
+
+    view.settings().set('color_scheme', dired_settings.get('color_scheme'))
 
 
 def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, other_group=''):
