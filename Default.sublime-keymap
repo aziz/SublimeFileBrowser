@@ -172,14 +172,6 @@
       ]
   },
   {
-      "keys": ["M"],
-      "command": "dired_move",
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-      ]
-  },
-  {
     "keys": ["ctrl+c"],
     "command": "dired_copy_files",
     "context": [

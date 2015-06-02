@@ -360,36 +360,8 @@ class DiredNextLineCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredMoveCommand(TextCommand, DiredBaseCommand):
-    def run(self, edit, **kwargs):
-        if kwargs and kwargs["to"]:
-            self.move_to_extreme(kwargs["to"])
-            return
-        else:
-            files = self.get_marked() or self.get_selected()
-            if files:
-                prompt.start('Move to:', self.view.window(), self.path, self._move)
-
-    def _move(self, path):
-        if path == self.path:
-            return
-
-        files = self.get_marked() or self.get_selected()
-
-        if not isabs(path):
-            path = join(self.path, path)
-        if not isdir(path):
-            sublime.error_message('Not a valid directory: {0}'.format(path))
-            return
-
-        # Move all items into the target directory.  If the target directory was also selected,
-        # ignore it.
-        files = self.get_marked() or self.get_selected()
-        path = normpath(normcase(path))
-        for filename in files:
-            fqn = normpath(normcase(join(self.path, filename)))
-            if fqn != path:
-                shutil.move(fqn, path)
-        self.view.run_command('dired_refresh')
+    def run(self, edit, to="bof"):
+        self.move_to_extreme(to)
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
