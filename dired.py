@@ -364,65 +364,32 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
         if kwargs and kwargs["to"]:
             self.move_to_extreme(kwargs["to"])
             return
-        elif kwargs and kwargs["duplicate"]:
-            self.items = self._get_items(self.path)
-            self.cursor = self.view.substr(self.view.line(self.view.sel()[0].a))[2:]
-            self._duplicate(duplicate=kwargs["duplicate"])
         else:
             files = self.get_marked() or self.get_selected()
             if files:
                 prompt.start('Move to:', self.view.window(), self.path, self._move)
 
-    def _get_items(self, path):
+    def _move(self, path):
+        if path == self.path:
+            return
+
+        files = self.get_marked() or self.get_selected()
+
+        if not isabs(path):
+            path = join(self.path, path)
+        if not isdir(path):
+            sublime.error_message('Not a valid directory: {0}'.format(path))
+            return
+
+        # Move all items into the target directory.  If the target directory was also selected,
+        # ignore it.
         files = self.get_marked() or self.get_selected()
         path = normpath(normcase(path))
         for filename in files:
             fqn = normpath(normcase(join(self.path, filename)))
-            yield fqn
-
-    def _move(self, path):
-        if not isabs(path):
-            path = join(self.path, path)
-        if not isdir(path):
-            sublime.error_message(u'Not a valid directory: {0}'.format(path))
-            return
-        for fqn in self._get_items(path):
             if fqn != path:
                 shutil.move(fqn, path)
         self.view.run_command('dired_refresh')
-
-    def _duplicate(self, duplicate=''):
-        fqn = next(self.items)
-        for i in itertools.count(2):
-            p, n = os.path.split(fqn)
-            cfp = u"{1} {0}.{2}".format(i, join(p, n.split('.')[0]), '.'.join(n.split('.')[1:]))
-            if os.path.isfile(cfp) or os.path.isdir(cfp):
-                pass
-            else:
-                break
-        if duplicate == 'rename':
-            prompt.start('New name:', self.view.window(), os.path.basename(cfp), self._copy_duplicate, rename=(fqn, cfp, self.cursor))
-        else:
-            self._copy_duplicate(fqn, cfp, 0)
-
-    def _copy_duplicate(self, fqn, cfp, int):
-        if isdir(fqn):
-            if not isdir(cfp):
-                shutil.copytree(fqn, cfp)
-            else:
-                print(*("\nSkip! Folder with this name exists already:", cfp), sep='\n', end='\n\n')
-        else:
-            if not isfile(cfp):
-                shutil.copy2(fqn, cfp)
-            else:
-                print(*("\nSkip! File with this name exists already:", cfp), sep='\n', end='\n\n')
-        try:
-            if int == 0:
-                self._duplicate()
-            elif int == 1:
-                self._duplicate(duplicate='rename')
-        except StopIteration:
-            self.view.run_command('dired_refresh', {"goto": self.cursor})
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
@@ -1029,7 +996,6 @@ class DiredHelpCommand(TextCommand):
         set_proper_scheme(view)
         view.settings().set('syntax','Packages/FileBrowser/dired-help.hidden-tmLanguage')
         view.settings().set('line_numbers',False)
-        view.settings().set('rulers',[])
         view.run_command('dired_show_help')
         sublime.active_window().focus_view(view)
 

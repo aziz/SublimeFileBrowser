@@ -179,24 +179,6 @@
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
   },
-  // { // Duplicate file given generic name (disable by default until proper copy-paste implemented)
-  //   "keys": ["n"],
-  //   "command": "dired_move",
-  //   "args":{"duplicate": true, "to": false},
-  //   "context": [
-  //       { "key": "selector", "operator": "equal", "operand": "text.dired" },
-  //       { "key": "setting.dired_rename_mode", "operand": false }
-  //   ]
-  // },
-  // { // Duplicate file with prompt for new name (disable by default until proper copy-paste implemented)
-  //   "keys": ["N"],
-  //   "command": "dired_move",
-  //   "args":{"duplicate": "rename", "to": false},
-  //   "context": [
-  //       { "key": "selector", "operator": "equal", "operand": "text.dired" },
-  //       { "key": "setting.dired_rename_mode", "operand": false }
-  //   ]
-  // },
   {
     "keys": ["ctrl+c"],
     "command": "dired_copy_files",
