@@ -278,11 +278,6 @@
     ]
   },
   {
-      "keys": ["tab"],
-      "command": "dired_complete",
-      "context": [{"key": "dired_complete"}]
-  },
-  {
     "keys": ["/"],
     "command": "show_panel",
     "args": {"panel": "incremental_find", "reverse": false},
@@ -437,6 +432,13 @@
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
+  },
+
+// Internal
+  {
+      "keys": ["tab"],
+      "command": "dired_complete",
+      "context": [{ "key": "setting.dired_prompt", "operand": true }]
   },
 
 // Disabling some keys in rename mode

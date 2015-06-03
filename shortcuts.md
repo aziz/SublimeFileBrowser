@@ -35,7 +35,6 @@ Action Shortcuts:
 |            Command            |          Shortcut         |
 +-------------------------------+---------------------------+
 | Rename                        | R                         |
-| Move                          | M                         |
 | Delete to trash               | D                         |
 | Delete (permanently)          | alt+shift+d               |
 | Create directory              | cd                        |

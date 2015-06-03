@@ -1,18 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Internal-only commands for dealing with the directory prompt.  Due to Sublime Text's quirky
-# design we need to re-issue commands over and over during a single prompt.
-
 import sublime
 from sublime import Region
-from sublime_plugin import WindowCommand, EventListener, TextCommand
+from sublime_plugin import TextCommand, WindowCommand
 import os
-from os.path import basename, join, isdir, dirname, expanduser
+from os.path import join, isdir, expanduser
+
+ST3 = int(sublime.version()) >= 3000
+
+if ST3:
+    from .common import sort_nicely
+else:
+    from common import sort_nicely
 
 map_window_to_ctx = {}
-# Map from window id that is displaying a prompt to its prompt context object.
-
 
 def start(msg, window, path, callback):
     """
@@ -28,152 +30,74 @@ def start(msg, window, path, callback):
 class PromptContext:
     def __init__(self, msg, path, callback):
         self.msg = msg
-        self.path = path
-        # The path we are completing.  This is updated as the user types, so it will be an
-        # invalid path at times.
-
+        self.path = path  # The path we are completing. This is updated as the user types, so it will be an invalid path at times.
         self.callback = callback
-
-        self.completion_view = None
-
-    def __repr__(self):
-        return u'{0} {1} view:{2}'.format(self.path, bool(self.completion_view))
 
 
 class DiredPromptCommand(WindowCommand):
     """
     An internal-only command that separates prompt handling from external commands since each
     tab completion requires another command.
-
     A prompt context must already be registered in map_window_to_ctx when this is executed.
     """
     def run(self):
-        ctx = map_window_to_ctx[self.window.id()]
-        self.window.show_input_panel(ctx.msg, ctx.path, self.on_done, self.on_change, self.on_cancel)
+        self.ctx = ctx = map_window_to_ctx[self.window.id()]
+        pv = self.window.show_input_panel(ctx.msg, ctx.path, self.on_done, None, None)
+        pv.settings().set('dired_prompt', True)
+        pv.set_name(msg)
 
     def on_done(self, value):
-        ctx = map_window_to_ctx.pop(self.window.id(), None)
-        self._close_completions()
-        ctx.callback(ctx.path)
-
-    def on_cancel(self):
-        self._close_completions()
-
-    def on_change(self, value):
-        # Keep the path in the ctx up to date in case Tab is pressed.  It will cancel this completion
-        # and start another.
-        ctx = map_window_to_ctx.get(self.window.id())
-        if ctx:
-            ctx.path = value
-
-    def _close_completions(self):
-        ctx = map_window_to_ctx.pop(self.window.id(), None)
-        if ctx and ctx.completion_view:
-            self.window.focus_view(ctx.completion_view)
-            self.window.run_command('close_file')
-
-class DiredEventListener(EventListener):
-    def on_query_context(self, view, key, operator, operand, match_all):
-        if not map_window_to_ctx or not key.startswith('dired_'):
-            return None
-        if key == 'dired_complete':
-            return True
-        return False
+        self.ctx.callback(value)
 
 
-class DiredCompleteCommand(WindowCommand):
+class DiredCompleteCommand(TextCommand):
     """
     An internal command executed when the user has pressed Tab in our directory prompt.
-
-    Since a prompt is already in progress, a completion info must already be registered for
-    this window.  Update the path, kill the current prompt, and reprompt with the new path.
     """
-    def _needs_sep(self, path):
-        """
-        Returns True if the current value is a complete directory name without a trailing
-        separator, and there are no other possible completions.
-        """
-        if not isdir(path) or path.endswith(os.sep):
-            return False
-
-        partial = basename(path)
-        path    = dirname(path)
-        if any(n for n in os.listdir(dirname(path)) if n != partial and n.startswith(partial) and isdir(join(path, n))):
-            # There are other completions.
-            return False
-
-        return True
-
-    def _parse_split(self, path):
-        """
-        Split the path into the directory to search and the prefix to match in that directory.
-
-        If the path is completely invalid, (None, None) is returned.
-        """
-        prefix = ''
-
-        if not path.endswith(os.sep):
-            prefix = basename(path)
-            path   = dirname(path)
-
+    def run(self, edit):
+        self.edit = edit
+        self.prompt_region = Region(0, self.view.size())
+        content = expanduser(self.view.substr(self.prompt_region))
+        path, prefix = os.path.split(content)
         if not isdir(path):
-            return (None, None)
-
-        return (path, prefix)
-
-
-    def _close_completions(self, ctx):
-        if ctx.completion_view:
-            self.window.focus_view(ctx.completion_view)
-            self.window.run_command('close_file')
-            ctx.completion_view = None
-
-
-    def run(self):
-        ctx = map_window_to_ctx.get(self.window.id())
-        if not ctx:
-            return
-
-        path = expanduser(ctx.path)
-        path, prefix = self._parse_split(path)
-        if path is None:
-            print('Invalid:', ctx.path)
-            return
+            return sublime.error_message(u'Invalid:\n\n%s', content)
 
         completions = [ n for n in os.listdir(path) if n.startswith(prefix) and isdir(join(path, n)) ]
+        sort_nicely(completions)
+        common      = os.path.commonprefix(completions)
+        new_content = ''
 
-        if len(completions) == 0:
-            sublime.status_message('No matches')
-            self._close_completions(ctx)
-            return
+        if not completions:
+            return sublime.status_message('No matches')
 
         if len(completions) == 1:
-            ctx.path = join(path, completions[0]) + os.sep
-            self.window.run_command('dired_prompt')
-            self._close_completions(ctx)
+            new_content = join(path, completions[0]) + os.sep
+        elif common and common > prefix:
+            new_content = join(path, common)
+
+        if new_content:
+            self.fill_prompt(new_content)
+        else:
+            self.completions = completions
+            self.path = path
+            self.w = self.view.window() or sublime.active_window()
+            return self.w.show_quick_panel(completions, self.on_done)
+
+    def on_done(self, i):
+        if i < 0 : return
+        content = join(self.path, self.completions[i]) + os.sep
+        if ST3:
+            ctx = map_window_to_ctx.get(self.w.id())
+            ctx.path = content
+            self.w.run_command('dired_prompt')
             return
+        else:
+            self.fill_prompt(content)
+            self.w.focus_view(self.view)
 
-        common = os.path.commonprefix(completions)
-        if common and common > prefix:
-            ctx.path = join(path, common)
-            self.window.run_command('dired_prompt')
-            self._close_completions(ctx)
-            return
-
-        # There are multiple possibilities.  Display a completion view.
-
-        if not ctx.completion_view:
-            ctx.completion_view = self.window.new_file()
-            ctx.completion_view.set_scratch(True)
-            ctx.completion_view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
-            ctx.completion_view.settings().set("gutter", False)
-            ctx.completion_view.set_name('*completions*')
-        ctx.completion_view.run_command('dired_show_completions', { "completions": completions })
-        self.window.focus_view(ctx.completion_view)
-
-
-class DiredShowCompletionsCommand(TextCommand):
-    def run(self, edit, completions=None):
-        self.view.erase(edit, Region(0, self.view.size()))
-        self.view.insert(edit, 0, '\n'.join(completions))
-
+    def fill_prompt(self, new_content):
+        self.view.replace(self.edit, self.prompt_region, new_content)
+        eol = self.view.size()
+        self.view.sel().clear()
+        self.view.sel().add(Region(eol, eol))
+        return

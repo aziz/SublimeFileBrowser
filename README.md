@@ -97,7 +97,6 @@ e.g. to completely mimic sidebar, it would be:
 | Command                                               | Shortcut                                   |
 | :---------------------------------------------------- | :----------------------------------------- |
 | Rename                                                | <kbd>R</kbd>                               |
-| Move                                                  | <kbd>M</kbd>                               |
 | Delete to trash                                       | <kbd>D</kbd>                               |
 | Delete (does not send to trash)                       | <kbd>alt+shift+d</kbd>                     |
 | Create directory                                      | <kbd>cd</kbd>                              |

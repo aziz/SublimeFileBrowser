@@ -11,7 +11,7 @@ from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normp
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import RE_FILE, DiredBaseCommand
+    from .common import RE_FILE, DiredBaseCommand, sort_nicely
     from . import prompt
     from .show import show
     from .show import set_proper_scheme
@@ -23,7 +23,7 @@ if ST3:
         send2trash = None
 else:  # ST2 imports
     import locale
-    from common import RE_FILE, DiredBaseCommand
+    from common import RE_FILE, DiredBaseCommand, sort_nicely
     import prompt
     from show import show
     from show import set_proper_scheme
@@ -316,7 +316,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             except OSError as e:
                 tree[~0] += '\t<%s>' % str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
                 return
-        self.sort_nicely(files)
+        sort_nicely(files)
         if tree and not files:
             # expanding empty folder, so notify that it is empty
             tree[~0] += '\t<empty>'
@@ -1421,23 +1421,7 @@ class call_SystemAgnosticFileOperation(object):
 
     def _setup_dir_or_file(self, mode, fqn, new_name, duplicate=False, overwrite=False):
         if duplicate:
-            for i in itertools.count(2):
-                path, name = os.path.split(new_name)
-                split_name = name.split('.')
-                parts = len(split_name)
-                if parts == 1 or isdir(fqn):
-                    cfp = u"{1} — {0}".format(i, new_name)
-                else:
-                    # leading space may cause problems, e.g.
-                    # good: 'name — 2.ext'
-                    # good: '— 2.ext'
-                    # bad:  ' — 2.ext'
-                    fn  = '.'.join(split_name[:~0])
-                    new = (u'%s ' % fn) if fn else ''
-                    cfp = u"{1}— {0}.{2}".format(i, join(path, new), split_name[~0])
-                if not os.path.exists(cfp):
-                    new_name = cfp
-                    break
+            new_name = self.generic_nn(fqn, new_name)
         if mode == 'move':
             if fqn != dirname(new_name):
                 if not exists(new_name):
@@ -1475,13 +1459,8 @@ class call_SystemAgnosticFileOperation(object):
         except Exception as e: # just in case
             sublime.error_message(u'FileBrowser:\n\n%s' % str([e]))
 
-
     def progress_bar(self, threads, i=0, dir=1):
-        next_threads = []
-        for thread in threads:
-            if thread.is_alive():
-                next_threads.append(thread)
-        threads = next_threads
+        threads = [t for t in threads if t.is_alive()]
         if threads:
             # This animates a little activity indicator in the status area
             before = i % 8
@@ -1495,3 +1474,21 @@ class call_SystemAgnosticFileOperation(object):
             return
         else:
             self.view.run_command('dired_clear_copy_cut_list')
+
+    def generic_nn(self, new_name):
+        for i in itertools.count(2):
+            path, name = os.path.split(new_name)
+            split_name = name.split('.')
+            if len(split_name) == 1 or isdir(new_name):
+                cfp = u"{1} — {0}".format(i, new_name)
+            else:
+                # leading space may cause problems, e.g.
+                # good: 'name — 2.ext'
+                # good: '— 2.ext'
+                # bad:  ' — 2.ext'
+                fn  = '.'.join(split_name[:~0])
+                new = (u'%s ' % fn) if fn else ''
+                cfp = u"{1}— {0}.{2}".format(i, join(path, new), split_name[~0])
+            if not os.path.exists(cfp):
+                break
+        return cfp

@@ -24,6 +24,15 @@ def first(seq, pred):
     # I can't comprehend how this isn't built-in.
     return next((item for item in seq if pred(item)), None)
 
+def sort_nicely(names):
+    """ Sort the given list in the way that humans expect.
+    Source: http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
+    """
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    names.sort(key=alphanum_key)
+
+
 class DiredBaseCommand:
     """
     Convenience functions for dired TextCommands
@@ -147,7 +156,7 @@ class DiredBaseCommand:
                     if text:
                         names.add(self._remove_ui(RE_FILE.match(self.get_parent(line, text)).group(2)))
         names = list(names)
-        self.sort_nicely(names)
+        sort_nicely(names)
         return names
 
     def get_marked(self):
@@ -243,14 +252,6 @@ class DiredBaseCommand:
         )
         self.view.set_status("__FileBrowser__", status)
 
-    def sort_nicely(self, names):
-        """ Sort the given list in the way that humans expect.
-        Source: http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
-        """
-        convert = lambda text: int(text) if text.isdigit() else text.lower()
-        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-        names.sort(key=alphanum_key)
-
     def ls(self, path, names, goto='', indent=''):
         f = []
         tab = self.view.settings().get('tab_size')
@@ -293,7 +294,7 @@ class DiredBaseCommand:
         show_hidden = self.view.settings().get('dired_show_hidden_files', True)
         if not show_hidden:
             names = [name for name in names if not self.is_hidden(name, path, goto)]
-        self.sort_nicely(names)
+        sort_nicely(names)
         f = self.ls(path, names, goto=goto if indent else '', indent=indent)
         return f
 
