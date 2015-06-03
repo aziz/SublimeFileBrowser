@@ -16,6 +16,7 @@ else:
 
 map_window_to_ctx = {}
 
+
 def start(msg, window, path, callback):
     """
     Starts the prompting process.
@@ -44,7 +45,6 @@ class DiredPromptCommand(WindowCommand):
         self.ctx = ctx = map_window_to_ctx[self.window.id()]
         pv = self.window.show_input_panel(ctx.msg, ctx.path, self.on_done, None, None)
         pv.settings().set('dired_prompt', True)
-        pv.set_name(msg)
 
     def on_done(self, value):
         self.ctx.callback(value)
@@ -62,7 +62,7 @@ class DiredCompleteCommand(TextCommand):
         if not isdir(path):
             return sublime.error_message(u'Invalid:\n\n%s', content)
 
-        completions = [ n for n in os.listdir(path) if n.startswith(prefix) and isdir(join(path, n)) ]
+        completions = [n for n in os.listdir(path) if n.startswith(prefix) and isdir(join(path, n))]
         sort_nicely(completions)
         common      = os.path.commonprefix(completions)
         new_content = ''
@@ -84,7 +84,7 @@ class DiredCompleteCommand(TextCommand):
             return self.w.show_quick_panel(completions, self.on_done)
 
     def on_done(self, i):
-        if i < 0 : return
+        if i < 0: return
         content = join(self.path, self.completions[i]) + os.sep
         if ST3:
             ctx = map_window_to_ctx.get(self.w.id())

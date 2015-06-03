@@ -1,21 +1,18 @@
 # coding: utf8
 import sublime
 from sublime import status_message, ok_cancel_dialog, load_settings, save_settings, Region
-from sublime_plugin import TextCommand, WindowCommand
-
+from sublime_plugin import TextCommand
 import os
-import re
-from os.path import dirname, realpath, join, isdir, basename, exists
+from os.path import isdir, basename, exists
 
 ST3 = int(sublime.version()) >= 3000
+
 if ST3:
     from .common import DiredBaseCommand
-    from . import prompt
     from .show import show
     from .show import set_proper_scheme
 else:
     from common import DiredBaseCommand
-    import prompt
     from show import show
     from show import set_proper_scheme
 
@@ -23,18 +20,22 @@ else:
 def load_jump_points():
     return load_settings('dired.sublime-settings').get('dired_jump_points', {})
 
+
 def save_jump_points(points, reverse=False):
     if reverse:
         points = dict((n, t) for t, n in points.items())
     load_settings('dired.sublime-settings').set('dired_jump_points', points)
     save_settings('dired.sublime-settings')
 
+
 def jump_points():
-    sorted_jp = sorted(load_jump_points().items(), key=lambda x:x[0].lower())
+    sorted_jp = sorted(load_jump_points().items(), key=lambda x: x[0].lower())
     return sorted_jp
+
 
 def jump_targets():
     return load_jump_points()
+
 
 def jump_names():
     return dict((t, n if ST3 else n.decode('utf8')) for n, t in load_jump_points().items())
@@ -73,7 +74,7 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
         if exists(target) and isdir(target) and target[-1] == os.sep:
             if self.new_window:
                 print(target)
-                self.view.run_command("dired_open_in_new_window", { "project_folder": [target] })
+                self.view.run_command("dired_open_in_new_window", {"project_folder": [target]})
             else:
                 show(self.view.window(), target, view_id=self.view.id())
                 status_message(u"Jumping to point '{0}' complete".format(name if ST3 else name.decode('utf8')))
@@ -103,7 +104,7 @@ class DiredEditJumpPointCommand(TextCommand, DiredBaseCommand):
         self.view.window().show_input_panel(prompt, name, self.edit_jump_point, None, None)
 
     def edit_jump_point(self, name):
-        if name: # edit or create jump point
+        if name:  # edit or create jump point
             if ST3:
                 iterable = list(self.names.items())
             else:
@@ -225,7 +226,7 @@ class DiredProjectSelectCommand(TextCommand):
         row, col = self.view.rowcol(pt)
         points = [[n, t] for n, t in jump_points()]
         current_project = [points[row - 3][1]]
-        self.view.run_command("dired_open_in_new_window", { "project_folder": current_project})
+        self.view.run_command("dired_open_in_new_window", {"project_folder": current_project})
 
         def close_view(view):
             if ST3:
@@ -242,4 +243,4 @@ class DiredProjectEditJumpPointCommand(TextCommand):
         row, col = self.view.rowcol(pt)
         points = [[n, t] for n, t in jump_points()]
         current_project = points[row - 3]
-        self.view.run_command("dired_edit_jump_point", { "item": current_project})
+        self.view.run_command("dired_edit_jump_point", {"item": current_project})

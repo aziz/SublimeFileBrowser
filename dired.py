@@ -6,12 +6,12 @@ import sublime
 from sublime import Region
 from sublime_plugin import WindowCommand, TextCommand, EventListener
 import os, re, shutil, tempfile, subprocess, itertools, sys, threading, glob
-from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
+from os.path import basename, dirname, isdir, isfile, exists, join, normpath
 
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import RE_FILE, DiredBaseCommand, sort_nicely
+    from .common import DiredBaseCommand, sort_nicely
     from . import prompt
     from .show import show
     from .show import set_proper_scheme
@@ -23,7 +23,7 @@ if ST3:
         send2trash = None
 else:  # ST2 imports
     import locale
-    from common import RE_FILE, DiredBaseCommand, sort_nicely
+    from common import DiredBaseCommand, sort_nicely
     import prompt
     from show import show
     from show import set_proper_scheme
@@ -79,7 +79,7 @@ def plugin_loaded():
             try:
                 return sublime.set_timeout(plugin_loaded, 100)
             except RuntimeError:
-                print('\ndired.plugin_loaded run recursively %d time(s); and failed to refresh\n'%recursive_plugin_loaded)
+                print('\ndired.plugin_loaded run recursively %d time(s); and failed to refresh\n' % recursive_plugin_loaded)
                 return
 
     for v in window.views():
@@ -235,12 +235,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         else:
             return self.populate_view(edit, path, names, goto=None)
 
-
     def populate_view(self, edit, path, names, goto):
         try:
-            if goto and goto[~0]==':':
-                # c:\\ valid path, c: not valid
-                goto += os.sep
+            if goto and goto[~0] == ':':
+                goto += os.sep  # c:\\ valid path, c: not valid
             names = os.listdir(path)
         except OSError as e:
             error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
@@ -289,19 +287,14 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
             self.view.show_at_center(Region(pt, pt))
-        elif not f: # empty folder?
+        else:  # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
             self.view.sel().add(Region(pt, pt))
-        else:
-            self.view.sel().clear()
-            self.view.sel().add(Region(name_point, name_point))
-            self.view.show_at_center(name_point)
 
     def traverse_tree(self, root, path, indent, tree, expanded):
-        if not path:
-            # special case for ThisPC, path is empty string
-            files = [u'%s\\'%d for d in tree]
+        if not path:  # special case for ThisPC, path is empty string
+            files = [u'%s\\' % d for d in tree]
             tree  = []
         else:
             # basename return funny results for c:\\ so it is tricky
@@ -338,7 +331,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         header    = self.view.settings().get('dired_header', False)
         name      = jump_names().get(path or self.path)
         caption   = u"{0} → {1}".format(name, path) if name else path or self.path
-        text      = [ caption, len(caption)*(u'—') ] if header else []
+        text      = [caption, len(caption)*(u'—')] if header else []
         view_name = self.view.name()[:2]
         if not path:
             title = u'%s%s' % (view_name, name or 'This PC')
@@ -404,7 +397,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
 
         for filename in filenames:
             fqn = join(path, filename)
-            if exists(fqn): # ignore 'item <error>'
+            if exists(fqn):  # ignore 'item <error>'
                 if isdir(fqn):
                     show(w, fqn, ignore_existing=new_view)
                 else:
@@ -565,7 +558,7 @@ class DiredUpCommand(TextCommand, DiredBaseCommand):
         if parent != os.sep and parent[1:] != ':\\':
             # need to avoid c:\\\\
             parent += os.sep
-        if parent == path and sublime.platform()=='windows':
+        if parent == path and sublime.platform() == 'windows':
             parent = 'ThisPC'
         elif parent == path:
             return
@@ -609,7 +602,7 @@ class DiredMarkExtensionCommand(TextCommand, DiredBaseCommand):
         if filergn.empty():
             return
         current_item = self.view.substr(self.view.line(self.view.sel()[0].a))
-        if current_item.endswith('/') or current_item == PARENT_SYM:
+        if current_item.endswith(os.sep) or current_item == PARENT_SYM:
             ext = ''
         else:
             ext = current_item.split('.')[-1]
@@ -622,9 +615,8 @@ class DiredMarkExtensionCommand(TextCommand, DiredBaseCommand):
             return
         if not ext.startswith('.'):
             ext = '.' + ext
-        def _markfunc(oldmark, filename):
-            return filename.endswith(ext) and True or oldmark
-        self._mark(mark=_markfunc, regions=self.fileregion())
+        self._mark(mark=lambda oldmark, filename: filename.endswith(ext) and True or oldmark,
+                   regions=self.fileregion())
 
 
 class DiredMarkCommand(TextCommand, DiredBaseCommand):
@@ -648,16 +640,10 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
             return
 
         # If markall is set, mark/unmark all files.  Otherwise only those that are selected.
-        if markall:
-            regions = [ filergn ]
-        else:
-            regions = self.view.sel()
+        regions = [filergn] if markall else self.view.sel()
 
-        def _toggle(oldmark, filename):
-            return not oldmark
         if mark == 'toggle':
-            # Special internal case.
-            mark = _toggle
+            mark = lambda oldmark, filename: not oldmark
 
         self._mark(mark=mark, regions=regions)
 
@@ -705,7 +691,8 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
         if which == 'directory':
             os.makedirs(fqn)
         else:
-            open(fqn, 'wb')
+            with open(fqn, 'wb'):
+                pass
 
         self.view.run_command('dired_refresh')
 
@@ -738,15 +725,17 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
     def _to_trash(self, files):
         path = self.path
         errors = []
+
         def _status(filename='', done=False):
             if done:
                 sublime.set_timeout(lambda: self.view.run_command('dired_refresh'), 1)
                 if errors:
                     sublime.error_message(u'Some files couldn’t be sent to trash (perhaps, they are being used by another process): \n\n'
-                                          +'\n'.join(errors).replace('Couldn\'t perform operation.', ''))
+                                          + '\n'.join(errors).replace('Couldn\'t perform operation.', ''))
             else:
                 status = u'Please, wait… Removing ' + filename
                 sublime.set_timeout(lambda: self.view.set_status("__FileBrowser__", status), 1)
+
         def _sender(files, event_for_wait, event_for_set):
             for filename in files:
                 event_for_wait.wait()
@@ -761,6 +750,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                 event_for_set.set()
             if event_for_wait is remove_event:
                 _status(done=True)
+
         remove_event = threading.Event()
         report_event = threading.Event()
         t1 = threading.Thread(target=_sender, args=(files, remove_event, report_event))
@@ -788,7 +778,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
                 if not ST3:
                     try:
                         e = str(e).decode(sys_enc)
-                    except: # failed getpreferredencoding
+                    except:  # failed getpreferredencoding
                         e = 'Unknown error'
                 errors.append(u'{0}:\t{1}'.format(e, filename))
         self.view.run_command('dired_refresh')
@@ -812,7 +802,7 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
             # Mark the original filename lines so we can make sure they are in the same
             # place.
             r = self.fileregion()
-            self.view.add_regions('rename', [ r ], '', '', MARK_OPTIONS)
+            self.view.add_regions('rename', [r], '', '', MARK_OPTIONS)
 
 
 class DiredRenameCancelCommand(TextCommand, DiredBaseCommand):
@@ -856,7 +846,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
             print('You can either resolve conflicts and apply changes or cancel renaming.\n')
             return
 
-        diffs = [ (b, a) for (b, a) in zip(before, after) if b != a ]
+        diffs = [(b, a) for (b, a) in zip(before, after) if b != a]
         if diffs:
             existing = set(before)
             while diffs:
@@ -966,8 +956,8 @@ class DiredHelpCommand(TextCommand):
         view.set_name("Browse: shortcuts")
         view.set_scratch(True)
         set_proper_scheme(view)
-        view.settings().set('syntax','Packages/FileBrowser/dired-help.hidden-tmLanguage')
-        view.settings().set('line_numbers',False)
+        view.settings().set('syntax', 'Packages/FileBrowser/dired-help.hidden-tmLanguage')
+        view.settings().set('line_numbers', False)
         view.run_command('dired_show_help')
         sublime.active_window().focus_view(view)
 
@@ -977,7 +967,7 @@ class DiredShowHelpCommand(TextCommand):
         COMMANDS_HELP = sublime.load_resource('Packages/FileBrowser/shortcuts.md') if ST3 else ''
         if not COMMANDS_HELP:
             dest = dirname(__file__)
-            shortcuts = join(dest if dest!='.' else join(sublime.packages_path(), 'FileBrowser'), "shortcuts.md")
+            shortcuts = join(dest if dest != '.' else join(sublime.packages_path(), 'FileBrowser'), "shortcuts.md")
             COMMANDS_HELP = open(shortcuts, "r").read()
         self.view.erase(edit, Region(0, self.view.size()))
         self.view.insert(edit, 0, COMMANDS_HELP)
@@ -1003,7 +993,7 @@ class DiredToggleProjectFolder(TextCommand, DiredBaseCommand):
         data['folders'] = data.get('folders') or {}
         folders = [f for f in data['folders'] if f['path'] != path]
         if len(folders) == len(data['folders']):
-            folders.insert(0, { 'path': path })
+            folders.insert(0, {'path': path})
         data['folders'] = folders
         self.view.window().set_project_data(data)
         self.view.window().run_command('dired_refresh')
@@ -1017,7 +1007,7 @@ class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
         msg = u"Set '{0}' as only one project folder (will remove all other folders from project)?".format(path)
         if sublime.ok_cancel_dialog(msg):
             data = self.view.window().project_data()
-            data['folders'] = [{ 'path': path }]
+            data['folders'] = [{'path': path}]
             self.view.window().set_project_data(data)
             self.view.window().run_command('dired_refresh')
 
@@ -1079,7 +1069,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
             files = self.get_marked() or self.get_selected()
         items = []
 
-        if ST3: # sublime.executable_path() is not available in ST2
+        if ST3:  # sublime.executable_path() is not available in ST2
             executable_path = sublime.executable_path()
             if sublime.platform() == 'osx':
                 app_path = executable_path[:executable_path.rfind(".app/")+5]
@@ -1096,7 +1086,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
             else:
                 subprocess.Popen(items, cwd=self.path)
 
-        else: # ST2
+        else:  # ST2
             items.append("-n")
             for filename in files:
                 fqn = join(self.path or u'', filename)
@@ -1104,7 +1094,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
 
             if sublime.platform() == 'osx':
                 try:
-                   subprocess.Popen(['subl'] + items, cwd=self.path)
+                    subprocess.Popen(['subl'] + items, cwd=self.path)
                 except:
                     try:
                         subprocess.Popen(['sublime'] + items, cwd=self.path)
@@ -1130,17 +1120,17 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                     subprocess.Popen(['sublime'] + items, cwd=self.path)
 
         def run_on_new_window():
-            sublime.active_window().run_command("dired", { "immediate": True, "project": True, "other_group": "left"})
+            sublime.active_window().run_command("dired", {"immediate": True, "project": True, "other_group": "left"})
 
-        sublime.set_timeout(run_on_new_window , 200)
+        sublime.set_timeout(run_on_new_window, 200)
         if not ST3:
-            sublime.set_timeout(lambda: sublime.active_window().run_command("toggle_side_bar") , 200)
+            sublime.set_timeout(lambda: sublime.active_window().run_command("toggle_side_bar"), 200)
 
 
 # EVENT LISTENERS ###################################################
 
 class DiredHijackNewWindow(EventListener):
-   def on_window_command(self, window, command_name, args):
+    def on_window_command(self, window, command_name, args):
         if command_name != "new_window":
             return
         hijack_window()
@@ -1270,7 +1260,7 @@ class CallVCS(DiredBaseCommand):
                     u'But the pattern cannot be found, please, fix it '
                     u'or use absolute path without wildcards.' % git)
 
-        shell = True if sublime.platform()=='windows' else False
+        shell = True if sublime.platform() == 'windows' else False
         try:
             p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
             git_output = p.communicate()[0]
@@ -1448,7 +1438,7 @@ class call_SystemAgnosticFileOperation(object):
     def _do(self, mode, source_name, new_name):
         try:
             if mode == 'move': shutil.move(source_name, new_name)
-            if mode == 'dir' : shutil.copytree(source_name, new_name)
+            if mode == 'dir':  shutil.copytree(source_name, new_name)
             if mode == 'file': shutil.copy2(source_name, new_name)
         except shutil.Error as e:
             m = e.args[0]
@@ -1456,7 +1446,7 @@ class call_SystemAgnosticFileOperation(object):
                 sublime.error_message(u'FileBrowser:\n\n%s' % u'\n'.join([i[~0] for i in m]))
             else:
                 sublime.error_message(u'FileBrowser:\n\n%s' % e)
-        except Exception as e: # just in case
+        except Exception as e:  # just in case
             sublime.error_message(u'FileBrowser:\n\n%s' % str([e]))
 
     def progress_bar(self, threads, i=0, dir=1):

@@ -4,7 +4,7 @@
 import re, os, fnmatch
 import sublime
 from sublime import Region
-from os.path import basename, dirname, isdir, isfile, exists, join, isabs, normpath, normcase
+from os.path import isdir, join
 
 if sublime.platform() == 'windows':
     import ctypes
@@ -15,14 +15,15 @@ if ST3:
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
 else:
     MARK_OPTIONS = 0
-    import locale
 
 
 RE_FILE = re.compile(r'^(\s*)([^\\//].*)$')
 
+
 def first(seq, pred):
     # I can't comprehend how this isn't built-in.
     return next((item for item in seq if pred(item)), None)
+
 
 def sort_nicely(names):
     """ Sort the given list in the way that humans expect.
@@ -137,8 +138,7 @@ class DiredBaseCommand:
         """
         Returns a list of all filenames in the view.
         """
-        return [ self._remove_ui(RE_FILE.match(self.get_parent(l, self.view.substr(l))).group(2)) for l in self.view.lines(self.fileregion()) ]
-
+        return [self._remove_ui(RE_FILE.match(self.get_parent(l, self.view.substr(l))).group(2)) for l in self.view.lines(self.fileregion())]
 
     def get_selected(self, parent=True):
         """
@@ -164,8 +164,7 @@ class DiredBaseCommand:
         if self.filecount():
             for region in self.view.get_regions('marked'):
                 lines.extend(self.view.lines(region))
-        return [ self._remove_ui(RE_FILE.match(self.get_parent(line, self.view.substr(line))).group(2)) for line in lines ]
-
+        return [self._remove_ui(RE_FILE.match(self.get_parent(line, self.view.substr(line))).group(2)) for line in lines]
 
     def _mark(self, mark=None, regions=None):
         """
@@ -182,7 +181,7 @@ class DiredBaseCommand:
 
         # Allow the user to pass a single region or a collection (like view.sel()).
         if isinstance(regions, Region):
-            regions = [ regions ]
+            regions = [regions]
 
         filergn = self.fileregion()
 
@@ -207,7 +206,7 @@ class DiredBaseCommand:
                         newmark = mark
 
                     if newmark:
-                        name_region = Region(line.a + len(indent) + 2, line.b) # do not mark UI elements
+                        name_region = Region(line.a + len(indent) + 2, line.b)  # do not mark UI elements
                         marked[filename] = name_region
                     else:
                         marked.pop(filename, None)
@@ -217,7 +216,6 @@ class DiredBaseCommand:
             self.view.add_regions('marked', r, 'dired.marked', '', MARK_OPTIONS)
         else:
             self.view.erase_regions('marked')
-
 
     def set_ui_in_rename_mode(self, edit):
         header = self.view.settings().get('dired_header', False)
@@ -255,7 +253,7 @@ class DiredBaseCommand:
     def ls(self, path, names, goto='', indent=''):
         f = []
         tab = self.view.settings().get('tab_size')
-        line = self.view.line(self.sel.a if self.sel!=None else self.view.sel()[0].a)
+        line = self.view.line(self.sel.a if self.sel is not None else self.view.sel()[0].a)
         content = self.view.substr(line).replace('\t', ' '*tab)
         ind = re.compile('^(\s*)').match(content).group(1)
         level = indent * int((len(ind) / tab) + 1) if ind else indent
@@ -300,7 +298,7 @@ class DiredBaseCommand:
 
     def prepare_treeview(self, names, path, goto, indent):
         f = self.prepare_filelist(names, path, goto, indent)
-        line = self.view.line(self.sel if self.sel!=None else self.view.sel()[0])
+        line = self.view.line(self.sel if self.sel is not None else self.view.sel()[0])
         # line may have inline error msg after os.sep
         dir_name = self.view.substr(line).split(os.sep)[0].replace(u'▸', u'▾', 1) + os.sep
         if f:
@@ -319,7 +317,7 @@ class DiredBaseCommand:
                 indent, text = RE_FILE.match(self.view.substr(line)).groups()
                 filename = self._remove_ui(self.get_parent(line, text))
                 if filename in marked:
-                    name_region = Region(line.a + len(indent) + 2, line.b) # do not mark UI elements
+                    name_region = Region(line.a + len(indent) + 2, line.b)  # do not mark UI elements
                     regions.append(name_region)
             self.view.add_regions('marked', regions, 'dired.marked', '', MARK_OPTIONS)
         else:
