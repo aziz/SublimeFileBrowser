@@ -1198,7 +1198,11 @@ if ST3:
         def run_(self, view, args):
             s = self.view.settings()
             if s.get("dired_path") and not s.get("dired_rename_mode"):
-                self.view.run_command("dired_select", {"other_group": True})
+                if 'file' in self.view.scope_name(self.view.sel()[0].a):
+                    args = {"other_group": True}
+                else:
+                    args = {"inline": True, "toggle": True}
+                self.view.run_command("dired_select", args)
             else:
                 system_command = args["command"] if "command" in args else None
                 if system_command:
@@ -1210,7 +1214,11 @@ else:
         def run_(self, args):
             s = self.view.settings()
             if s.get("dired_path") and not s.get("dired_rename_mode"):
-                self.view.run_command("dired_select", {"other_group": True})
+                if 'file' in self.view.scope_name(self.view.sel()[0].a):
+                    args = {"other_group": True}
+                else:
+                    args = {"inline": True, "toggle": True}
+                self.view.run_command("dired_select", args)
             else:
                 system_command = args["command"] if "command" in args else None
                 if system_command:
