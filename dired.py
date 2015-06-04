@@ -989,8 +989,8 @@ class DiredToggleProjectFolder(TextCommand, DiredBaseCommand):
         if not ST3:
             return sublime.status_message('This feature is available only in Sublime Text 3')
         path = self.path.rstrip(os.sep)
-        data = self.view.window().project_data()
-        data['folders'] = data.get('folders') or {}
+        data = self.view.window().project_data() or {}
+        data['folders'] = data.get('folders', {})
         folders = [f for f in data['folders'] if f['path'] != path]
         if len(folders) == len(data['folders']):
             folders.insert(0, {'path': path})
@@ -1006,7 +1006,7 @@ class DiredOnlyOneProjectFolder(TextCommand, DiredBaseCommand):
         path = self.path.rstrip(os.sep)
         msg = u"Set '{0}' as only one project folder (will remove all other folders from project)?".format(path)
         if sublime.ok_cancel_dialog(msg):
-            data = self.view.window().project_data()
+            data = self.view.window().project_data() or {'folders': {}}
             data['folders'] = [{'path': path}]
             self.view.window().set_project_data(data)
             self.view.window().run_command('dired_refresh')
@@ -1193,16 +1193,18 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
 
 # MOUSE INTERATIONS #################################################
 
+def dired_mouse_arguments(sel):
+    if 'directory' in sel:
+        return {"inline": True, "toggle": True}
+    else:
+        return {"other_group": True}
+
 if ST3:
     class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
         def run_(self, view, args):
             s = self.view.settings()
             if s.get("dired_path") and not s.get("dired_rename_mode"):
-                if 'file' in self.view.scope_name(self.view.sel()[0].a):
-                    args = {"other_group": True}
-                else:
-                    args = {"inline": True, "toggle": True}
-                self.view.run_command("dired_select", args)
+                self.view.run_command("dired_select", dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
             else:
                 system_command = args["command"] if "command" in args else None
                 if system_command:
@@ -1214,11 +1216,7 @@ else:
         def run_(self, args):
             s = self.view.settings()
             if s.get("dired_path") and not s.get("dired_rename_mode"):
-                if 'file' in self.view.scope_name(self.view.sel()[0].a):
-                    args = {"other_group": True}
-                else:
-                    args = {"inline": True, "toggle": True}
-                self.view.run_command("dired_select", args)
+                self.view.run_command("dired_select", dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
             else:
                 system_command = args["command"] if "command" in args else None
                 if system_command:

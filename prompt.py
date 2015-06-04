@@ -5,9 +5,10 @@ import sublime
 from sublime import Region
 from sublime_plugin import TextCommand, WindowCommand
 import os
-from os.path import join, isdir, expanduser
+from os.path import join, expanduser
 
 ST3 = int(sublime.version()) >= 3000
+NT  = sublime.platform() == 'windows'
 
 if ST3:
     from .common import sort_nicely
@@ -26,6 +27,22 @@ def start(msg, window, path, callback):
     path = expanduser(path)
     map_window_to_ctx[window.id()] = PromptContext(msg, path, callback)
     window.run_command('dired_prompt')
+
+
+def isdir(u):
+    '''alas, this is really silly'''
+    if NT and any(v for v in (u'\\', u'/') if v == u):
+        return False
+    else:
+        return os.path.isdir(u)
+
+
+def valid(value):
+    if not isdir(value):
+        sublime.error_message(u'FileBrowser:\n\nDirectory doesn’t exist:\n%s' % value)
+        return False
+    else:
+        return True
 
 
 class PromptContext:
@@ -47,6 +64,8 @@ class DiredPromptCommand(WindowCommand):
         pv.settings().set('dired_prompt', True)
 
     def on_done(self, value):
+        if not valid(value):
+            return self.window.run_command('dired_prompt')
         self.ctx.callback(value)
 
 
@@ -58,13 +77,13 @@ class DiredCompleteCommand(TextCommand):
         self.edit = edit
         self.prompt_region = Region(0, self.view.size())
         content = expanduser(self.view.substr(self.prompt_region))
-        path, prefix = os.path.split(content)
-        if not isdir(path):
-            return sublime.error_message(u'Invalid:\n\n%s', content)
+        path, prefix = os.path.split(content) if not isdir(content) else (content, '')
+        if not valid(path or content):
+            return
 
-        completions = [n for n in os.listdir(path) if n.startswith(prefix) and isdir(join(path, n))]
+        completions = [n for n in os.listdir(path) if n.upper().startswith(prefix.upper()) and isdir(join(path, n))]
         sort_nicely(completions)
-        common      = os.path.commonprefix(completions)
+        common      = os.path.commonprefix([f.upper() for f in completions])
         new_content = ''
 
         if not completions:
