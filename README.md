@@ -216,8 +216,11 @@ If you want to save some key stokes you can add the following code in your user 
 
 You can change `f3` in the above code to your custom keyboard shortcut.
 
-**NOTE**: This command creates a new window and open that directory in Sublime. It also opens a
-          Browse Mode view as sidebar.
+**NOTE**: This command creates a new window and open that directory in Sublime with a Browse Mode view.
+          The view opens as a left sidebar by default. To change it add `dired_open_on_jump` to your
+          user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
+          Set it to `"right"` to open the view as sidebar on the right side of the window or
+          to `true` to fill all space. A value of `false` will prevent any view to open when jumping.
 
 ##### Jump List View
 Bring up *Command Palette* and search for `Browse Mode: Jump List` (typing `bmj` should find it for
@@ -234,7 +237,7 @@ If you want to save some key stokes you can add the following code in your user 
 You can change `f3` in the above code to your custom keyboard shortcut.
 Jump List View can be browsed using the <kbd>up</kbd>/<kbd>down</kbd> or <kbd>j</kbd>/<kbd>k</kbd>.
 Pressing <kbd>enter</kbd> on a jump point will open it in a new window with a Browse Mode view as
-sidebar.
+sidebar or what was configured with `dired_open_on_jump`.
 
 ##### Jump List in a new empty window e.g. Hijacking (ST3 only)
 You can also configure FileBrower to automatically open *Jump List View*  in new empty windows.
