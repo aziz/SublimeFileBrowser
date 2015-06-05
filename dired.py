@@ -217,7 +217,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             text.extend(tree)
 
             marked = set(self.get_marked())
-            sels   = self.get_selected()
+            sels   = (self.get_selected(), list(self.view.sel()))
 
             self.view.set_read_only(False)
             self.view.erase(edit, Region(0, self.view.size()))
@@ -257,6 +257,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         f = self.prepare_filelist(names, path, '', '')
 
         marked = set(self.get_marked())
+        sels   = (self.get_selected(), list(self.view.sel()))
 
         text, header = self.set_title(path)
         if path and (not f or self.show_parent()):
@@ -282,11 +283,13 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                 try:
                     line = f.index(goto) + (2 if header else 0) + (1 if self.show_parent() else 0)
                     pt = self.view.text_point(line, 2)
+                    self.view.sel().clear()
+                    self.view.sel().add(Region(pt, pt))
+                    self.view.show_at_center(Region(pt, pt))
                 except ValueError:
                     pass
-            self.view.sel().clear()
-            self.view.sel().add(Region(pt, pt))
-            self.view.show_at_center(Region(pt, pt))
+            else:
+                self.restore_sels(sels)
         else:  # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
@@ -460,7 +463,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         self.view.replace(edit, line, replacement)
         self.view.set_read_only(True)
         self.restore_marks(marked)
-        self.restore_sels(sels)
+        self.restore_sels((sels, sel))
         CallVCS(self.view, path)
 
 
@@ -486,7 +489,7 @@ class DiredFold(TextCommand, DiredBaseCommand):
     def run(self, edit, update=''):
         v = self.view
         self.marked = None
-        self.seled  = self.get_selected()
+        self.seled  = (self.get_selected(), list(self.view.sel()))
         marks       = self.view.get_regions('marked')
         virt_sels   = []
 
@@ -543,7 +546,7 @@ class DiredFold(TextCommand, DiredBaseCommand):
             if self.marked:
                 self.marked.append(folded_name)
             elif self.seled:
-                self.seled.append(folded_name)
+                self.seled[0].append(folded_name)
 
         v.set_read_only(False)
         v.replace(edit, icon_region, u'▸')
@@ -1426,7 +1429,7 @@ class call_SystemAgnosticFileOperation(object):
 
     def _setup_dir_or_file(self, mode, fqn, new_name, duplicate=False, overwrite=False):
         if duplicate:
-            new_name = self.generic_nn(fqn, new_name)
+            new_name = self.generic_nn(new_name)
         if mode == 'move':
             if fqn != dirname(new_name):
                 if not exists(new_name):

@@ -325,20 +325,31 @@ class DiredBaseCommand:
 
     def restore_sels(self, sels=None):
         if sels:
+            seled_fnames, seled_regions = sels
             regions = []
             for line in self.view.lines(self.fileregion()):
                 indent, text = RE_FILE.match(self.view.substr(line)).groups()
                 filename = self._remove_ui(self.get_parent(line, text))
-                if filename in sels:
+                if filename in seled_fnames:
                     name_point = line.a + len(indent) + 2
-                    regions.append(name_point)
+                    regions.append(Region(name_point, name_point))
             if regions:
-                self.view.sel().clear()
-                for r in regions:
-                    self.view.sel().add(r)
-                self.view.show_at_center(r)
-                return
+                return self._add_sels(regions)
+            else:
+                # e.g. when user remove file(s), we just restore sel RegionSet
+                # despite positions may be wrong sometimes
+                return self._add_sels(seled_regions)
         # fallback:
+        return self._add_sels([Region(0, 0)])
+
+    def _add_sels(self, sels):
+        eof = self.view.size()
         self.view.sel().clear()
-        self.view.sel().add(Region(0, 0))
-        self.view.show_at_center(Region(0, 0))
+        for s in sels:
+            if s.begin() <= eof:
+                self.view.sel().add(s)
+        if not self.view.sel():
+            # all sels are more than eof
+            s = Region(0, 0)
+            self.view.sel().add(s)
+        self.view.show_at_center(s)
