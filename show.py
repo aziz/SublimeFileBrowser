@@ -97,7 +97,8 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         name = u"■ {0}".format(view_name)
 
     view.set_name(name)
+    reset_sels = path != view.settings().get('dired_path', '')
     view.settings().set('dired_path', path)
     view.settings().set('dired_rename_mode', False)
     window.focus_view(view)
-    view.run_command('dired_refresh', {'goto': goto})
+    view.run_command('dired_refresh', {'goto': goto, 'reset_sels': reset_sels})

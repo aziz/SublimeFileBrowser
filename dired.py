@@ -163,7 +163,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     """
     Populates or repopulates a dired view.
     """
-    def run(self, edit, goto=None, to_expand=None, toggle=None):
+    def run(self, edit, goto=None, to_expand=None, toggle=None, reset_sels=None):
         """
         goto
             Optional filename to put the cursor on; used only from "dired_up"
@@ -174,6 +174,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         toggle
             If true, marked/selected directories shall switch state,
             i.e. expand/collapse
+
+        reset_sels
+            If True, previous selections & marks shan’t be restored
         """
         path = self.path
         self.sel = None
@@ -188,6 +191,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         if expanded or to_expand:
             self.re_populate_view(edit, path, names, expanded, to_expand, toggle)
         else:
+            self.reset_sels = reset_sels
             if not path:
                 self.continue_refreshing(edit, path, names)
             else:
@@ -236,9 +240,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             return self.populate_view(edit, path, names, goto=None)
 
     def populate_view(self, edit, path, names, goto):
+        if goto and goto[~0] == ':':
+            goto += os.sep  # c:\\ valid path, c: not valid
         try:
-            if goto and goto[~0] == ':':
-                goto += os.sep  # c:\\ valid path, c: not valid
             names = os.listdir(path)
         except OSError as e:
             error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
@@ -251,13 +255,13 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.continue_refreshing(edit, path, names, goto)
             CallVCS(self.view, path)
 
-    def continue_refreshing(self, edit, path, names, goto=None, indent=''):
+    def continue_refreshing(self, edit, path, names, goto=None):
         self.set_status()
 
         f = self.prepare_filelist(names, path, '', '')
 
-        marked = set(self.get_marked())
-        sels   = (self.get_selected(), list(self.view.sel()))
+        marked = None if self.reset_sels else set(self.get_marked())
+        sels   = None if self.reset_sels else (self.get_selected(), list(self.view.sel()))
 
         text, header = self.set_title(path)
         if path and (not f or self.show_parent()):
