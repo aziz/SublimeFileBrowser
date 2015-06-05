@@ -72,7 +72,10 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
             return
         name, target = self.jump_points[index]
         if exists(target) and isdir(target) and target[-1] == os.sep:
-            if self.new_window:
+            settings = load_settings('dired.sublime-settings')
+            smart_jump = settings.get('dired_smart_jump', False)
+            auto = self.new_window == 'auto'
+            if self.new_window == True or ((not smart_jump) and auto) or (smart_jump and auto and len(self.view.window().views()) > 0):
                 print(target)
                 self.view.run_command("dired_open_in_new_window", {"project_folder": [target]})
             else:
@@ -226,7 +229,12 @@ class DiredProjectSelectCommand(TextCommand):
         row, col = self.view.rowcol(pt)
         points = [[n, t] for n, t in jump_points()]
         current_project = [points[row - 3][1]]
-        self.view.run_command("dired_open_in_new_window", {"project_folder": current_project})
+        settings = load_settings('dired.sublime-settings')
+        smart_jump = settings.get('dired_smart_jump', False)
+        if smart_jump and len(self.view.window().views()) == 1:
+            show(self.view.window(), current_project[0])
+        else:
+            self.view.run_command("dired_open_in_new_window", {"project_folder": current_project})
 
         def close_view(view):
             if ST3:

@@ -15,7 +15,7 @@
   {
     "caption": "Browse Mode: Jump List Quick Panel",
     "command": "dired_jump",
-    "args": { "new_window": true }
+    "args": { "new_window": "auto" }
   },
   {
     "caption": "Browse Mode: Left Sidebar",

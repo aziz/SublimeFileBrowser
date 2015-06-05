@@ -44,6 +44,10 @@
   // false: don’t open any view
   "dired_open_on_jump": "left",
 
+  // true: keep the active window if empty when jumping
+  // false: the default, always open a new window when jumping
+  "dired_smart_jump": false,
+
   // Automatically disable Vintageous to avoid keybindings incompatibilities;
   // note it is Vintageous setting, if it does not work you should report into
   // appropriate repository https://github.com/guillermooo/Vintageous/issues

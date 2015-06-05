@@ -220,7 +220,10 @@ You can change `f3` in the above code to your custom keyboard shortcut.
           The view opens as a left sidebar by default. To change it add `dired_open_on_jump` to your
           user settings file (`Preferences` → `Package Settings` → `FileBrowser` → `Settings — User`).
           Set it to `"right"` to open the view as sidebar on the right side of the window or
-          to `true` to fill all space. A value of `false` will prevent any view to open when jumping.
+          to `true` to fill all space. A value of `false` will prevent any view to open when jumping.  
+          To open the directory in the same window call the command with `false`.
+          To keep the current window if it is empty call the command with `"auto"`
+          and edit your user settings with `"dired_smart_jump": true`.
 
 ##### Jump List View
 Bring up *Command Palette* and search for `Browse Mode: Jump List` (typing `bmj` should find it for
@@ -236,8 +239,7 @@ If you want to save some key stokes you can add the following code in your user 
 
 You can change `f3` in the above code to your custom keyboard shortcut.
 Jump List View can be browsed using the <kbd>up</kbd>/<kbd>down</kbd> or <kbd>j</kbd>/<kbd>k</kbd>.
-Pressing <kbd>enter</kbd> on a jump point will open it in a new window with a Browse Mode view as
-sidebar or what was configured with `dired_open_on_jump`.
+Pressing <kbd>enter</kbd> on a jump point will open it in a new window with a Browse Mode view as sidebar or what was configured with `dired_open_on_jump`. Empty windows will be reused if `dired_smart_jump` is set to `true` in your user settings.
 
 ##### Jump List in a new empty window e.g. Hijacking (ST3 only)
 You can also configure FileBrower to automatically open *Jump List View*  in new empty windows.
