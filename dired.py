@@ -1120,7 +1120,16 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                     subprocess.Popen(['sublime'] + items, cwd=self.path)
 
         def run_on_new_window():
-            sublime.active_window().run_command("dired", {"immediate": True, "project": True, "other_group": "left"})
+            settings = sublime.load_settings('dired.sublime-settings')
+            open_on_jump = settings.get('dired_open_on_jump', 'left')
+
+            if open_on_jump:
+                options = {"immediate": True, "project": True}
+
+                if open_on_jump in ['left', 'right']:
+                    options["other_group"] = open_on_jump
+
+                sublime.active_window().run_command("dired", options)
 
         sublime.set_timeout(run_on_new_window, 200)
         if not ST3:

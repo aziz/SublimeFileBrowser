@@ -37,6 +37,13 @@
   // false: a new view is created.
   "dired_reuse_view": true,
 
+  // How should be positioned the Browse Mode view opened when jumping
+  // "left": the default, open the view on the left
+  // "right": open the view on the right
+  // true: take all space available
+  // false: don’t open any view
+  "dired_open_on_jump": "left",
+
   // Automatically disable Vintageous to avoid keybindings incompatibilities;
   // note it is Vintageous setting, if it does not work you should report into
   // appropriate repository https://github.com/guillermooo/Vintageous/issues
