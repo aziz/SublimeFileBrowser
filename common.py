@@ -251,23 +251,20 @@ class DiredBaseCommand:
         self.view.set_status("__FileBrowser__", status)
 
     def ls(self, path, names, goto='', indent=''):
-        f = []
-        tab = self.view.settings().get('tab_size')
-        line = self.view.line(self.sel.a if self.sel is not None else self.view.sel()[0].a)
+        items   = []
+        tab     = self.view.settings().get('tab_size')
+        line    = self.view.line(self.sel.a if self.sel is not None else self.view.sel()[0].a)
         content = self.view.substr(line).replace('\t', ' '*tab)
-        ind = re.compile('^(\s*)').match(content).group(1)
-        level = indent * int((len(ind) / tab) + 1) if ind else indent
-        # generating dirs list first
+        ind     = re.compile('^(\s*)').match(content).group(1)
+        level   = indent * int((len(ind) / tab) + 1) if ind else indent
+        files   = []
         for name in names:
             if isdir(join(path, goto, name)):
-                name = ''.join([level, u"▸ ", name, os.sep])
-                f.append(name)
-        # generating files list
-        for name in names:
-            if not isdir(join(path, goto, name)):
-                name = ''.join([level, u"≡ ", name])
-                f.append(name)
-        return f
+                items.append(''.join([level, u"▸ ", name, os.sep]))
+            else:
+                files.append(''.join([level, u"≡ ", name]))
+        items += files
+        return items
 
     def is_hidden(self, filename, path, goto=''):
         if not (path or goto):  # special case for ThisPC

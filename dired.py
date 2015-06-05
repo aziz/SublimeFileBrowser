@@ -301,7 +301,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
 
     def traverse_tree(self, root, path, indent, tree, expanded):
         if not path:  # special case for ThisPC, path is empty string
-            files = [u'%s\\' % d for d in tree]
+            items = [u'%s\\' % d for d in tree]
             tree  = []
         else:
             # basename return funny results for c:\\ so it is tricky
@@ -310,17 +310,18 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                 tree.append(indent[:-1] + u'▾ ' + b + os.sep)
             try:
                 if not self.show_hidden:
-                    files = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
+                    items = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
                 else:
-                    files = os.listdir(path)
+                    items = os.listdir(path)
             except OSError as e:
                 tree[~0] += '\t<%s>' % str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
                 return
-        sort_nicely(files)
-        if tree and not files:
+        sort_nicely(items)
+        files = []
+        if tree and not items:
             # expanding empty folder, so notify that it is empty
             tree[~0] += '\t<empty>'
-        for f in files:
+        for f in items:
             new_path = join(path, f)
             check = isdir(new_path)
             if check and new_path.replace(root, '', 1).strip(os.sep) in expanded:
@@ -328,10 +329,8 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             elif check:
                 tree.append(u'%s▸ %s%s' % (indent, f, os.sep if f[~0] != os.sep else ''))
             else:
-                continue
-        for f in files:
-            if not os.path.isdir(os.path.join(path, f)):
-                tree.append(indent + u'≡ ' + f)
+                files.append(indent + u'≡ ' + f)
+        tree += files
         return tree
 
     def set_title(self, path):
