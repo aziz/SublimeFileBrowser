@@ -34,6 +34,10 @@ else:  # ST2 imports
     except ImportError:
         send2trash = None
 PARENT_SYM = u"⠤"
+OS  = sublime.platform()
+NT  = OS == 'windows'
+LIN = OS == 'linux'
+OSX = OS == 'osx'
 
 
 def print(*args, **kwargs):
@@ -42,7 +46,7 @@ def print(*args, **kwargs):
         Redefining/tweaking built-in things is relatively safe; of course, when
         ST2 will become irrelevant, this def might be removed undoubtedly.
     """
-    if not ST3 and sublime.platform() != 'windows':
+    if not (ST3 or NT):
         args = (s.encode('utf-8') if isinstance(s, unicode) else str(s) for s in args)
     else:
         args = (s if isinstance(s, str if ST3 else unicode) else str(s) for s in args)
@@ -84,7 +88,8 @@ def plugin_loaded():
 
     for v in window.views():
         if v.settings() and v.settings().get("dired_path"):
-            v.run_command("dired_refresh")
+            # reset sels because dired_index not exists yet, so we cant restore sels
+            v.run_command("dired_refresh", {"reset_sels": True})
     # if not ST3:
     #     print('\ndired.plugin_loaded run recursively %d time(s); and call refresh command\n'%recursive_plugin_loaded)
 
@@ -162,6 +167,17 @@ class DiredCommand(WindowCommand):
 class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     """
     Populates or repopulates a dired view.
+
+    self.index is a representation of view lines
+               list contains full path of each item in a view, except
+               header ['', ''] and parent_dir [PARENT_SYM]
+    self.index shall be updated according to view modifications (refresh, expand single folder, fold)
+                    and stored in view settings as 'dired_index'
+
+    The main reason for index is access speed to item path because we can
+        self.index[self.view.rowcol(region.a)[0]]
+    to get full path, instead of grinding with substr thru entire view
+    substr is slow: https://github.com/SublimeTextIssues/Core/issues/882
     """
     def run(self, edit, goto=None, to_expand=None, toggle=None, reset_sels=None):
         """
@@ -178,20 +194,29 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         reset_sels
             If True, previous selections & marks shan’t be restored
         """
+        # after restart ST, callback seems to disappear, so reset callback on each refresh for more reliability
+        self.view.settings().clear_on_change('color_scheme')
+        self.view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(self.view))
+
         path = self.path
         self.sel = None
         expanded = self.view.find_all(u'^\s*▾') if not goto else []
         names = []
+        self.number_line = 0
+        self.index  = None if reset_sels else self.get_all()
+        self.marked = None if reset_sels else self.get_marked()
+        self.sels   = None if reset_sels else (self.get_selected(), list(self.view.sel()))
+
         if path == 'ThisPC\\':
             path = ''
             for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
                 disk = '%s:' % s
                 if isdir(disk):
                     names.append(disk)
-        if expanded or to_expand:
+        if not reset_sels:
             self.re_populate_view(edit, path, names, expanded, to_expand, toggle)
         else:
-            self.reset_sels = reset_sels
+            self.index = []
             if not path:
                 self.continue_refreshing(edit, path, names)
             else:
@@ -200,28 +225,26 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     def re_populate_view(self, edit, path, names, expanded, to_expand, toggle):
         root = path
         for i, r in enumerate(expanded):
-            line = self.view.line(r)
-            full_name = self._remove_ui(self.get_parent(line, self.view.substr(line)))
-            expanded[i] = full_name.rstrip(os.sep)
+            name = self.get_parent(r, path)
+            expanded[i] = name.rstrip(os.sep)
         if toggle and to_expand:
             merged = list(set(expanded + to_expand))
             expanded = [e for e in merged if not (e in expanded and e in to_expand)]
         else:
             expanded.extend(to_expand or [])
-        if any(e for e in expanded if e == path.rstrip(os.sep)):
-            # e.g. c:\ was expanded and user press enter on it
-            return self.populate_view(edit, path, names, goto=None)
+        # we need prev index to setup expanded list — done, so reset index
+        self.index = []
         self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
         tree = self.traverse_tree(root, root, '', names, expanded)
         if tree:
             self.set_status()
-            text, _ = self.set_title(path)
+            text, header = self.set_title(path)
             if root and self.show_parent():
                 text.extend(PARENT_SYM)
+                self.index = [PARENT_SYM] + self.index
+            if header:
+                self.index = ['', ''] + self.index
             text.extend(tree)
-
-            marked = set(self.get_marked())
-            sels   = (self.get_selected(), list(self.view.sel()))
 
             self.view.set_read_only(False)
             self.view.erase(edit, Region(0, self.view.size()))
@@ -231,9 +254,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             fileregion = self.fileregion()
             count = len(self.view.lines(fileregion)) if fileregion else 0
             self.view.settings().set('dired_count', count)
+            self.view.settings().set('dired_index', self.index)
 
-            self.restore_marks(marked)
-            self.restore_sels(sels)
+            self.restore_marks(self.marked)
+            self.restore_sels(self.sels)
 
             CallVCS(self.view, path)
         else:
@@ -246,10 +270,12 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             names = os.listdir(path)
         except OSError as e:
             error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
+            if not ST3 and LIN:
+                error = error.decode('utf8')
             self.view.run_command("dired_up")
             self.view.set_read_only(False)
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b,
-                             '\t<%s>' % error)
+                             u'\t<%s>' % error)
             self.view.set_read_only(True)
         else:
             self.continue_refreshing(edit, path, names, goto)
@@ -258,14 +284,16 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     def continue_refreshing(self, edit, path, names, goto=None):
         self.set_status()
 
+        text, header = self.set_title(path)
         f = self.prepare_filelist(names, path, '', '')
 
-        marked = None if self.reset_sels else set(self.get_marked())
-        sels   = None if self.reset_sels else (self.get_selected(), list(self.view.sel()))
-
-        text, header = self.set_title(path)
         if path and (not f or self.show_parent()):
             text.append(PARENT_SYM)
+            self.index = [PARENT_SYM] + self.index
+            self.number_line += 1
+        if header:
+            self.index = ['', ''] + self.index
+            self.number_line += 2
         text.extend(f)
 
         self.view.set_read_only(False)
@@ -274,7 +302,9 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.settings().set('dired_count', len(f))
         self.view.set_read_only(True)
 
-        self.restore_marks(marked)
+        self.view.settings().set('dired_index', self.index)
+
+        self.restore_marks(self.marked)
 
         # Place the cursor.
         if f:
@@ -293,7 +323,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                 except ValueError:
                     pass
             else:
-                self.restore_sels(sels)
+                self.restore_sels(self.sels)
         else:  # empty folder?
             pt = self.view.text_point(2, 0)
             self.view.sel().clear()
@@ -307,17 +337,22 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             # basename return funny results for c:\\ so it is tricky
             b = os.path.basename(os.path.abspath(path)) or path.rstrip(os.sep)
             if root != path and b != os.path.basename(root.rstrip(os.sep)):
-                tree.append(indent[:-1] + u'▾ ' + b + os.sep)
+                tree.append(u'%s▾ %s%s' % (indent[:-1], b.rstrip(os.sep), os.sep))
+                self.index.append(u'%s%s' % (path.rstrip(os.sep), os.sep))
             try:
                 if not self.show_hidden:
                     items = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
                 else:
                     items = os.listdir(path)
             except OSError as e:
-                tree[~0] += '\t<%s>' % str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
+                error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
+                if not ST3 and LIN:
+                    error = error.decode('utf8')
+                tree[~0] += u'\t<%s>' % error
                 return
         sort_nicely(items)
         files = []
+        index_files = []
         if tree and not items:
             # expanding empty folder, so notify that it is empty
             tree[~0] += '\t<empty>'
@@ -327,9 +362,12 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             if check and new_path.replace(root, '', 1).strip(os.sep) in expanded:
                 self.traverse_tree(root, new_path, indent + '\t', tree, expanded)
             elif check:
-                tree.append(u'%s▸ %s%s' % (indent, f, os.sep if f[~0] != os.sep else ''))
+                self.index.append(u'%s%s' % (new_path.rstrip(os.sep), os.sep))
+                tree.append(u'%s▸ %s%s' % (indent, f.rstrip(os.sep), os.sep))
             else:
-                files.append(indent + u'≡ ' + f)
+                index_files.append(new_path)
+                files.append(u'%s≡ %s' % (indent, f))
+        self.index += index_files
         tree += files
         return tree
 
@@ -366,6 +404,7 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
 class DiredSelect(TextCommand, DiredBaseCommand):
     def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0, inline=0, toggle=0):
         path = self.path
+        self.index = self.get_all()
         if inline:
             filenames = self.get_marked() or self.get_selected(parent=False)
             if len(filenames) == 1 and filenames[0][~0] == os.sep:
@@ -435,7 +474,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         return group
 
     def expand_single_folder(self, edit, path, filename, toggle):
-        marked = set(self.get_marked())
+        marked = self.get_marked()
         sels   = self.get_selected()
 
         if toggle:
@@ -446,17 +485,22 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 self.view.run_command('dired_fold')
                 return
 
-        self.view.run_command('dired_fold', {'update': True})
-        sel    = self.view.get_regions('marked')[0] if marked else list(self.view.sel())[0]
-        line   = self.view.line(sel)
-        fqn    = join(path, filename)
+        self.view.run_command('dired_fold', {'update': True, 'index': self.index})
+        self.index = self.get_all()  # fold changed index, get a new one
+        sel  = self.view.get_regions('marked')[0] if marked else list(self.view.sel())[0]
+        line = self.view.line(sel)
+        # bah, 0-based index sucks, have to take number of next line to make slicing work properly
+        self.number_line = 1 + self.view.rowcol(line.a)[0]
+        fqn  = join(path, filename)
         if isdir(fqn):
             self.sel = sel
             try:
                 names = os.listdir(fqn)
             except OSError as e:
                 error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
-                replacement = '%s\t<%s>' % (self.view.substr(line), error)
+                if not ST3 and LIN:
+                    error = error.decode('utf8')
+                replacement = u'%s\t<%s>' % (self.view.substr(line), error)
             else:
                 path = self.path if self.path != 'ThisPC\\' else ''
                 replacement = self.prepare_treeview(names, path, fqn, '\t')
@@ -465,6 +509,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         self.view.set_read_only(False)
         self.view.replace(edit, line, replacement)
         self.view.set_read_only(True)
+        self.view.settings().set('dired_index', self.index)
         self.restore_marks(marked)
         self.restore_sels((sels, [sel]))
         CallVCS(self.view, path)
@@ -489,8 +534,9 @@ class DiredFold(TextCommand, DiredBaseCommand):
             it’ll be filled (basically it is like update/refresh), also set dired_count;
         (b) directory was folded (as in 1.b) — do nothing
     '''
-    def run(self, edit, update=''):
+    def run(self, edit, update=None, index=None):
         v = self.view
+        self.index  = index or self.get_all()
         self.marked = None
         self.seled  = (self.get_selected(), list(self.view.sel()))
         marks       = self.view.get_regions('marked')
@@ -500,7 +546,7 @@ class DiredFold(TextCommand, DiredBaseCommand):
             for m in marks:
                 if 'directory' in self.view.scope_name(m.a):
                     virt_sels.append(Region(m.a, m.a))
-            self.marked = list(set(self.get_marked()))
+            self.marked = self.get_marked()
         sels = virt_sels
 
         lines = [v.line(s.a) for s in reversed(sels or list(v.sel()))]
@@ -519,7 +565,8 @@ class DiredFold(TextCommand, DiredBaseCommand):
         folded_folder    = update and current_region.empty() and next_region.empty()
         file_item_in_root = not is_folder and current_region.empty()
 
-        if v.substr(line).endswith('<empty>'):
+        if 'error' in v.scope_name(line.b - 1):
+            # remove inline errors, e.g. <empty>
             indented_region = v.extract_scope(line.b - 1)
         elif folded_subfolder or folded_folder or file_item_in_root:
             return  # folding is not supposed to happen, so we exit
@@ -536,7 +583,7 @@ class DiredFold(TextCommand, DiredBaseCommand):
         else:
             icon_region = Region(line.a, line.a + 1)
 
-        # do not set count on empty folder
+        # do not set count & index on empty folder
         if not line.contains(indented_region):
             dired_count = v.settings().get('dired_count', 0)
             v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
@@ -544,8 +591,13 @@ class DiredFold(TextCommand, DiredBaseCommand):
                 # MUST avoid new line at eof
                 indented_region = Region(indented_region.a - 1, indented_region.b)
 
+            line_number = 1 + v.rowcol(line.a)[0]
+            removed_lines = line_number + len(v.lines(indented_region))
+            v.settings().set('dired_index', self.index[:line_number] + self.index[removed_lines:])
+
         if self.marked or self.seled:
-            folded_name = self._remove_ui(self.get_parent(line, self.view.substr(line)))
+            path = self.path
+            folded_name = self.get_parent(line, path)
             if self.marked:
                 self.marked.append(folded_name)
             elif self.seled:
@@ -564,7 +616,7 @@ class DiredUpCommand(TextCommand, DiredBaseCommand):
         if parent != os.sep and parent[1:] != ':\\':
             # need to avoid c:\\\\
             parent += os.sep
-        if parent == path and sublime.platform() == 'windows':
+        if parent == path and NT:
             parent = 'ThisPC'
         elif parent == path:
             return
@@ -589,6 +641,7 @@ class DiredGotoCommand(TextCommand, DiredBaseCommand):
 
 class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
+        self.index = self.get_all()
         path = self.path
         if path == 'ThisPC\\':
             path  = ''
@@ -645,6 +698,10 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
         if filergn.empty():
             return
 
+        if not mark and markall:
+            self.view.erase_regions('marked')
+            return
+
         # If markall is set, mark/unmark all files.  Otherwise only those that are selected.
         regions = [filergn] if markall else self.view.sel()
 
@@ -664,6 +721,7 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
 class DiredCreateCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, which=None):
         assert which in ('file', 'directory'), "which: " + which
+        self.index = self.get_all()
         relative_path = self.get_selected(parent=False) or ""
         if relative_path:
             relative_path = relative_path[0]
@@ -705,6 +763,7 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, trash=False):
+        self.index = self.get_all()
         files = self.get_marked() or self.get_selected(parent=False)
         if files:
             # Yes, I know this is English.  Not sure how Sublime is translating.
@@ -796,7 +855,8 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
         if self.filecount():
             # Store the original filenames so we can compare later.
-            self.view.settings().set('rename', self.get_all())
+            path = self.path
+            self.view.settings().set('rename', self.get_all_relative(path))
             self.view.settings().set('dired_rename_mode', True)
             self.view.set_read_only(False)
 
@@ -833,9 +893,13 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
         # number of files.
         after = []
 
+        self.index = self.get_all()
+        path = self.path
         for region in self.view.get_regions('rename'):
             for line in self.view.lines(region):
-                after.append(self._remove_ui(self.get_parent(line, self.view.substr(line).strip())))
+                parent = dirname(self.get_parent(line, path).rstrip(os.sep))
+                name = self.view.substr(Region(self._get_name_point(line), line.b))
+                after.append(join(parent, name))
 
         if len(after) != len(before):
             sublime.error_message('You cannot add or remove lines')
@@ -897,6 +961,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
 
 class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, cut=False):
+        self.index = self.get_all()
         path      = self.path if self.path != 'ThisPC\\' else ''
         filenames = self.get_marked() or self.get_selected(parent=False)
         if not filenames:
@@ -927,6 +992,7 @@ class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
         if not (sources_move or sources_copy):
             return sublime.status_message('Nothing to paste')
 
+        self.index = self.get_all()
         path = self.path if self.path != 'ThisPC\\' else ''
         relative_path = self.get_selected(parent=False) or ''
         if relative_path:
@@ -936,7 +1002,7 @@ class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
             if relative_path == os.sep:
                 relative_path = ""
         destination = join(path, relative_path) or path
-        if sublime.platform() == 'windows':
+        if NT:
             return call_SHFileOperationW(self.view, sources_move, sources_copy, destination)
         else:
             return call_SystemAgnosticFileOperation(self.view, sources_move, sources_copy, destination)
@@ -1020,18 +1086,18 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
     quick look current file in mac or open in default app on other OSs
     """
     def run(self, edit):
+        self.index = self.get_all()
         files = self.get_marked() or self.get_selected(parent=False)
         if not files:
             return sublime.status_message('Nothing chosen')
-        p = sublime.platform()
-        if p == 'osx':
+        if OSX:
             cmd = ["qlmanage", "-p"]
             for filename in files:
                 fqn = join(self.path, filename)
                 cmd.append(fqn)
             subprocess.call(cmd)
         else:
-            if p == 'windows':
+            if NT:
                 launch = lambda f: os.startfile(f)
             else:
                 launch = lambda f: subprocess.call(['xdg-open', f])
@@ -1046,6 +1112,7 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
     """
     def run(self, edit):
         path = self.path
+        self.index = self.get_all()
         files = self.get_selected(parent=False)
         fname = join(path, files[0] if files else '')
         p, f  = os.path.split(fname.rstrip(os.sep))
@@ -1053,7 +1120,7 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
         if not exists(fname):
             return sublime.status_message(u'Directory doesn’t exist “%s”' % path)
 
-        if sublime.platform() == 'windows' and path == 'ThisPC\\':
+        if NT and path == 'ThisPC\\':
             if not ST3:
                 fname = fname.encode(locale.getpreferredencoding(False))
             return subprocess.Popen('explorer /select,"%s"' % fname)
@@ -1066,6 +1133,7 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
 
 class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, project_folder=False):
+        self.index = self.get_all()
         if project_folder:
             files = project_folder
         else:
@@ -1074,7 +1142,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
 
         if ST3:  # sublime.executable_path() is not available in ST2
             executable_path = sublime.executable_path()
-            if sublime.platform() == 'osx':
+            if OSX:
                 app_path = executable_path[:executable_path.rfind(".app/")+5]
                 executable_path = app_path+"Contents/SharedSupport/bin/subl"
             items.append(executable_path)
@@ -1084,7 +1152,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                 fqn = join(self.path, filename)
                 items.append(fqn)
 
-            if sublime.platform() == 'windows':
+            if NT:
                 subprocess.Popen(items)
             else:
                 subprocess.Popen(items, cwd=self.path)
@@ -1095,7 +1163,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                 fqn = join(self.path or u'', filename)
                 items.append(fqn)
 
-            if sublime.platform() == 'osx':
+            if OSX:
                 try:
                     subprocess.Popen(['subl'] + items, cwd=self.path)
                 except:
@@ -1105,7 +1173,7 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                         app_path = subprocess.Popen(["osascript", "-e" "tell application \"System Events\" to POSIX path of (file of process \"Sublime Text 2\" as alias)"], stdout=subprocess.PIPE).communicate()[0].rstrip()
                         subl_path = "{0}/Contents/SharedSupport/bin/subl".format(app_path)
                         subprocess.Popen([subl_path] + items, cwd=self.path)
-            elif sublime.platform() == 'windows':
+            elif NT:
                 # 9200 means win8
                 shell = True if sys.getwindowsversion()[2] < 9200 else False
                 items = [i.encode(locale.getpreferredencoding(False)) if sys.getwindowsversion()[2] == 9200 else i for i in items]
@@ -1278,7 +1346,7 @@ class CallVCS(DiredBaseCommand):
                     u'But the pattern cannot be found, please, fix it '
                     u'or use absolute path without wildcards.' % git)
 
-        shell = True if sublime.platform() == 'windows' else False
+        shell = True if NT else False
         try:
             p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
             git_output = p.communicate()[0]
@@ -1299,19 +1367,16 @@ class CallVCS(DiredBaseCommand):
 
     def vcs_colorized(self, changed_items):
         modified, untracked = [], []
-        path = normpath(self.vcs_state['path'])
-        files_regions = dict((normpath(join(path, f)), r) for f, r in zip(self.get_all(), self.view.split_by_newlines(self.fileregion())))
+        files_regions = dict((f, r) for f, r in zip(self.get_all(), self.view.split_by_newlines(self.fileregion())))
         colorblind = self.view.settings().get('vcs_color_blind', False)
         offset = 1 if not colorblind else 0
         for fn in changed_items.keys():
             full_fn = normpath(fn)
             r = files_regions.get(full_fn, 0)
             if r:
-                content = self.view.substr(r)
-                indent  = len(re.match(r'^(\s*)', content).group(1))
-                icon    = r.a + indent
-                r       = Region(icon, icon + offset)
-                status  = changed_items[fn]
+                icon   = self._get_name_point(r) - 2
+                r      = Region(icon, icon + offset)
+                status = changed_items[fn]
                 if status == 'M':
                     modified.append(r)
                 elif status == '?':

@@ -4,7 +4,7 @@
 import re, os, fnmatch
 import sublime
 from sublime import Region
-from os.path import isdir, join
+from os.path import isdir, join, basename
 
 if sublime.platform() == 'windows':
     import ctypes
@@ -41,9 +41,6 @@ class DiredBaseCommand:
     @property
     def path(self):
         return self.view.settings().get('dired_path')
-
-    def _remove_ui(self, s):
-        return s.replace(u"▸ ", "").replace(u"▾ ", "").replace(u"≡ ", "")
 
     def filecount(self):
         """
@@ -88,12 +85,7 @@ class DiredBaseCommand:
                 # Not (or no longer) in the list of files, so move to the closest edge.
                 pt = (pt > files.b) and files.b or files.a
 
-            line = self.view.line(pt)
-            scope = self.view.scope_name(line.a)
-            if 'indent' in scope:
-                name_point = self.view.extract_scope(line.a).b
-            else:
-                name_point = line.a + (2 if not 'parent_dir' in scope else 0)
+            name_point = self._get_name_point(self.view.line(pt))
             new_sels.append(name_point)
 
         self.view.sel().clear()
@@ -102,6 +94,14 @@ class DiredBaseCommand:
         name_point = new_sels[~0] if forward else new_sels[0]
         surroundings = True if self.view.rowcol(name_point)[0] < 3 else False
         self.view.show(name_point, surroundings)
+
+    def _get_name_point(self, line):
+        scope = self.view.scope_name(line.a)
+        if 'indent' in scope:
+            name_point = self.view.extract_scope(line.a).b
+        else:
+            name_point = line.a + (2 if not 'parent_dir' in scope else 0)
+        return name_point
 
     def show_parent(self):
         return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
@@ -120,30 +120,40 @@ class DiredBaseCommand:
             return None
         return Region(all_items[0].a, all_items[~0].b)
 
-    def get_parent(self, line, text):
+    def get_parent(self, line, path):
+        u'''
+        Returns relative path for line
+            • line is a region
+            • path is self.path
+            • self.index is list stored in view settings as 'dired_index'
         '''
-        Returns relative path for text using os.sep, e.g. bla\\parent\\text\\
-        '''
-        indent = self.view.indented_region(line.b)
-        if 'directory' in self.view.scope_name(line.a):
-            # line may have inline error msg after os.sep
-            text = text.split(os.sep)[0] + os.sep
-        while not indent.empty():
-            parent = self.view.line(indent.a - 2)
-            text   = os.path.join(self.view.substr(parent).lstrip(), text.lstrip())
-            indent = self.view.indented_region(parent.a)
-        return text
+        return self.get_fullpath_for(line).replace(path, '', 1)
+
+    def get_fullpath_for(self, line):
+        return self.index[self.view.rowcol(line.a)[0]]
 
     def get_all(self):
         """
         Returns a list of all filenames in the view.
+        dired_index is always supposed to represent current state of view,
+        each item matches corresponding line, thus list will never be empty unless sth went wrong;
+        if header is enabled then first two elements are empty strings
         """
-        return [self._remove_ui(RE_FILE.match(self.get_parent(l, self.view.substr(l))).group(2)) for l in self.view.lines(self.fileregion())]
+        index = self.view.settings().get('dired_index', [])
+        if not index:
+            return sublime.error_message(u'FileBrowser:\n\n"dired_index" is empty,\n'
+                                         u'that shouldn’t happen ever, there is some bug.')
+        return index
+
+    def get_all_relative(self, path):
+        return [f.replace(path, '', 1) for f in self.get_all()]
 
     def get_selected(self, parent=True):
         """
         Returns a list of selected filenames.
+        self.index should be assigned before call it
         """
+        path = self.path
         names = set()
         fileregion = self.fileregion(with_parent_link=parent)
         if not fileregion:
@@ -152,19 +162,24 @@ class DiredBaseCommand:
             lines = self.view.lines(sel)
             for line in lines:
                 if fileregion.contains(line):
-                    text = self.view.substr(line)
+                    text = self.get_parent(line, path)
                     if text:
-                        names.add(self._remove_ui(RE_FILE.match(self.get_parent(line, text)).group(2)))
+                        names.add(text)
         names = list(names)
         sort_nicely(names)
+        # XXX: why we sorting these?
         return names
 
     def get_marked(self):
+        '''self.index should be assigned before call it'''
+        if not self.filecount():
+            return []
+        path = self.path
         lines = []
-        if self.filecount():
-            for region in self.view.get_regions('marked'):
-                lines.extend(self.view.lines(region))
-        return [self._remove_ui(RE_FILE.match(self.get_parent(line, self.view.substr(line))).group(2)) for line in lines]
+        for region in self.view.get_regions('marked'):
+            if region not in lines:
+                lines.append(region)
+        return [self.get_parent(line, path) for line in lines]
 
     def _mark(self, mark=None, regions=None):
         """
@@ -183,21 +198,21 @@ class DiredBaseCommand:
         if isinstance(regions, Region):
             regions = [regions]
 
+        path = self.path
+        self.index = self.get_all_relative(path)
         filergn = self.fileregion()
-
+        marked = {}
         # We can't update regions for a key, only replace, so we need to record the existing
         # marks.
         previous = [m for m in self.view.get_regions('marked') if not m.empty()]
-        marked = {}
         for r in previous:
-            item = self._remove_ui(RE_FILE.match(self.get_parent(r, self.view.substr(r))).group(2))
+            item = self.get_parent(r, path)
             marked[item] = r
 
         for region in regions:
             for line in self.view.lines(region):
                 if filergn.contains(line):
-                    indent, text = RE_FILE.match(self.view.substr(line)).groups()
-                    filename = self._remove_ui(self.get_parent(line, text))
+                    filename = self.get_parent(line, path)
 
                     if mark not in (True, False):
                         newmark = mark(filename in marked, filename)
@@ -206,8 +221,8 @@ class DiredBaseCommand:
                         newmark = mark
 
                     if newmark:
-                        name_region = Region(line.a + len(indent) + 2, line.b)  # do not mark UI elements
-                        marked[filename] = name_region
+                        name_point = self._get_name_point(line)
+                        marked[filename] = Region(name_point, line.b)
                     else:
                         marked.pop(filename, None)
 
@@ -251,6 +266,9 @@ class DiredBaseCommand:
         self.view.set_status("__FileBrowser__", status)
 
     def ls(self, path, names, goto='', indent=''):
+        ''' this is just ls; "backend" for self.prepare_filelist
+        About self.index see DiredRefreshCommand
+        '''
         items   = []
         tab     = self.view.settings().get('tab_size')
         line    = self.view.line(self.sel.a if self.sel is not None else self.view.sel()[0].a)
@@ -258,11 +276,18 @@ class DiredBaseCommand:
         ind     = re.compile('^(\s*)').match(content).group(1)
         level   = indent * int((len(ind) / tab) + 1) if ind else indent
         files   = []
+        index_dirs  = []
+        index_files = []
         for name in names:
-            if isdir(join(path, goto, name)):
+            full_name = join(path, goto, name)
+            if isdir(full_name):
+                index_dirs.append(u'%s%s' % (full_name, os.sep))
                 items.append(''.join([level, u"▸ ", name, os.sep]))
             else:
+                index_files.append(full_name)
                 files.append(''.join([level, u"≡ ", name]))
+        index = index_dirs + index_files
+        self.index = self.index[:self.number_line] + index + self.index[self.number_line:]
         items += files
         return items
 
@@ -286,6 +311,10 @@ class DiredBaseCommand:
         return result
 
     def prepare_filelist(self, names, path, goto, indent):
+        '''wrap self.ls method
+        could be called from  self.prepare_treeview
+                     or from  DiredRefresh.continue_refresh
+        '''
         show_hidden = self.view.settings().get('dired_show_hidden_files', True)
         if not show_hidden:
             names = [name for name in names if not self.is_hidden(name, path, goto)]
@@ -294,6 +323,7 @@ class DiredBaseCommand:
         return f
 
     def prepare_treeview(self, names, path, goto, indent):
+        '''called when expand single directory'''
         f = self.prepare_filelist(names, path, goto, indent)
         line = self.view.line(self.sel if self.sel is not None else self.view.sel()[0])
         # line may have inline error msg after os.sep
@@ -309,27 +339,41 @@ class DiredBaseCommand:
         if marked:
             # Even if we have the same filenames, they may have moved so we have to manually
             # find them again.
+            path = self.path
             regions = []
-            for line in self.view.lines(self.fileregion()):
-                indent, text = RE_FILE.match(self.view.substr(line)).groups()
-                filename = self._remove_ui(self.get_parent(line, text))
-                if filename in marked:
-                    name_region = Region(line.a + len(indent) + 2, line.b)  # do not mark UI elements
-                    regions.append(name_region)
-            self.view.add_regions('marked', regions, 'dired.marked', '', MARK_OPTIONS)
+            for mark in marked:
+                matches = self._find_in_view(mark)
+                for region in matches:
+                    filename = self.get_parent(region, path)
+                    if filename == mark:
+                        regions.append(region)
+                        # if it is found, no need to check other mathes, so break
+                        break
+            self._mark(mark=True, regions=regions)
         else:
             self.view.erase_regions('marked')
 
     def restore_sels(self, sels=None):
+        '''
+        sels is tuple of two elements:
+            0 list of filenames
+                relative paths to search in the view
+            1 list of Regions
+                copy of view.sel(), used for fallback if filenames are not found
+                in view (e.g. user deleted selected file)
+        '''
         if sels:
             seled_fnames, seled_regions = sels
+            path = self.path
             regions = []
-            for line in self.view.lines(self.fileregion()):
-                indent, text = RE_FILE.match(self.view.substr(line)).groups()
-                filename = self._remove_ui(self.get_parent(line, text))
-                if filename in seled_fnames:
-                    name_point = line.a + len(indent) + 2
-                    regions.append(Region(name_point, name_point))
+            for selection in seled_fnames:
+                matches = self._find_in_view(selection)
+                for region in matches:
+                    filename = self.get_parent(region, path)
+                    if filename == selection:
+                        name_point = self._get_name_point(region)
+                        regions.append(Region(name_point, name_point))
+                        break
             if regions:
                 return self._add_sels(regions)
             else:
@@ -337,16 +381,32 @@ class DiredBaseCommand:
                 # despite positions may be wrong sometimes
                 return self._add_sels(seled_regions)
         # fallback:
-        return self._add_sels([Region(0, 0)])
+        return self._add_sels()
 
-    def _add_sels(self, sels):
-        eof = self.view.size()
+    def _find_in_view(self, item):
+        fname = re.escape(basename(item.rstrip(os.sep)))
+        if item[~0] == os.sep:
+            pattern = u'^\s*[▸▾] '
+            sep = re.escape(os.sep)
+        else:
+            pattern = u'^\s*≡ '
+            sep = ''
+        return self.view.find_all(u'%s%s%s' % (pattern, fname, sep))
+
+    def _add_sels(self, sels=None):
         self.view.sel().clear()
-        for s in sels:
-            if s.begin() <= eof:
-                self.view.sel().add(s)
-        if not self.view.sel():
-            # all sels are more than eof
-            s = Region(0, 0)
+
+        if sels:
+            eof = self.view.size()
+            for s in sels:
+                if s.begin() <= eof:
+                    self.view.sel().add(s)
+
+        if not sels or not list(self.view.sel()):  # all sels more than eof
+            item = (self.view.find_by_selector('text.dired dired.item.parent_dir ') or
+                    self.view.find_by_selector('text.dired dired.item.directory string.name.directory.dired ') or
+                    self.view.find_by_selector('text.dired dired.item.file string.name.file.dired '))
+            s = Region(item[0].a, item[0].a) if item else Region(0, 0)
             self.view.sel().add(s)
+
         self.view.show_at_center(s)

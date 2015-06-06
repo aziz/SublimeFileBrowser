@@ -27,6 +27,9 @@ def set_proper_scheme(view):
     else:
         dired_settings = sublime.load_settings('dired.sublime-settings')
 
+    if view.settings().get('color_scheme') == dired_settings.get('color_scheme'):
+        return
+
     view.settings().set('color_scheme', dired_settings.get('color_scheme'))
 
 
@@ -62,6 +65,9 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
         view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
         view.set_scratch(True)
+        reset_sels = True
+    else:
+        reset_sels = path != view.settings().get('dired_path', '')
 
     nag = window.active_group()
     if other_group:
@@ -100,7 +106,6 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
         name = u"■ {0}".format(view_name)
 
     view.set_name(name)
-    reset_sels = path != view.settings().get('dired_path', '')
     view.settings().set('dired_path', path)
     view.settings().set('dired_rename_mode', False)
     window.focus_view(view)
