@@ -466,7 +466,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         self.view.replace(edit, line, replacement)
         self.view.set_read_only(True)
         self.restore_marks(marked)
-        self.restore_sels((sels, sel))
+        self.restore_sels((sels, [sel]))
         CallVCS(self.view, path)
 
 
@@ -798,7 +798,6 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
             # Store the original filenames so we can compare later.
             self.view.settings().set('rename', self.get_all())
             self.view.settings().set('dired_rename_mode', True)
-            set_proper_scheme(self.view)
             self.view.set_read_only(False)
 
             self.set_ui_in_rename_mode(edit)
@@ -817,7 +816,6 @@ class DiredRenameCancelCommand(TextCommand, DiredBaseCommand):
     """
     def run(self, edit):
         self.view.settings().erase('rename')
-        set_proper_scheme(self.view)
         self.view.settings().set('dired_rename_mode', False)
         self.view.run_command('dired_refresh')
 
@@ -893,7 +891,6 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
 
         self.view.erase_regions('rename')
         self.view.settings().erase('rename')
-        set_proper_scheme(self.view)
         self.view.settings().set('dired_rename_mode', False)
         self.view.run_command('dired_refresh')
 
@@ -961,7 +958,7 @@ class DiredHelpCommand(TextCommand):
         view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
         view.set_name("Browse: shortcuts")
         view.set_scratch(True)
-        set_proper_scheme(view)
+        view.settings().set('rulers', [])
         view.settings().set('syntax', 'Packages/FileBrowser/dired-help.hidden-tmLanguage')
         view.settings().set('line_numbers', False)
         view.run_command('dired_show_help')

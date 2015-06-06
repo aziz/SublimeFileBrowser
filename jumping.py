@@ -185,11 +185,11 @@ class DiredJumpListCommand(TextCommand):
             view.set_read_only(False)
         else:
             view = self.view.window().new_file()
+            view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
 
         view.set_name("FileBrowser: Jump List")
         view.set_scratch(True)
         view.set_syntax_file('Packages/FileBrowser/dired_jumplist.hidden-tmLanguage')
-        set_proper_scheme(view)
         view.settings().set('line_numbers', False)
         view.settings().set('draw_centered', True)
         view.run_command('dired_jump_list_render')

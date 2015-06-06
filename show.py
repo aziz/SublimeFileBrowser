@@ -14,12 +14,15 @@ else:
 
 
 def set_proper_scheme(view):
+    '''
+    this is callback, it is not meant to be called directly
+        view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
+    set once, right after view is created
+    _note_, color_scheme must not be set directly, but in a setting file
+    '''
     # Since we cannot create file with syntax, there is moment when view has no settings,
     # but it is activated, so some plugins (e.g. Color Highlighter) set wrong color scheme
-
-    dired_settings = None
-
-    if view.settings().get('dired_rename_mode'):
+    if view.settings().get('dired_rename_mode', False):
         dired_settings = sublime.load_settings('dired-rename-mode.sublime-settings')
     else:
         dired_settings = sublime.load_settings('dired.sublime-settings')
