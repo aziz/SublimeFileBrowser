@@ -1,0 +1,20 @@
+0.7.1
+
+• Custom colour scheme can be set in dired-rename-mode.sublime-settings file.
+  Keep your customisations in Packages/User so they won’t be removed on upgrade.
+
+• REMOVED: Duplicate and Move commands
+           Please, use cut-copy-paste functionality for these purposes.
+           See prev. release or readme for details about cut-copy-paste.
+
+• CHANGED: Case-insensitive prompt (such as ‘Go to’ or ‘Browse Mode…’)
+           Though, completion (tab key) shall set proper case for matching item.
+
+• CHANGED: Double click toggles folder (expand/collapse) instead of open it.
+
+• NEW: Control how to open a view from Jumping with setting "dired_open_on_jump"
+       "left"  the default, open the view on the left
+       "right" open the view on the right
+       true    take all space available
+
+• NEW: Prevent create new window from Jumping with "dired_smart_jump": true
