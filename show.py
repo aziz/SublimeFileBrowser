@@ -33,6 +33,28 @@ def set_proper_scheme(view):
     view.settings().set('color_scheme', dired_settings.get('color_scheme'))
 
 
+def calc_width(view):
+    '''
+    return float width, which must be
+        0.0 < width < 1.0 (other values acceptable, but cause unfriendly layout)
+    used in show() and "dired_select" command with other_group=True
+    '''
+    width = view.settings().get('dired_width', 0.3)
+    if isinstance(width, float):
+        width -= width//1  # must be less than 1
+    elif isinstance(width, int if ST3 else long):  # assume it is pixels
+        wport = view.viewport_extent()[0]
+        width = 1 - round((wport - width) / wport, 2)
+        if width >= 1:
+            width = 0.9
+    else:
+        sublime.error_message(u'FileBrowser:\n\ndired_width set to '
+                              u'unacceptable type "%s", please change it.\n\n'
+                              u'Fallback to default 0.3 for now.' % type(width))
+        width = 0.3
+    return width or 0.1  # avoid 0.0
+
+
 def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, other_group=''):
     """
     Determines the correct view to use, creating one if necessary, and prepares it.
@@ -73,7 +95,8 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
     if other_group:
         group = 0 if other_group == 'left' else 1
         if window.num_groups() == 1:
-            cols = [0.0, 0.3, 1.0] if other_group == 'left' else [0.0, 0.66, 1.0]
+            width = calc_width(view)
+            cols = [0.0, width, 1.0] if other_group == 'left' else [0.0, 1-width, 1.0]
             window.set_layout({"cols": cols, "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
         elif view:
             groups = window.num_groups()

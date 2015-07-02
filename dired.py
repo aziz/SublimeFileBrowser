@@ -13,8 +13,7 @@ ST3 = int(sublime.version()) >= 3000
 if ST3:
     from .common import DiredBaseCommand, sort_nicely
     from . import prompt
-    from .show import show
-    from .show import set_proper_scheme
+    from .show import show, set_proper_scheme, calc_width
     from .jumping import jump_names
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
     try:
@@ -25,8 +24,7 @@ else:  # ST2 imports
     import locale
     from common import DiredBaseCommand, sort_nicely
     import prompt
-    from show import show
-    from show import set_proper_scheme
+    from show import show, set_proper_scheme, calc_width
     from jumping import jump_names
     MARK_OPTIONS = 0
     try:
@@ -464,7 +462,8 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         '''
         groups = w.num_groups()
         if groups == 1:
-            w.set_layout({"cols": [0.0, 0.3, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
+            width = calc_width(self.view)
+            w.set_layout({"cols": [0.0, width, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
         if groups <= 4 and nag < 2:
             group = 1 if nag == 0 else 0
         elif groups == 4 and nag >= 2:

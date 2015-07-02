@@ -48,6 +48,12 @@
   // false: the default, always open a new window when jumping
   "dired_smart_jump": false,
 
+  // Width for FileBrowser column (as sidebar) accepts float or int:
+  // float  0.1-0.9   put 1 is a window width, so e.g. 0.5 is half of window
+  // int    e.g. 99   pixels, if value will be more than current window width
+  //                  then value will be treated as 0.9
+  "dired_width": 0.3,
+
   // Automatically disable Vintageous to avoid keybindings incompatibilities;
   // note it is Vintageous setting, if it does not work you should report into
   // appropriate repository https://github.com/guillermooo/Vintageous/issues
