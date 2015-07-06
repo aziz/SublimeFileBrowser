@@ -1,0 +1,11 @@
+0.7.2
+
+• Improve performance when work with thousands items for all actions which need
+  full or relative path of item(s) (expand, mark, rename, remove, etc.)
+  ¡IMPORTANT! You may need to close existing FileBrowser view(s),
+              before continue.
+
+• Fix setting custom color schemes (hopefully, it’s a last time).
+
+• Add setting dired_width which define default width of FileBrowser sidebar.
+  See default settings file for details.
