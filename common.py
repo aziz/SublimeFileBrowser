@@ -154,6 +154,8 @@ class DiredBaseCommand:
         self.index should be assigned before call it
         """
         path = self.path
+        if path == 'ThisPC\\':
+            path = ''
         names = set()
         fileregion = self.fileregion(with_parent_link=parent)
         if not fileregion:
@@ -175,6 +177,8 @@ class DiredBaseCommand:
         if not self.filecount():
             return []
         path = self.path
+        if path == 'ThisPC\\':
+            path = ''
         lines = []
         for region in self.view.get_regions('marked'):
             if region not in lines:
@@ -199,6 +203,8 @@ class DiredBaseCommand:
             regions = [regions]
 
         path = self.path
+        if path == 'ThisPC\\':
+            path = ''
         self.index = self.get_all_relative(path)
         filergn = self.fileregion()
         marked = {}
@@ -340,6 +346,8 @@ class DiredBaseCommand:
             # Even if we have the same filenames, they may have moved so we have to manually
             # find them again.
             path = self.path
+            if path == 'ThisPC\\':
+                path = ''
             regions = []
             for mark in marked:
                 matches = self._find_in_view(mark)
@@ -365,6 +373,8 @@ class DiredBaseCommand:
         if sels:
             seled_fnames, seled_regions = sels
             path = self.path
+            if path == 'ThisPC\\':
+                path = ''
             regions = []
             for selection in seled_fnames:
                 matches = self._find_in_view(selection)
@@ -384,7 +394,7 @@ class DiredBaseCommand:
         return self._add_sels()
 
     def _find_in_view(self, item):
-        fname = re.escape(basename(item.rstrip(os.sep)))
+        fname = re.escape(basename(os.path.abspath(item)) or item.rstrip(os.sep))
         if item[~0] == os.sep:
             pattern = u'^\s*[▸▾] '
             sep = re.escape(os.sep)

@@ -855,13 +855,13 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
         if self.filecount():
             # Store the original filenames so we can compare later.
             path = self.path
-            self.view.settings().set('rename', self.get_all_relative(path))
+            self.view.settings().set('rename', [f for f in self.get_all_relative('' if path == 'ThisPC\\' else path) if f and f != u'⠤'])
             self.view.settings().set('dired_rename_mode', True)
             self.view.set_read_only(False)
 
             self.set_ui_in_rename_mode(edit)
 
-            self.view.set_status("__FileBrowser__", u" 𝌆 [enter: Apply changes] [escape: Discard changes] %s" % (u'¡¡¡DO NOT RENAME DISKS!!! you can rename their children though ' if self.path == 'ThisPC\\' else ''))
+            self.view.set_status("__FileBrowser__", u" 𝌆 [enter: Apply changes] [escape: Discard changes] %s" % (u'¡¡¡DO NOT RENAME DISKS!!! you can rename their children though ' if path == 'ThisPC\\' else ''))
 
             # Mark the original filename lines so we can make sure they are in the same
             # place.
