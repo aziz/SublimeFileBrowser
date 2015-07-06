@@ -33,6 +33,13 @@
   //     "git_path": ""
   "git_path": "git",
 
+  // Path to hg executable.
+  // Wildcards are supported, e.g. if you use TortoiseHg it would be:
+  //     "hg_path": "%ProgramFiles%/TortoiseHg/hg.exe"
+  // To disable hg integration set to empty string:
+  //     "hg_path": ""
+  "hg_path": "hg",
+
   // true: the default, pressing Enter on a directory uses the current view.
   // false: a new view is created.
   "dired_reuse_view": true,
