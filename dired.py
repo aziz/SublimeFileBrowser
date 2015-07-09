@@ -1336,8 +1336,8 @@ class CallVCS(DiredBaseCommand):
             self.vcs_state.update(git=False)
 
     def git_check(self, path, git='git'):
-        if any(c for c in '~*?[]' if c in git):
-            match = glob.glob(os.path.expanduser(git))
+        if any(c for c in '~*?[]$%' if c in git) and not isfile(git):
+            match = glob.glob(os.path.expandvars(os.path.expanduser(git)))
             if match:
                 git = match[0]
             else:
@@ -1374,8 +1374,8 @@ class CallVCS(DiredBaseCommand):
             self.vcs_state.update(hg=False)
 
     def hg_check(self, path, hg='hg'):
-        if any(c for c in '~*?[]' if c in hg):
-            match = glob.glob(os.path.expanduser(hg))
+        if any(c for c in '~*?[]$%' if c in hg) and not isfile(hg):
+            match = glob.glob(os.path.expandvars(os.path.expanduser(hg)))
             if match:
                 hg = match[0]
             else:
