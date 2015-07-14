@@ -1,0 +1,8 @@
+0.7.4
+
+• Add support for Mercurial, in the same manner as for Git.
+  Setting "hg_path" can be used in case Hg is not presented in PATH.
+  See default settings file for examples.
+
+• Expand env vars for custom git_path and hg_path, such as e.g. %ProgramFiles%
+  So, for instance, you can use same setting on different machine.
