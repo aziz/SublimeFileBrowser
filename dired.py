@@ -1317,10 +1317,11 @@ class CallVCS(DiredBaseCommand):
         self.view.erase_regions('M')
         self.view.erase_regions('?')
         self.call_git(path)
+        self.call_hg(path)
         self.watch_threads()
 
     def watch_threads(self):
-        if not 'git' in self.vcs_state:
+        if not all(n in self.vcs_state for n in ['git', 'hg']):
             sublime.set_timeout(self.watch_threads, 100)
             return
         if 'changed_items' in self.vcs_state:
@@ -1329,14 +1330,14 @@ class CallVCS(DiredBaseCommand):
     def call_git(self, path):
         git = self.view.settings().get('git_path', '')
         if git:  # empty string disable git integration
-            self.vcs_thread = threading.Thread(target=self.vcs_check, args=(path, git))
-            self.vcs_thread.start()
+            self.git_thread = threading.Thread(target=self.git_check, args=(path, git))
+            self.git_thread.start()
         else:
             self.vcs_state.update(git=False)
 
-    def vcs_check(self, path, git='git'):
-        if any(c for c in '~*?[]' if c in git):
-            match = glob.glob(os.path.expanduser(git))
+    def git_check(self, path, git='git'):
+        if any(c for c in '~*?[]$%' if c in git) and not isfile(git):
+            match = glob.glob(os.path.expandvars(os.path.expanduser(git)))
             if match:
                 git = match[0]
             else:
@@ -1363,6 +1364,44 @@ class CallVCS(DiredBaseCommand):
                 self.vcs_state.update(git=True, changed_items=changed_items)
             else:
                 self.vcs_state.update(git=False)
+
+    def call_hg(self, path):
+        hg = self.view.settings().get('hg_path', '')
+        if hg:  # empty string disable hg integration
+            self.hg_thread = threading.Thread(target=self.hg_check, args=(path, hg))
+            self.hg_thread.start()
+        else:
+            self.vcs_state.update(hg=False)
+
+    def hg_check(self, path, hg='hg'):
+        if any(c for c in '~*?[]$%' if c in hg) and not isfile(hg):
+            match = glob.glob(os.path.expandvars(os.path.expanduser(hg)))
+            if match:
+                hg = match[0]
+            else:
+                sublime.error_message(u'FileBrowser:\n'
+                    u'It seems like you use wildcards in\n\n"hg_path": "%s".\n\n'
+                    u'But the pattern cannot be found, please, fix it '
+                    u'or use absolute path without wildcards.' % hg)
+
+        shell = True if NT else False
+        try:
+            p = subprocess.Popen([hg, 'status'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
+            hg_output = p.communicate()[0]
+            p = subprocess.Popen([hg, 'root'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
+            root = p.communicate()[0].decode('utf-8').strip('\n')
+        except:
+            # on Windows exception is not being raised if cwd is not None and shell=True
+            self.vcs_state.update(hg=False)
+        else:
+            if hg_output:
+                hg_output = str(hg_output, 'utf-8').split('\n') if ST3 else hg_output.split('\n')
+                new_values = dict(( join(root,i[2:] if ST3 else unicode(i[2:], 'utf-8')), i[0]) for i in hg_output if i != '')
+                changed_items = self.vcs_state.get('changed_items', {})
+                changed_items.update(new_values)
+                self.vcs_state.update(hg=True, changed_items=changed_items)
+            else:
+                self.vcs_state.update(hg=False)
 
     def vcs_colorized(self, changed_items):
         modified, untracked = [], []

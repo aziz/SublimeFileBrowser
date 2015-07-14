@@ -280,13 +280,13 @@ such patterns:
 { "dired_hidden_files_patterns": [".*", "__pycache__", "*.pyc"] }
 ```
 
-### Git integration
-In case `git status` returns a colorable output in current directory, the modified and untracked
-files will be designated by orange and green icons respectively.
+### VCS integration
+In case `git status`(or `hg status`) returns a colorable output in current directory, the modified
+and untracked files will be designated by orange and green icons respectively.
 You can use setting `"vcs_color_blind": true` — untracked files will get vertical line on left side
 of their icons, modified files will get horizontal line under their icons.
-If Git is not presented in your `PATH` you may set `git_path` setting (see example in default
-settings file).
+If Git (or HG) is not presented in your `PATH` you may set `git_path` (resp `hg_path`) setting (see
+example in default settings file).
 
 
 ### Hijacking a new empty window (ST3 only)
