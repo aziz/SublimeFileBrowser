@@ -350,6 +350,11 @@ class DiredClearCopyCutList(TextCommand):
         self.view.run_command('dired_refresh')
 
 
+def _dups(sources_copy, destination):
+    '''return list of files that should be duplicated silently'''
+    return [p for p in sources_copy if os.path.split(p.rstrip(os.sep))[0] == destination.rstrip(os.sep)]
+
+
 class call_SHFileOperationW(object):
     '''call Windows API for file operations'''
     def __init__(self, view, sources_move, sources_copy, destination):
@@ -364,7 +369,7 @@ class call_SHFileOperationW(object):
         if sources_copy:
             # if user paste files in the same folder where they are then
             # it shall duplicate these files w/o asking anything
-            dups = [p for p in sources_copy if os.path.split(p.rstrip(os.sep))[0] == destination.rstrip(os.sep)]
+            dups = _dups(sources_copy, destination)
             if dups:
                 self.shfow_d_thread = threading.Thread(target=self.caller, args=(2, dups, destination, True))
                 self.shfow_d_thread.start()
@@ -416,23 +421,24 @@ class call_SystemAgnosticFileOperation(object):
         if sources_copy:
             # if user paste files in the same folder where they are then
             # it shall duplicate these files w/o asking anything
-            dups = [p for p in sources_copy if os.path.split(p.rstrip(os.sep))[0] == destination.rstrip(os.sep)]
+            dups = _dups(sources_copy, destination)
             if dups:
-                self.caller('copy', dups, destination, duplicate=True)
+                self.caller('dup', dups, destination)
                 sources_copy = [p for p in sources_copy if p not in dups]
                 if sources_copy:
                     self.caller('copy', sources_copy, destination)
             else:
                 self.caller('copy', sources_copy, destination)
 
-        msg = u'FileBrowser:\n\nSome files exist already, Cancel to skip all, OK to overwrite or rename.\n\n\t%s' % '\n\t'.join(self.errors.keys())
-        if self.errors and sublime.ok_cancel_dialog(msg):
-            t, f = self.errors.popitem()
-            self.actions = [['Overwrite', 'Folder cannot be overwritten'],
-                            ['Duplicate', 'Item will be renamed automatically']]
-            self.show_quick_panel(self.actions + [[u'from %s' % f, 'Skip'], [u'to   %s' % t, 'Skip']],
-                                  lambda i: self.user_input(i, f, t))
+        self.check_errors()
         self.start_threads()
+
+    def check_errors(self):
+        msg = u'FileBrowser:\n\nSome files exist already, Cancel to skip all, OK to overwrite or rename.\n\n\t%s' % '\n\t'.join(self.errors.keys())
+        self.actions = [['Overwrite', 'Folder cannot be overwritten'],
+                        ['Duplicate', 'Item will be renamed automatically']]
+        if self.errors and sublime.ok_cancel_dialog(msg):
+            self.show_quick_panel()
 
     def start_threads(self):
         if self.threads:
@@ -440,49 +446,65 @@ class call_SystemAgnosticFileOperation(object):
                 t.start()
             self.progress_bar(self.threads)
 
-    def show_quick_panel(self, options, done):
+    def show_quick_panel(self):
+        '''dialog asks if user would like to duplicate, overwrite, or skip item'''
+        t, f    = self.errors.popitem()
+        options = self.actions + [[u'from %s' % f, 'Skip'], [u'to   %s' % t, 'Skip']]
+        done    = lambda i: self.user_input(i, f, t)
         sublime.set_timeout(lambda: self.window.show_quick_panel(options, done, sublime.MONOSPACE_FONT), 10)
         return
 
     def user_input(self, i, name, new_name):
         if i == 0:
-            self._setup_dir_or_file('copy', name, new_name, overwrite=True)
+            self._setup('overwrite', name, new_name)
         if i == 1:
-            self._setup_dir_or_file('copy', name, new_name, duplicate=True)
+            self.duplicate(name, new_name)
         if self.errors:
-            t, f = self.errors.popitem()
-            self.show_quick_panel(self.actions + [[u'from %s' % f, 'Skip'], [u'to   %s' % t, 'Skip']],
-                                  lambda i: self.user_input(i, f, t))
+            self.show_quick_panel()
         else:
             self.start_threads()
 
-    def caller(self, mode, sources, destination, duplicate=False, overwrite=False):
+    def caller(self, mode, sources, destination):
         for fqn in sources:
             new_name = join(destination, basename(fqn.rstrip(os.sep)))
-            self._setup_dir_or_file(mode, fqn, new_name, duplicate, overwrite)
-
-    def _setup_dir_or_file(self, mode, fqn, new_name, duplicate=False, overwrite=False):
-        if duplicate:
-            new_name = self.generic_nn(new_name)
-        if mode == 'move':
-            if fqn != dirname(new_name):
-                if not exists(new_name):
-                    self._init_thread('move', fqn, new_name)
-                else:
-                    self.errors.update({str(new_name): fqn})
-        if mode == 'copy':
-            if isdir(fqn):
-                if not isdir(new_name) or overwrite:
-                    self._init_thread('dir', fqn, new_name)
-                else:
-                    self.errors.update({str(new_name): fqn})
+            if mode == 'dup':
+                self.duplicate(fqn, new_name)
             else:
-                if not isfile(new_name) or overwrite:
-                    self._init_thread('file', fqn, new_name)
-                else:
-                    self.errors.update({str(new_name): fqn})
+                self._setup(mode, fqn, new_name)
+
+    def duplicate(self, name, new_name):
+        new_name = self.generic_nn(new_name)
+        self._setup_copy(name, new_name, False)
+
+    def _setup(self, mode, original, new_name):
+        '''mode can be "move", "copy", "overwrite"'''
+        if mode == 'move' and original != dirname(new_name):
+            return self._setup_move(original, new_name)
+        overwrite = mode == 'overwrite'
+        if mode == 'copy' or overwrite:
+            return self._setup_copy(original, new_name, overwrite)
+
+    def _setup_move(self, original, new_name):
+        if not exists(new_name):
+            self._init_thread('move', original, new_name)
+        else:
+            self.errors.update({new_name: original})
+
+    def _setup_copy(self, original, new_name, overwrite):
+        '''overwrite is either True or False'''
+        def __dir_or_file(mode, new_name, overwrite):
+            exist = isdir(new_name) if mode == 'dir' else isfile(new_name)
+            if not exist or overwrite:
+                self._init_thread(mode, original, new_name)
+            else:
+                self.errors.update({new_name: original})
+        if isdir(original):
+            __dir_or_file('dir', new_name, overwrite)
+        else:
+            __dir_or_file('file', new_name, overwrite)
 
     def _init_thread(self, mode, source_name, new_name):
+        '''mode can be "move", "dir", "file"'''
         t = threading.Thread(target=self._do, args=(mode, source_name, new_name))
         t.setName(new_name if ST3 else new_name.encode('utf8'))
         self.threads.append(t)
