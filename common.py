@@ -1,7 +1,7 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+# coding: utf-8
 
-import re, os, fnmatch
+from __future__ import print_function
+import re, os, fnmatch, sys
 import sublime
 from sublime import Region
 from os.path import isdir, join, basename
@@ -16,12 +16,16 @@ if ST3:
 else:
     MARK_OPTIONS = 0
 
-
+OS = sublime.platform()
+NT = OS == 'windows'
+LIN = OS == 'linux'
+OSX = OS == 'osx'
 RE_FILE = re.compile(r'^(\s*)([^\\//].*)$')
+PARENT_SYM = u"⠤"
 
 
 def first(seq, pred):
-    # I can't comprehend how this isn't built-in.
+    '''similar to built-in any() but return the object instead of boolean'''
     return next((item for item in seq if pred(item)), None)
 
 
@@ -32,6 +36,77 @@ def sort_nicely(names):
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     names.sort(key=alphanum_key)
+
+
+def print(*args, **kwargs):
+    """ Redefine print() function; the reason is the inconsistent treatment of
+        unicode literals among Python versions used in ST2.
+        Redefining/tweaking built-in things is relatively safe; of course, when
+        ST2 will become irrelevant, this def might be removed undoubtedly.
+    """
+    if not (ST3 or NT):
+        args = (s.encode('utf-8') if isinstance(s, unicode) else str(s) for s in args)
+    else:
+        args = (s if isinstance(s, str if ST3 else unicode) else str(s) for s in args)
+    sep, end = kwargs.get('sep', ' '), kwargs.get('end', '\n')
+    sys.stdout.write(sep.join(s for s in args) + end)
+
+
+def set_proper_scheme(view):
+    '''
+    this is callback, it is not meant to be called directly
+        view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
+    set once, right after view is created
+    _note_, color_scheme must not be set directly, but in a setting file
+    '''
+    # Since we cannot create file with syntax, there is moment when view has no settings,
+    # but it is activated, so some plugins (e.g. Color Highlighter) set wrong color scheme
+    if view.settings().get('dired_rename_mode', False):
+        dired_settings = sublime.load_settings('dired-rename-mode.sublime-settings')
+    else:
+        dired_settings = sublime.load_settings('dired.sublime-settings')
+
+    if view.settings().get('color_scheme') == dired_settings.get('color_scheme'):
+        return
+
+    view.settings().set('color_scheme', dired_settings.get('color_scheme'))
+
+
+def calc_width(view):
+    '''
+    return float width, which must be
+        0.0 < width < 1.0 (other values acceptable, but cause unfriendly layout)
+    used in show.show() and "dired_select" command with other_group=True
+    '''
+    width = view.settings().get('dired_width', 0.3)
+    if isinstance(width, float):
+        width -= width//1  # must be less than 1
+    elif isinstance(width, int if ST3 else long):  # assume it is pixels
+        wport = view.viewport_extent()[0]
+        width = 1 - round((wport - width) / wport, 2)
+        if width >= 1:
+            width = 0.9
+    else:
+        sublime.error_message(u'FileBrowser:\n\ndired_width set to '
+                              u'unacceptable type "%s", please change it.\n\n'
+                              u'Fallback to default 0.3 for now.' % type(width))
+        width = 0.3
+    return width or 0.1  # avoid 0.0
+
+
+def relative_path(rpath):
+        u'''rpath is either list or empty string (if list, we need only first item);
+        return either empty string or rpath[0] (or its parent), e.g.
+            foo/bar/ → foo/bar/
+            foo/bar  → foo/
+        '''
+        if rpath:
+            rpath = rpath[0]
+            if rpath[~0] != os.sep:
+                rpath = os.path.split(rpath)[0] + os.sep
+            if rpath == os.sep:
+                rpath = ''
+        return rpath
 
 
 class DiredBaseCommand:
@@ -420,3 +495,4 @@ class DiredBaseCommand:
             self.view.sel().add(s)
 
         self.view.show_at_center(s)
+

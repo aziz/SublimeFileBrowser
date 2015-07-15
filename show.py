@@ -8,51 +8,9 @@ from os.path import basename
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import first
+    from .common import first, set_proper_scheme, calc_width
 else:
-    from common import first
-
-
-def set_proper_scheme(view):
-    '''
-    this is callback, it is not meant to be called directly
-        view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
-    set once, right after view is created
-    _note_, color_scheme must not be set directly, but in a setting file
-    '''
-    # Since we cannot create file with syntax, there is moment when view has no settings,
-    # but it is activated, so some plugins (e.g. Color Highlighter) set wrong color scheme
-    if view.settings().get('dired_rename_mode', False):
-        dired_settings = sublime.load_settings('dired-rename-mode.sublime-settings')
-    else:
-        dired_settings = sublime.load_settings('dired.sublime-settings')
-
-    if view.settings().get('color_scheme') == dired_settings.get('color_scheme'):
-        return
-
-    view.settings().set('color_scheme', dired_settings.get('color_scheme'))
-
-
-def calc_width(view):
-    '''
-    return float width, which must be
-        0.0 < width < 1.0 (other values acceptable, but cause unfriendly layout)
-    used in show() and "dired_select" command with other_group=True
-    '''
-    width = view.settings().get('dired_width', 0.3)
-    if isinstance(width, float):
-        width -= width//1  # must be less than 1
-    elif isinstance(width, int if ST3 else long):  # assume it is pixels
-        wport = view.viewport_extent()[0]
-        width = 1 - round((wport - width) / wport, 2)
-        if width >= 1:
-            width = 0.9
-    else:
-        sublime.error_message(u'FileBrowser:\n\ndired_width set to '
-                              u'unacceptable type "%s", please change it.\n\n'
-                              u'Fallback to default 0.3 for now.' % type(width))
-        width = 0.3
-    return width or 0.1  # avoid 0.0
+    from common import first, set_proper_scheme, calc_width
 
 
 def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, other_group=''):
