@@ -128,6 +128,9 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
 
     def _to_trash(self, files):
         path = self.path
+        if NT:  # use winapi directly, because better errors handling, plus GUI
+            sources_move = [join(path, f) for f in files]
+            return call_SHFileOperationW(self.view, sources_move, [], '$TRASH$')
         errors = []
 
         def _status(filename='', done=False):
@@ -351,6 +354,10 @@ class call_SHFileOperationW(object):
     '''call Windows API for file operations'''
     def __init__(self, view, sources_move, sources_copy, destination):
         self.view = view
+        if destination == '$TRASH$':
+            self.shfow_d_thread = threading.Thread(target=self.caller, args=(3, sources_move, ''))
+            self.shfow_d_thread.start()
+            return
         if sources_move:
             self.shfow_m_thread = threading.Thread(target=self.caller, args=(1, sources_move, destination))
             self.shfow_m_thread.start()
@@ -370,23 +377,27 @@ class call_SHFileOperationW(object):
                 self.shfow_c_thread.start()
 
     def caller(self, mode, sources, destination, duplicate=False):
-        '''mode is int either 1 (move) or 2 (copy)'''
+        '''mode is int: 1 (move), 2 (copy), 3 (delete)'''
         import ctypes
         if ST3: from Default.send2trash.plat_win import SHFILEOPSTRUCTW
         else:   from send2trash.plat_win import SHFILEOPSTRUCTW
 
-        fFlags = 8 if duplicate else 0
+        if duplicate:   fFlags = 8
+        elif mode == 3: fFlags = 64  # send to recycle bin
+        else:           fFlags = 0
+
         SHFileOperationW = ctypes.windll.shell32.SHFileOperationW
         SHFileOperationW.argtypes = [ctypes.POINTER(SHFILEOPSTRUCTW)]
         pFrom = u'\x00'.join(sources) + u'\x00'
-        pTo   = u'%s\x00' % destination
+        pTo   = (u'%s\x00' % destination) if destination else None
         args  = SHFILEOPSTRUCTW(wFunc  = ctypes.wintypes.UINT(mode),
                                 pFrom  = ctypes.wintypes.LPCWSTR(pFrom),
                                 pTo    = ctypes.wintypes.LPCWSTR(pTo),
                                 fFlags = fFlags,
                                 fAnyOperationsAborted = ctypes.wintypes.BOOL())
         out = SHFileOperationW(ctypes.byref(args))
-        if not out:  # 0 == success
+
+        if not out and destination:  # 0 == success
             sublime.set_timeout(lambda: self.view.run_command('dired_clear_copy_cut_list'), 1)
         else:  # probably user cancel op., or sth went wrong; keep settings
             sublime.set_timeout(lambda: self.view.run_command('dired_refresh'), 1)
