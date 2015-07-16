@@ -109,6 +109,16 @@ def relative_path(rpath):
         return rpath
 
 
+def hijack_window():
+    settings = sublime.load_settings('dired.sublime-settings')
+    command = settings.get("dired_hijack_new_window")
+    if command:
+        if command == "jump_list":
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired_jump_list"), 1)
+        else:
+            sublime.set_timeout(lambda: sublime.windows()[-1].run_command("dired", {"immediate": True}), 1)
+
+
 class DiredBaseCommand:
     """
     Convenience functions for dired TextCommands
