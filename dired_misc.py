@@ -289,8 +289,6 @@ class DiredCallVcs(TextCommand):
         CallVCS(self.view, path)
 
 
-# TOOLS #############################################################
-
 class CallVCS(DiredBaseCommand):
     '''
     this should be placed in common.py probably, but for some reason
@@ -301,92 +299,70 @@ class CallVCS(DiredBaseCommand):
         self.vcs_state = dict(path=path)
         self.view.erase_regions('M')
         self.view.erase_regions('?')
-        self.call_git(path)
-        self.call_hg(path)
+        for vcs in ['git', 'hg']:
+            self.start(vcs)
         self.watch_threads()
 
     def watch_threads(self):
-        if not all(n in self.vcs_state for n in ['git', 'hg']):
+        if not all(vcs in self.vcs_state for vcs in ['git', 'hg']):
             sublime.set_timeout(self.watch_threads, 100)
             return
         if 'changed_items' in self.vcs_state:
             self.vcs_colorized(self.vcs_state['changed_items'])
 
-    def call_git(self, path):
-        git = self.view.settings().get('git_path', '')
-        if git:  # empty string disable git integration
-            self.git_thread = threading.Thread(target=self.git_check, args=(path, git))
-            self.git_thread.start()
+    def start(self, vcs):
+        command = self.view.settings().get('%s_path' % vcs, '')
+        if command:  # user can set empty string to disable integration with vcs
+            vars(self)['%s_thread' % vcs] = threading.Thread(target=self.check, args=(vcs, command))
+            vars(self)['%s_thread' % vcs].start()
         else:
-            self.vcs_state.update(git=False)
+            self.vcs_state.update({vcs: False})
 
-    def git_check(self, path, git='git'):
-        if any(c for c in '~*?[]$%' if c in git) and not isfile(git):
-            match = glob.glob(os.path.expandvars(os.path.expanduser(git)))
+    def check(self, vcs, command):
+        status, root = self.get_output(vcs, self.expand_command(vcs, command))
+        if status and root:
+            changed_items = self.vcs_state.get('changed_items', {})
+            changed_items.update(dict(self.set_value(vcs, root, i) for i in status if i != ''))
+            self.vcs_state.update({vcs: True, 'changed_items': changed_items})
+        else:
+            self.vcs_state.update({vcs: False})
+
+    def expand_command(self, vcs, command):
+        if any(c for c in '~*?[]$%' if c in command) and not isfile(command):
+            match = glob.glob(os.path.expandvars(os.path.expanduser(command)))
             if match:
-                git = match[0]
+                return match[0]
             else:
                 sublime.error_message(u'FileBrowser:\n'
-                    u'It seems like you use wildcards in\n\n"git_path": "%s".\n\n'
+                    u'It seems like you use wildcards in\n\n"%s_path": "%s".\n\n'
                     u'But the pattern cannot be found, please, fix it '
-                    u'or use absolute path without wildcards.' % git)
+                    u'or use absolute path without wildcards.' % (vcs, command))
+        return command
 
-        shell = True if NT else False
+    def get_output(self, vcs, command):
+        args = {'git_status': ['status', '-z'],
+                'git_root':   ['rev-parse', '--show-toplevel'],
+                'hg_status':  ['status'],
+                'hg_root':    ['root']}
+        sep = {'hg': '\n', 'git': '\x00' if ST3 else '\00'}
+        status, root, shell = '', '', True if NT else False
+        path = self.vcs_state['path']
         try:
-            p = subprocess.Popen([git, 'status', '-z'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
-            git_output = p.communicate()[0]
-            p = subprocess.Popen([git, 'rev-parse', '--show-toplevel'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
+            p = subprocess.Popen([command] + args['%s_status' % vcs], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
+            status = p.communicate()[0]
+            status = str(status, 'utf-8').split(sep[vcs]) if ST3 else status.split(sep[vcs])
+            p = subprocess.Popen([command] + args['%s_root' % vcs], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
             root = p.communicate()[0].decode('utf-8').strip('\n')
         except:
             # on Windows exception is not being raised if cwd is not None and shell=True
-            self.vcs_state.update(git=False)
-        else:
-            if git_output:
-                git_output = str(git_output, 'utf-8').split('\x00') if ST3 else git_output.split('\00')
-                new_values = dict((join(root, i[3:] if ST3 else unicode(i[3:], 'utf-8')), i[1]) for i in git_output if i != '')
-                changed_items = self.vcs_state.get('changed_items', {})
-                changed_items.update(new_values)
-                self.vcs_state.update(git=True, changed_items=changed_items)
-            else:
-                self.vcs_state.update(git=False)
+            self.vcs_state.update({vcs: False})
+        return (status, root)
 
-    def call_hg(self, path):
-        hg = self.view.settings().get('hg_path', '')
-        if hg:  # empty string disable hg integration
-            self.hg_thread = threading.Thread(target=self.hg_check, args=(path, hg))
-            self.hg_thread.start()
-        else:
-            self.vcs_state.update(hg=False)
-
-    def hg_check(self, path, hg='hg'):
-        if any(c for c in '~*?[]$%' if c in hg) and not isfile(hg):
-            match = glob.glob(os.path.expandvars(os.path.expanduser(hg)))
-            if match:
-                hg = match[0]
-            else:
-                sublime.error_message(u'FileBrowser:\n'
-                    u'It seems like you use wildcards in\n\n"hg_path": "%s".\n\n'
-                    u'But the pattern cannot be found, please, fix it '
-                    u'or use absolute path without wildcards.' % hg)
-
-        shell = True if NT else False
-        try:
-            p = subprocess.Popen([hg, 'status'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
-            hg_output = p.communicate()[0]
-            p = subprocess.Popen([hg, 'root'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=path, shell=shell)
-            root = p.communicate()[0].decode('utf-8').strip('\n')
-        except:
-            # on Windows exception is not being raised if cwd is not None and shell=True
-            self.vcs_state.update(hg=False)
-        else:
-            if hg_output:
-                hg_output = str(hg_output, 'utf-8').split('\n') if ST3 else hg_output.split('\n')
-                new_values = dict(( join(root,i[2:] if ST3 else unicode(i[2:], 'utf-8')), i[0]) for i in hg_output if i != '')
-                changed_items = self.vcs_state.get('changed_items', {})
-                changed_items.update(new_values)
-                self.vcs_state.update(hg=True, changed_items=changed_items)
-            else:
-                self.vcs_state.update(hg=False)
+    def set_value(self, vcs, root, item):
+        '''return tuple (fullpath, status)'''
+        item = item[1:] if vcs == 'git' else item
+        filename = (item[2:] if ST3 else unicode(item[2:], 'utf-8'))
+        return (join(root, filename), item[0])
 
     def vcs_colorized(self, changed_items):
         modified, untracked = [], []
