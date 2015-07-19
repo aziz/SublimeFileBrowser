@@ -1419,10 +1419,12 @@ class CallVCS(DiredBaseCommand):
                     modified.append(r)
                 elif status == '?':
                     untracked.append(r)
-        grist = (('M', modified, 'item.modified.dired', sublime.DRAW_EMPTY_AS_OVERWRITE),
-                 ('?', untracked, 'item.untracked.dired', sublime.DRAW_EMPTY))
-        for name, regions, scope, mark in grist:
-            self.view.add_regions(name, regions, scope, '', MARK_OPTIONS | mark if colorblind else MARK_OPTIONS)
+        if colorblind:
+            self.view.add_regions('M', modified, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE)
+            self.view.add_regions('?', untracked, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY)
+        else:
+            self.view.add_regions('M', modified, 'item.modified.dired', '', MARK_OPTIONS)
+            self.view.add_regions('?', untracked, 'item.untracked.dired', '', MARK_OPTIONS)
 
 
 class call_SHFileOperationW(object):
