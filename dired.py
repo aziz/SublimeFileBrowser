@@ -1405,7 +1405,7 @@ class CallVCS(DiredBaseCommand):
 
     def vcs_colorized(self, changed_items):
         modified, untracked = [], []
-        files_regions = dict((f, r) for f, r in zip(self.get_all(), self.view.split_by_newlines(self.fileregion())))
+        files_regions = dict((f, r) for f, r in zip(self.get_all(), self.view.split_by_newlines(Region(0, self.view.size()))))
         colorblind = self.view.settings().get('vcs_color_blind', False)
         offset = 1 if not colorblind else 0
         for fn in changed_items.keys():
@@ -1419,12 +1419,10 @@ class CallVCS(DiredBaseCommand):
                     modified.append(r)
                 elif status == '?':
                     untracked.append(r)
-        if colorblind:
-            self.view.add_regions('M', modified, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY_AS_OVERWRITE)
-            self.view.add_regions('?', untracked, 'item.colorblind.dired', '', MARK_OPTIONS | sublime.DRAW_EMPTY)
-        else:
-            self.view.add_regions('M', modified, 'item.modified.dired', '', MARK_OPTIONS)
-            self.view.add_regions('?', untracked, 'item.untracked.dired', '', MARK_OPTIONS)
+        grist = (('M', modified, 'item.modified.dired', sublime.DRAW_EMPTY_AS_OVERWRITE),
+                 ('?', untracked, 'item.untracked.dired', sublime.DRAW_EMPTY))
+        for name, regions, scope, mark in grist:
+            self.view.add_regions(name, regions, scope, '', MARK_OPTIONS | mark if colorblind else MARK_OPTIONS)
 
 
 class call_SHFileOperationW(object):
