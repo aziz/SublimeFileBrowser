@@ -35,8 +35,8 @@
   },
   {
       "keys": ["o"],
-      "command": "dired_select",
-      "args": { "inline": true, "toggle": true },
+      "command": "dired_expand",
+      "args": { "toggle": true },
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
@@ -44,8 +44,7 @@
   },
   {
       "keys": ["right"],
-      "command": "dired_select",
-      "args": { "inline": true },
+      "command": "dired_expand",
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
@@ -53,8 +52,7 @@
   },
   {
       "keys": ["l"],
-      "command": "dired_select",
-      "args": { "inline": true },
+      "command": "dired_expand",
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }

@@ -343,23 +343,10 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
-    def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0, inline=0, toggle=0):
+    def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0):
         path = self.path
         self.index = self.get_all()
-        if inline:
-            filenames = self.get_marked() or self.get_selected(parent=False)
-            if len(filenames) == 1 and filenames[0][~0] == os.sep:
-                return self.expand_single_folder(edit, path, filenames[0], toggle)
-            elif filenames:
-                # working with several selections at once is very tricky,
-                # thus for reliability we should recreate the entire tree
-                # despite it is slower
-                self.view.run_command('dired_refresh', {'to_expand': [f.rstrip(os.sep) for f in filenames], 'toggle': toggle})
-                return
-            else:
-                return sublime.status_message('Item cannot be expanded')
-
-        filenames = self.get_selected() if not (new_view or inline) else self.get_marked() or self.get_selected()
+        filenames = self.get_selected() if not new_view else self.get_marked() or self.get_selected()
 
         # If reuse view is turned on and the only item is a directory, refresh the existing view.
         if not new_view and reuse_view():
@@ -414,6 +401,24 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         else:
             group = nag - 1
         return group
+
+
+class DiredExpand(TextCommand, DiredBaseCommand):
+    def run(self, edit, toggle=False):
+        path = self.path
+        self.index = self.get_all()
+        filenames = self.get_marked() or self.get_selected(parent=False)
+
+        if len(filenames) == 1 and filenames[0][~0] == os.sep:
+            return self.expand_single_folder(edit, path, filenames[0], toggle)
+        elif filenames:
+            # working with several selections at once is very tricky,
+            # thus for reliability we should recreate the entire tree
+            # despite it is slower
+            self.view.run_command('dired_refresh', {'to_expand': [f.rstrip(os.sep) for f in filenames], 'toggle': toggle})
+            return
+        else:
+            return sublime.status_message('Item cannot be expanded')
 
     def expand_single_folder(self, edit, path, filename, toggle):
         marked = self.get_marked()
@@ -659,16 +664,16 @@ class DiredToggleHiddenFilesCommand(TextCommand):
 
 def dired_mouse_arguments(sel):
     if 'directory' in sel:
-        return {"inline": True, "toggle": True}
+        return ("dired_expand", {"toggle": True})
     else:
-        return {"other_group": True}
+        return ("dired_select", {"other_group": True})
 
 if ST3:
     class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
         def run_(self, view, args):
             s = self.view.settings()
             if s.get("dired_path") and not s.get("dired_rename_mode"):
-                self.view.run_command("dired_select", dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
+                self.view.run_command(*dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
             else:
                 system_command = args["command"] if "command" in args else None
                 if system_command:
@@ -680,7 +685,7 @@ else:
         def run_(self, args):
             s = self.view.settings()
             if s.get("dired_path") and not s.get("dired_rename_mode"):
-                self.view.run_command("dired_select", dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
+                self.view.run_command(*dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
             else:
                 system_command = args["command"] if "command" in args else None
                 if system_command:
