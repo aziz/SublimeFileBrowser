@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from __future__ import print_function
-import re, os, fnmatch, sys
+import re, os, fnmatch, sys, itertools
 import sublime
 from sublime import Region
 from os.path import isdir, join, basename
@@ -127,6 +127,12 @@ class DiredBaseCommand:
     def path(self):
         return self.view.settings().get('dired_path')
 
+    def get_path(self):
+        path = self.path
+        if path == 'ThisPC\\':
+            path = ''
+        return path
+
     def filecount(self):
         """
         Returns the number of files and directories in the view.
@@ -153,15 +159,7 @@ class DiredBaseCommand:
         """
         assert forward in (True, False), 'forward must be set to True or False'
 
-        files = self.fileregion(with_parent_link=True)
-        if files.empty():
-            return
-
-        sels = list(self.view.sel())
-        new_sels = []
-
-        for s in sels:
-            pt = s.a
+        def __next_line(pt, files):
             if files.contains(pt):
                 # Try moving by one line.
                 line = self.view.line(pt)
@@ -169,9 +167,15 @@ class DiredBaseCommand:
             if not files.contains(pt):
                 # Not (or no longer) in the list of files, so move to the closest edge.
                 pt = (pt > files.b) and files.b or files.a
+            return self.view.line(pt)
 
-            name_point = self._get_name_point(self.view.line(pt))
-            new_sels.append(name_point)
+        files = self.fileregion(with_parent_link=True)
+        if not files:
+            return
+
+        new_sels = []
+        for s in list(self.view.sel()):
+            new_sels.append(self._get_name_point(__next_line(s.a, files)))
 
         self.view.sel().clear()
         for n in new_sels:
@@ -189,7 +193,7 @@ class DiredBaseCommand:
         return name_point
 
     def show_parent(self):
-        return sublime.load_settings('dired.sublime-settings').get('dired_show_parent', False)
+        return self.view.settings().get('dired_show_parent', False)
 
     def fileregion(self, with_parent_link=False):
         """
@@ -238,90 +242,74 @@ class DiredBaseCommand:
         Returns a list of selected filenames.
         self.index should be assigned before call it
         """
-        path = self.path
-        if path == 'ThisPC\\':
-            path = ''
-        names = set()
         fileregion = self.fileregion(with_parent_link=parent)
         if not fileregion:
             return None
-        for sel in self.view.sel():
-            lines = self.view.lines(sel)
-            for line in lines:
-                if fileregion.contains(line):
-                    text = self.get_parent(line, path)
-                    if text:
-                        names.add(text)
-        names = list(names)
-        sort_nicely(names)
-        # XXX: why we sorting these?
+        path = self.get_path()
+        names = []
+        for line in self._get_lines([s for s in self.view.sel()], fileregion):
+            text = self.get_parent(line, path)
+            if text and text not in names:
+                names.append(text)
         return names
 
     def get_marked(self):
         '''self.index should be assigned before call it'''
         if not self.filecount():
             return []
-        path = self.path
-        if path == 'ThisPC\\':
-            path = ''
+        path = self.get_path()
         lines = []
         for region in self.view.get_regions('marked'):
             if region not in lines:
                 lines.append(region)
         return [self.get_parent(line, path) for line in lines]
 
-    def _mark(self, mark=None, regions=None):
+    def _mark(self, mark, regions):
         """
         Marks the requested files.
 
         mark
-            True, False, or a function with signature `func(oldmark, filename)`.  The function
-            should return True or False.
+            True, False, or a function with signature `func(oldmark, filename)`.
+            The function should return True or False.
 
         regions
-            Either a single region or a sequence of regions.  Only files within the region will
-            be modified.
+            List of region(s).  Only files within the region will be modified.
         """
-
-        # Allow the user to pass a single region or a collection (like view.sel()).
-        if isinstance(regions, Region):
-            regions = [regions]
-
-        path = self.path
-        if path == 'ThisPC\\':
-            path = ''
-        self.index = self.get_all_relative(path)
         filergn = self.fileregion()
-        marked = {}
-        # We can't update regions for a key, only replace, so we need to record the existing
-        # marks.
-        previous = [m for m in self.view.get_regions('marked') if not m.empty()]
-        for r in previous:
-            item = self.get_parent(r, path)
-            marked[item] = r
+        if not filergn:
+            return
 
-        for region in regions:
-            for line in self.view.lines(region):
-                if filergn.contains(line):
-                    filename = self.get_parent(line, path)
+        self.index = self.get_all()
+        # We can't update regions for a key, only replace, so we need to record the existing marks.
+        marked = dict((self.get_fullpath_for(r), r) for r in self.view.get_regions('marked') if not r.empty())
 
-                    if mark not in (True, False):
-                        newmark = mark(filename in marked, filename)
-                        assert newmark in (True, False), u'Invalid mark: {0}'.format(newmark)
-                    else:
-                        newmark = mark
+        for line in self._get_lines(regions, filergn):
+            filename = self.get_fullpath_for(line)
 
-                    if newmark:
-                        name_point = self._get_name_point(line)
-                        marked[filename] = Region(name_point, line.b)
-                    else:
-                        marked.pop(filename, None)
+            if mark not in (True, False):
+                newmark = mark(filename in marked, filename)
+                assert newmark in (True, False), u'Invalid mark: {0}'.format(newmark)
+            else:
+                newmark = mark
+
+            if newmark:
+                name_point = self._get_name_point(line)
+                marked[filename] = Region(name_point, line.b)
+            else:
+                marked.pop(filename, None)
 
         if marked:
             r = sorted(list(marked.values()), key=lambda region: region.a)
             self.view.add_regions('marked', r, 'dired.marked', '', MARK_OPTIONS)
         else:
             self.view.erase_regions('marked')
+
+    def _get_lines(self, regions, within):
+        '''
+        regions is a list of non-overlapping region(s), each may have many lines
+        within  is a region which is supposed to contain each line
+        '''
+        return (line for line in itertools.chain(*(self.view.lines(r) for r in regions)) if within.contains(line))
 
     def set_ui_in_rename_mode(self, edit):
         header = self.view.settings().get('dired_header', False)
@@ -430,9 +418,7 @@ class DiredBaseCommand:
         if marked:
             # Even if we have the same filenames, they may have moved so we have to manually
             # find them again.
-            path = self.path
-            if path == 'ThisPC\\':
-                path = ''
+            path = self.get_path()
             regions = []
             for mark in marked:
                 matches = self._find_in_view(mark)
@@ -457,9 +443,7 @@ class DiredBaseCommand:
         '''
         if sels:
             seled_fnames, seled_regions = sels
-            path = self.path
-            if path == 'ThisPC\\':
-                path = ''
+            path = self.get_path()
             regions = []
             for selection in seled_fnames:
                 matches = self._find_in_view(selection)
@@ -505,4 +489,3 @@ class DiredBaseCommand:
             self.view.sel().add(s)
 
         self.view.show_at_center(s)
-

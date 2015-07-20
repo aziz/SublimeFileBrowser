@@ -609,8 +609,8 @@ class DiredMarkExtensionCommand(TextCommand, DiredBaseCommand):
             return
         if not ext.startswith('.'):
             ext = '.' + ext
-        self._mark(mark=lambda oldmark, filename: filename.endswith(ext) and True or oldmark,
-                   regions=self.fileregion())
+        self._mark(mark=lambda oldmark, filename: filename.endswith(ext) or oldmark,
+                   regions=[self.fileregion()])
 
 
 class DiredMarkCommand(TextCommand, DiredBaseCommand):
@@ -638,7 +638,7 @@ class DiredMarkCommand(TextCommand, DiredBaseCommand):
             return
 
         # If markall is set, mark/unmark all files.  Otherwise only those that are selected.
-        regions = [filergn] if markall else self.view.sel()
+        regions = [filergn] if markall else list(self.view.sel())
 
         if mark == 'toggle':
             mark = lambda oldmark, filename: not oldmark
