@@ -237,7 +237,7 @@ class DiredBaseCommand:
     def get_all_relative(self, path):
         return [f.replace(path, '', 1) for f in self.get_all()]
 
-    def get_selected(self, parent=True):
+    def get_selected(self, parent=True, full=False):
         """
         Returns a list of selected filenames.
         self.index should be assigned before call it
@@ -248,21 +248,22 @@ class DiredBaseCommand:
         path = self.get_path()
         names = []
         for line in self._get_lines([s for s in self.view.sel()], fileregion):
-            text = self.get_parent(line, path)
+            text = self.get_fullpath_for(line) if full else self.get_parent(line, path)
             if text and text not in names:
                 names.append(text)
         return names
 
-    def get_marked(self):
+    def get_marked(self, full=False):
         '''self.index should be assigned before call it'''
         if not self.filecount():
             return []
         path = self.get_path()
-        lines = []
-        for region in self.view.get_regions('marked'):
-            if region not in lines:
-                lines.append(region)
-        return [self.get_parent(line, path) for line in lines]
+        names = []
+        for line in self.view.get_regions('marked'):
+            text = self.get_fullpath_for(line) if full else self.get_parent(line, path)
+            if text and text not in names:
+                names.append(text)
+        return names
 
     def _mark(self, mark, regions):
         """
@@ -333,20 +334,20 @@ class DiredBaseCommand:
         window          = self.view.window() or sublime.active_window()
         path_in_project = any(folder == self.path[:-1] for folder in window.folders())
         settings        = self.view.settings()
-        show_hidden     = settings.get('dired_show_hidden_files', True)
         copied_items    = settings.get('dired_to_copy', [])
         cut_items       = settings.get('dired_to_move', [])
         status = u" 𝌆 [?: Help] {0}Hidden: {1}{2}{3}".format(
             'Project root, ' if path_in_project else '',
-            'On' if show_hidden else 'Off',
+            'On' if self.show_hidden else 'Off',
             ', copied(%d)' % len(copied_items) if copied_items else '',
             ', cut(%d)' % len(cut_items) if cut_items else ''
         )
         self.view.set_status("__FileBrowser__", status)
 
-    def ls(self, path, names, goto='', indent=''):
-        ''' this is just ls; "backend" for self.prepare_filelist
-        About self.index see DiredRefreshCommand
+    def prepare_filelist(self, names, path, goto, indent):
+        '''About self.index see DiredRefreshCommand
+        could be called from  DiredExpand.expand_single_folder
+                     or from  DiredRefresh.continue_refresh
         '''
         items   = []
         tab     = self.view.settings().get('tab_size')
@@ -389,30 +390,23 @@ class DiredBaseCommand:
             result = False
         return result
 
-    def prepare_filelist(self, names, path, goto, indent):
-        '''wrap self.ls method
-        could be called from  self.prepare_treeview
-                     or from  DiredRefresh.continue_refresh
-        '''
-        show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-        if not show_hidden:
-            names = [name for name in names if not self.is_hidden(name, path, goto)]
-        sort_nicely(names)
-        f = self.ls(path, names, goto=goto if indent else '', indent=indent)
-        return f
-
-    def prepare_treeview(self, names, path, goto, indent):
-        '''called when expand single directory'''
-        f = self.prepare_filelist(names, path, goto, indent)
-        line = self.view.line(self.sel if self.sel is not None else self.view.sel()[0])
-        # line may have inline error msg after os.sep
-        dir_name = self.view.substr(line).split(os.sep)[0].replace(u'▸', u'▾', 1) + os.sep
-        if f:
-            dired_count = self.view.settings().get('dired_count', 0)
-            self.view.settings().set('dired_count', int(dired_count) + len(f))
-            return '\n'.join([dir_name] + f)
+    def try_listing_directory(self, path):
+        items, error = [], ''
+        try:
+            if not self.show_hidden:
+                items = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
+            else:
+                items = os.listdir(path)
+        except OSError as e:
+            error = str(e)
+            if NT:
+                error = error.split(':')[0].replace('[Error 5] ', 'Access denied').replace('[Error 3] ', 'Not exists, press r to refresh')
+            if not ST3 and LIN:
+                error = error.decode('utf8')
         else:
-            return '\t'.join([dir_name, '<empty>'])
+            sort_nicely(items)
+        finally:
+            return items, error
 
     def restore_marks(self, marked=None):
         if marked:

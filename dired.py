@@ -10,12 +10,12 @@ from os.path import basename, dirname, isdir, exists, join
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import DiredBaseCommand, sort_nicely, print, set_proper_scheme, calc_width, hijack_window, NT, LIN, PARENT_SYM
+    from .common import DiredBaseCommand, print, set_proper_scheme, calc_width, hijack_window, NT, PARENT_SYM
     from . import prompt
     from .show import show
     from .jumping import jump_names
 else:  # ST2 imports
-    from common import DiredBaseCommand, sort_nicely, print, set_proper_scheme, calc_width, hijack_window, NT, LIN, PARENT_SYM
+    from common import DiredBaseCommand, print, set_proper_scheme, calc_width, hijack_window, NT, PARENT_SYM
     import prompt
     from show import show
     from jumping import jump_names
@@ -156,34 +156,29 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(self.view))
 
         path = self.path
-        self.sel = None
         expanded = self.view.find_all(u'^\s*▾') if not goto else []
         names = []
-        self.number_line = 0
-        self.index  = None if reset_sels else self.get_all()
-        self.marked = None if reset_sels else self.get_marked()
-        self.sels   = None if reset_sels else (self.get_selected(), list(self.view.sel()))
+        if reset_sels:
+            self.index, self.marked, self.sels = None, None, None
+        else:
+            self.index  = self.get_all()
+            self.marked = self.get_marked()
+            self.sels   = (self.get_selected(), list(self.view.sel()))
+        self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
 
         if path == 'ThisPC\\':
-            path = ''
-            for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-                disk = '%s:' % s
-                if isdir(disk):
-                    names.append(disk)
+            path, names = '', self.get_disks()
         if not reset_sels:
             self.re_populate_view(edit, path, names, expanded, to_expand, toggle)
         else:
             self.index = []
-            if not path:
-                self.continue_refreshing(edit, path, names, goto)
-            else:
-                self.populate_view(edit, path, names, goto)
+            self.populate_view(edit, path, names, goto)
 
     def re_populate_view(self, edit, path, names, expanded, to_expand, toggle):
         root = path
         for i, r in enumerate(expanded):
-            name = self.get_parent(r, path)
-            expanded[i] = name.rstrip(os.sep)
+            name = self.get_fullpath_for(r)
+            expanded[i] = name
         if toggle and to_expand:
             merged = list(set(expanded + to_expand))
             expanded = [e for e in merged if not (e in expanded and e in to_expand)]
@@ -191,143 +186,134 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             expanded.extend(to_expand or [])
         # we need prev index to setup expanded list — done, so reset index
         self.index = []
-        self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
+
         tree = self.traverse_tree(root, root, '', names, expanded)
-        if tree:
-            self.set_status()
-            text, header = self.set_title(path)
-            if root and self.show_parent():
-                text.extend(PARENT_SYM)
-                self.index = [PARENT_SYM] + self.index
-            if header:
-                self.index = ['', ''] + self.index
-            text.extend(tree)
-
-            self.view.set_read_only(False)
-            self.view.erase(edit, Region(0, self.view.size()))
-            self.view.insert(edit, 0, '\n'.join(text))
-            self.view.set_read_only(True)
-
-            fileregion = self.fileregion()
-            count = len(self.view.lines(fileregion)) if fileregion else 0
-            self.view.settings().set('dired_count', count)
-            self.view.settings().set('dired_index', self.index)
-
-            self.restore_marks(self.marked)
-            self.restore_sels(self.sels)
-
-            self.view.run_command('dired_call_vcs', {'path': path})
-        else:
+        if not tree:
             return self.populate_view(edit, path, names, goto=None)
 
+        self.set_status()
+        items = self.correcting_index(path, tree)
+        self.write(edit, items)
+        self.restore_selections()
+        self.view.run_command('dired_call_vcs', {'path': path})
+
     def populate_view(self, edit, path, names, goto):
-        if goto and goto[~0] == ':':
-            goto += os.sep  # c:\\ valid path, c: not valid
-        try:
-            names = os.listdir(path)
-        except OSError as e:
-            error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
-            if not ST3 and LIN:
-                error = error.decode('utf8')
+        if not path and names:  # open ThisPC
+            self.continue_populate(edit, path, names, goto)
+            return
+        items, error = self.try_listing_directory(path)
+        if error:
             self.view.run_command("dired_up")
             self.view.set_read_only(False)
             self.view.insert(edit, self.view.line(self.view.sel()[0]).b,
                              u'\t<%s>' % error)
             self.view.set_read_only(True)
         else:
-            self.continue_refreshing(edit, path, names, goto)
-            self.view.run_command('dired_call_vcs', {'path': path})
+            self.continue_populate(edit, path, items, goto)
 
-    def continue_refreshing(self, edit, path, names, goto=None):
+    def continue_populate(self, edit, path, names, goto=None):
+        self.sel = None
+        self.number_line = 0
         self.set_status()
+        items = self.correcting_index(path, self.prepare_filelist(names, path, '', ''))
+        self.write(edit, items)
+        self.restore_selections(goto, path)
+        self.view.run_command('dired_call_vcs', {'path': path})
 
+    def traverse_tree(self, root, path, indent, tree, expanded):
+        if not path:  # special case for ThisPC, path is empty string
+            items = [u'%s\\' % d for d in tree]
+            tree  = []
+
+        else:
+            if indent:  # this happens during recursive call, i.e. path in expanded
+                # basename return funny results for c:\\ so it is tricky
+                bname = os.path.basename(os.path.abspath(path)) or path.rstrip(os.sep)
+                tree.append(u'%s▾ %s%s' % (indent[:-1], bname.rstrip(os.sep), os.sep))
+                self.index.append(u'%s' % path)
+
+            items, error = self.try_listing_directory(path)
+            if error:
+                tree[~0] += u'\t<%s>' % error
+                return
+            if not items:  # expanding empty folder, so notify that it is empty
+                tree[~0] += '\t<empty>'
+                return
+
+        files = []
+        index_files = []
+        for f in items:
+            new_path = join(path, f)
+            dir_path = u'%s%s' % (new_path.rstrip(os.sep), os.sep)
+            check = isdir(new_path)
+            if check and dir_path in expanded:
+                self.traverse_tree(root, dir_path, indent + '\t', tree, expanded)
+            elif check:
+                self.index.append(dir_path)
+                tree.append(u'%s▸ %s%s' % (indent, f.rstrip(os.sep), os.sep))
+            else:
+                index_files.append(new_path)
+                files.append(u'%s≡ %s' % (indent, f))
+
+        self.index += index_files
+        tree += files
+        return tree
+
+    def set_title(self, path):
+        header  = self.view.settings().get('dired_header', False)
+        name    = jump_names().get(path or self.path)
+        caption = u"{0} → {1}".format(name, path) if name else path or self.path
+        text    = [caption, len(caption)*(u'—')] if header else []
+        icon    = self.view.name()[:2]
+        if not path:
+            title = u'%s%s' % (icon, name or 'This PC')
+        else:
+            norm_path = path.rstrip(os.sep)
+            if self.view.settings().get('dired_show_full_path', False):
+                title = u'%s%s (%s)' % (icon, name or basename(norm_path), norm_path)
+            else:
+                title = u'%s%s' % (icon, name or basename(norm_path))
+        self.view.set_name(title)
+        return (text, header)
+
+    def write(self, edit, fileslist):
+        '''apply changes to view'''
+        self.view.set_read_only(False)
+        self.view.erase(edit, Region(0, self.view.size()))
+        self.view.insert(edit, 0, '\n'.join(fileslist))
+        self.view.set_read_only(True)
+
+        fileregion = self.fileregion()
+        count = len(self.view.lines(fileregion)) if fileregion else 0
+        self.view.settings().set('dired_count', count)
+        self.view.settings().set('dired_index', self.index)
+
+    def correcting_index(self, path, fileslist):
         text, header = self.set_title(path)
-        f = self.prepare_filelist(names, path, '', '')
-
-        if path and (not f or self.show_parent()):
+        if path and (not fileslist or self.show_parent()):
             text.append(PARENT_SYM)
             self.index = [PARENT_SYM] + self.index
             self.number_line += 1
         if header:
             self.index = ['', ''] + self.index
             self.number_line += 2
-        text.extend(f)
+        return text + fileslist
 
-        self.view.set_read_only(False)
-        self.view.erase(edit, Region(0, self.view.size()))
-        self.view.insert(edit, 0, '\n'.join(text))
-        self.view.settings().set('dired_count', len(f))
-        self.view.set_read_only(True)
-
-        self.view.settings().set('dired_index', self.index)
-
+    def restore_selections(self, goto=None, path=None):
         self.restore_marks(self.marked)
-
-        # Place the cursor.
         if goto:
             if goto[~0] != os.sep:
                 goto += (os.sep if isdir(join(path, goto)) else '')
             self.sels = ([goto], None)
         self.restore_sels(self.sels)
 
-    def traverse_tree(self, root, path, indent, tree, expanded):
-        if not path:  # special case for ThisPC, path is empty string
-            items = [u'%s\\' % d for d in tree]
-            tree  = []
-        else:
-            # basename return funny results for c:\\ so it is tricky
-            b = os.path.basename(os.path.abspath(path)) or path.rstrip(os.sep)
-            if root != path and b != os.path.basename(root.rstrip(os.sep)):
-                tree.append(u'%s▾ %s%s' % (indent[:-1], b.rstrip(os.sep), os.sep))
-                self.index.append(u'%s%s' % (path.rstrip(os.sep), os.sep))
-            try:
-                if not self.show_hidden:
-                    items = [name for name in os.listdir(path) if not self.is_hidden(name, path)]
-                else:
-                    items = os.listdir(path)
-            except OSError as e:
-                error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
-                if not ST3 and LIN:
-                    error = error.decode('utf8')
-                tree[~0] += u'\t<%s>' % error
-                return
-        sort_nicely(items)
-        files = []
-        index_files = []
-        if tree and not items:
-            # expanding empty folder, so notify that it is empty
-            tree[~0] += '\t<empty>'
-        for f in items:
-            new_path = join(path, f)
-            check = isdir(new_path)
-            if check and new_path.replace(root, '', 1).strip(os.sep) in expanded:
-                self.traverse_tree(root, new_path, indent + '\t', tree, expanded)
-            elif check:
-                self.index.append(u'%s%s' % (new_path.rstrip(os.sep), os.sep))
-                tree.append(u'%s▸ %s%s' % (indent, f.rstrip(os.sep), os.sep))
-            else:
-                index_files.append(new_path)
-                files.append(u'%s≡ %s' % (indent, f))
-        self.index += index_files
-        tree += files
-        return tree
-
-    def set_title(self, path):
-        header    = self.view.settings().get('dired_header', False)
-        name      = jump_names().get(path or self.path)
-        caption   = u"{0} → {1}".format(name, path) if name else path or self.path
-        text      = [caption, len(caption)*(u'—')] if header else []
-        view_name = self.view.name()[:2]
-        if not path:
-            title = u'%s%s' % (view_name, name or 'This PC')
-        else:
-            norm_path = path.rstrip(os.sep)
-            if self.view.settings().get('dired_show_full_path', False):
-                title = u'%s%s (%s)' % (view_name, name or basename(norm_path), norm_path)
-            else:
-                title = u'%s%s' % (view_name, name or basename(norm_path))
-        self.view.set_name(title)
-        return (text, header)
+    def get_disks(self):
+        names = []
+        for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            disk = '%s:' % s
+            if isdir(disk):
+                names.append(disk)
+        return names
 
 
 # NAVIGATION #####################################################
@@ -405,61 +391,67 @@ class DiredSelect(TextCommand, DiredBaseCommand):
 
 class DiredExpand(TextCommand, DiredBaseCommand):
     def run(self, edit, toggle=False):
-        path = self.path
         self.index = self.get_all()
-        filenames = self.get_marked() or self.get_selected(parent=False)
+        filenames = self.get_marked(full=True) or self.get_selected(parent=False, full=True)
 
         if len(filenames) == 1 and filenames[0][~0] == os.sep:
-            return self.expand_single_folder(edit, path, filenames[0], toggle)
+            return self.expand_single_folder(edit, filenames[0], toggle)
         elif filenames:
-            # working with several selections at once is very tricky,
-            # thus for reliability we should recreate the entire tree
-            # despite it is slower
-            self.view.run_command('dired_refresh', {'to_expand': [f.rstrip(os.sep) for f in filenames], 'toggle': toggle})
+            # working with several selections at once is very tricky, thus for reliability we should
+            # recreate the entire tree, despite it is supposedly slower, but not really, because
+            # one view.replace/insert() call is faster than multiple ones
+            self.view.run_command('dired_refresh', {'to_expand': filenames, 'toggle': toggle})
             return
         else:
             return sublime.status_message('Item cannot be expanded')
 
-    def expand_single_folder(self, edit, path, filename, toggle):
+    def expand_single_folder(self, edit, filename, toggle):
         marked = self.get_marked()
-        sels   = self.get_selected()
+        seled  = self.get_selected()
 
-        if toggle:
-            line = self.view.line(self.view.get_regions('marked')[0] if marked else
-                                  list(self.view.sel())[0])
-            content = self.view.substr(line).lstrip()[0]
-            if content == u'▾':
-                self.view.run_command('dired_fold')
-                return
+        if toggle and self.try_to_fold(marked):
+            return
 
         self.view.run_command('dired_fold', {'update': True, 'index': self.index})
         self.index = self.get_all()  # fold changed index, get a new one
-        sel  = self.view.get_regions('marked')[0] if marked else list(self.view.sel())[0]
-        line = self.view.line(sel)
-        # bah, 0-based index sucks, have to take number of next line to make slicing work properly
+
+        self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
+        self.sel = self.view.get_regions('marked')[0] if marked else list(self.view.sel())[0]
+        line     = self.view.line(self.sel)
+
+        # number of next line to make slicing work properly
         self.number_line = 1 + self.view.rowcol(line.a)[0]
-        fqn  = join(path, filename)
-        if isdir(fqn):
-            self.sel = sel
-            try:
-                names = os.listdir(fqn)
-            except OSError as e:
-                error = str(e).split(':')[0].replace('[Error 5] ', 'Access denied')
-                if not ST3 and LIN:
-                    error = error.decode('utf8')
-                replacement = u'%s\t<%s>' % (self.view.substr(line), error)
-            else:
-                path = self.path if self.path != 'ThisPC\\' else ''
-                replacement = self.prepare_treeview(names, path, fqn, '\t')
-        else:
-            replacement = '%s\t<%s>' % (self.view.substr(line), 'Not exists, press r to refresh')
+        # line may have inline error msg after os.sep
+        root = self.view.substr(line).split(os.sep)[0].replace(u'▸', u'▾', 1) + os.sep
+
+        items, error = self.try_listing_directory(filename)
+        if error:
+            replacement = [u'%s\t<%s>' % (root, error)]
+        elif items:
+            replacement = [root] + self.prepare_filelist(items, '', filename, '\t')
+            dired_count = self.view.settings().get('dired_count', 0)
+            self.view.settings().set('dired_count', dired_count + len(items))
+        else:  # expanding empty folder, so notify that it is empty
+            replacement = [u'%s\t<empty>' % root]
+
         self.view.set_read_only(False)
-        self.view.replace(edit, line, replacement)
+        self.view.replace(edit, line, '\n'.join(replacement))
         self.view.set_read_only(True)
+
         self.view.settings().set('dired_index', self.index)
         self.restore_marks(marked)
-        self.restore_sels((sels, [sel]))
-        self.view.run_command('dired_call_vcs', {'path': path})
+        self.restore_sels((seled, [self.sel]))
+        self.view.run_command('dired_call_vcs', {'path': self.path})
+
+    def try_to_fold(self, marked):
+        line = self.view.line(self.view.get_regions('marked')[0] if marked else
+                              list(self.view.sel())[0])
+        content = self.view.substr(line).lstrip()[0]
+        if content == u'▾':
+            self.view.run_command('dired_fold')
+            return True
+        else:
+            return False
 
 
 class DiredFold(TextCommand, DiredBaseCommand):
