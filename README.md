@@ -99,8 +99,10 @@ e.g. to completely mimic sidebar, it would be:
 | Rename                                                | <kbd>R</kbd>                               |
 | Delete to trash                                       | <kbd>D</kbd>                               |
 | Delete (does not send to trash)                       | <kbd>alt+shift+d</kbd>                     |
-| Create directory                                      | <kbd>cd</kbd>                              |
-| Create file                                           | <kbd>cf</kbd>                              |
+| Create directory                                      | <kbd>cd</kbd>, <kbd>enter</kbd>            |
+| Create directory and open it                          | <kbd>cd</kbd>, <kbd>⌘+enter</kbd>          |
+| Create file                                           | <kbd>cf</kbd>, <kbd>enter</kbd>            |
+| Create file and open it                               | <kbd>cf</kbd>, <kbd>⌘+enter</kbd>          |
 | Create/Edit/Remove jump point                         | <kbd>P</kbd>                               |
 | Toggle hidden files                                   | <kbd>H</kbd>                               |
 | Open in Finder/File Explorer                          | <kbd>\\</kbd>                              |

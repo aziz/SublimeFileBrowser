@@ -729,35 +729,62 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
             if relative_path == os.sep:
                 relative_path = ""
 
-        # Is there a better way to do this?  Why isn't there some kind of context?  I assume
-        # the command instance is global and really shouldn't have instance information.
-        callback = getattr(self, 'on_done_' + which, None)
-        pv = self.view.window().show_input_panel(which.capitalize() + ':', relative_path, callback, None, None)
+        self.which = which
+        self.refresh = True
+        pv = self.view.window().show_input_panel(which.capitalize() + ':', relative_path, self.on_done, None, None)
         pv.run_command('move_to', {'to': 'eol', 'extend': False})
+        pv.settings().set('dired_create', True)
+        pv.settings().set('which', which)
+        pv.settings().set('dired_path', self.path)
 
-    def on_done_file(self, value):
-        self._on_done('file', value)
-
-    def on_done_directory(self, value):
-        self._on_done('directory', value)
-
-    def _on_done(self, which, value):
+    def on_done(self, value):
         value = value.strip()
         if not value:
-            return
+            return False
 
         fqn = join(self.path, value)
         if exists(fqn):
             sublime.error_message(u'{0} already exists'.format(fqn))
-            return
+            return False
 
-        if which == 'directory':
+        if self.which == 'directory':
             os.makedirs(fqn)
         else:
             with open(fqn, 'wb'):
                 pass
+        if self.refresh:  # user press enter
+            self.view.run_command('dired_refresh')
 
-        self.view.run_command('dired_refresh')
+        # user press ctrl+enter, no refresh
+        return fqn
+
+
+class DiredCreateAndOpenCommand(DiredCreateCommand):
+    '''Being called with ctrl+enter while user is in Create prompt
+    So self.view is prompt view
+    '''
+    def run(self, edit):
+        self.which = self.view.settings().get('which', '')
+        if not self.which:
+            return sublime.error_message('oops, does not work!')
+
+        self.refresh = False
+        value = self.view.substr(Region(0, self.view.size()))
+        fqn = self.on_done(value)
+        if not fqn:
+            return sublime.status_message('oops, does not work!')
+
+        dired_view = sublime.active_window().active_view()
+        if dired_view.settings().has('dired_path'):
+            self.refresh = True
+        if self.which == 'directory':
+            dired_view.settings().set('dired_path', fqn + os.sep)
+        else:
+            sublime.active_window().open_file(fqn)
+        if self.refresh:
+            dired_view.run_command('dired_refresh')
+
+        sublime.active_window().run_command('hide_panel', {'cancel': True})
 
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):

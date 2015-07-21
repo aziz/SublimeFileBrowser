@@ -37,8 +37,10 @@ Action Shortcuts:
 | Rename                        | R                         |
 | Delete to trash               | D                         |
 | Delete (permanently)          | alt+shift+d               |
-| Create directory              | cd                        |
-| Create file                   | cf                        |
+| Create directory              | cd, enter                 |
+| Create directory and open it  | cd, super+enter           |
+| Create file                   | cf, enter                 |
+| Create file and open it       | cf, super+enter           |
 | Create/Edit/Remove jump point | P                         |
 | Toggle hidden files           | H                         |
 | Open in Finder/Explorer       | \                         |

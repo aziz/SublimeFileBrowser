@@ -95,6 +95,16 @@
       ]
   },
   {
+      "keys": ["ctrl+enter"],
+      "command": "dired_create_and_open",
+      "context": [{ "key": "setting.dired_create", "operand": true }]
+  },
+  {
+      "keys": ["super+enter"],
+      "command": "dired_create_and_open",
+      "context": [{ "key": "setting.dired_create", "operand": true }]
+  },
+  {
       "keys": ["r"],
       "command": "dired_refresh",
       "context": [
