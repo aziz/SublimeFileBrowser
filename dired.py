@@ -216,7 +216,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         else:
             self.index = []
             if not path:
-                self.continue_refreshing(edit, path, names)
+                self.continue_refreshing(edit, path, names, goto)
             else:
                 self.populate_view(edit, path, names, goto)
 
@@ -305,27 +305,11 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.restore_marks(self.marked)
 
         # Place the cursor.
-        if f:
-            pt = self.fileregion(with_parent_link=True).a
-            if goto:
-                if isdir(join(path, goto)) and not goto.endswith(os.sep):
-                    goto = u"▸ " + goto + os.sep
-                else:
-                    goto = u"≡ " + goto
-                try:
-                    line = f.index(goto) + (2 if header else 0) + (1 if self.show_parent() else 0)
-                    pt = self.view.text_point(line, 2)
-                    self.view.sel().clear()
-                    self.view.sel().add(Region(pt, pt))
-                    self.view.show_at_center(Region(pt, pt))
-                except ValueError:
-                    pass
-            else:
-                self.restore_sels(self.sels)
-        else:  # empty folder?
-            pt = self.view.text_point(2, 0)
-            self.view.sel().clear()
-            self.view.sel().add(Region(pt, pt))
+        if goto:
+            if goto[~0] != os.sep:
+                goto += (os.sep if isdir(join(path, goto)) else '')
+            self.sels = ([goto], None)
+        self.restore_sels(self.sels)
 
     def traverse_tree(self, root, path, indent, tree, expanded):
         if not path:  # special case for ThisPC, path is empty string
@@ -592,7 +576,8 @@ class DiredFold(TextCommand, DiredBaseCommand):
 
             line_number = 1 + v.rowcol(line.a)[0]
             removed_lines = line_number + len(v.lines(indented_region))
-            v.settings().set('dired_index', self.index[:line_number] + self.index[removed_lines:])
+            self.index = self.index[:line_number] + self.index[removed_lines:]
+            v.settings().set('dired_index', self.index)
 
         if self.marked or self.seled:
             path = self.path
@@ -624,7 +609,8 @@ class DiredUpCommand(TextCommand, DiredBaseCommand):
             return
 
         view_id = (self.view.id() if reuse_view() else None)
-        show(self.view.window(), parent, view_id, goto=basename(path.rstrip(os.sep)))
+        goto = basename(path.rstrip(os.sep)) or path
+        show(self.view.window(), parent, view_id, goto=goto)
 
 
 class DiredGotoCommand(TextCommand, DiredBaseCommand):
