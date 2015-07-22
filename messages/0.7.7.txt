@@ -1,0 +1,5 @@
+0.7.7
+
+• When create file or directory press ⌘+enter or ctrl+enter to open right away.
+
+• Fix some regressions.
