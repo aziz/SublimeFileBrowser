@@ -329,47 +329,56 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
-    def run(self, edit, new_view=0, other_group=0, preview=0, and_close=0):
-        path = self.path
+    def run(self, edit, new_view=0, other_group=0, and_close=0):
         self.index = self.get_all()
-        filenames = self.get_selected() if not new_view else self.get_marked() or self.get_selected()
+        filenames = (self.get_selected(full=True) if not new_view else
+                     self.get_marked(full=True) or self.get_selected(full=True))
 
+        window = self.view.window()
         # If reuse view is turned on and the only item is a directory, refresh the existing view.
-        if not new_view and reuse_view():
-            fqn = join(path, filenames[0])
-            if len(filenames) == 1 and isdir(fqn):
-                show(self.view.window(), fqn, view_id=self.view.id())
-                return
-            elif len(filenames) == 1 and filenames[0] == PARENT_SYM:
-                self.view.window().run_command("dired_up")
-                return
+        if self.goto_directory(filenames, window, new_view):
+            return
 
-        w = self.view.window()
-        if other_group or preview or and_close:
-            dired_view = self.view
-            nag = self.view.window().active_group()
-            if not and_close:
-                target_group = self._other_group(w, nag)
-                # set_view_index and focus are not very reliable
-                # just focus target_group should do what we want
-                w.focus_group(target_group)
+        dired_view = self.view
+        if other_group:
+            self.focus_other_group(window)
 
-        for filename in filenames:
-            fqn = join(path, filename)
-            if exists(fqn):  # ignore 'item <error>'
-                if isdir(fqn):
-                    show(w, fqn, ignore_existing=new_view)
-                else:
-                    if preview:
-                        w.open_file(fqn, sublime.TRANSIENT)
-                        w.focus_view(dired_view)
-                        return  # preview is possible for a single file only
-                    else:
-                        v = w.open_file(fqn)
+        self.last_created_view = None
+        for fqn in filenames:
+            self.open_item(fqn, window, new_view)
+
         if and_close:
-            w.focus_view(dired_view)
-            w.run_command("close")
-            w.focus_view(v)
+            window.focus_view(dired_view)
+            window.run_command("close")
+            if self.last_created_view:
+                window.focus_view(self.last_created_view)
+
+    def goto_directory(self, filenames, window, new_view):
+        if new_view and reuse_view():
+            return False
+        fqn = filenames[0]
+        if len(filenames) == 1 and isdir(fqn):
+            show(self.view.window(), fqn, view_id=self.view.id())
+            return True
+        elif fqn == PARENT_SYM:
+            self.view.window().run_command("dired_up")
+            return True
+        return False
+
+    def open_item(self, fqn, window, new_view):
+        if isdir(fqn):
+            show(window, fqn, ignore_existing=new_view)
+        elif exists(fqn):  # ignore 'item <error>'
+            self.last_created_view = window.open_file(fqn)
+        else:
+            sublime.status_message(u'File does not exist (%s)' % (basename(fqn.rstrip(os.sep)) or fqn))
+
+    def focus_other_group(self, window):
+        '''call it when preview open in other group'''
+        target_group = self._other_group(window, window.active_group())
+        # set_view_index and focus are not very reliable
+        # just focus target_group should do what we want
+        window.focus_group(target_group)
 
     def _other_group(self, w, nag):
         '''
@@ -387,6 +396,30 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         else:
             group = nag - 1
         return group
+
+
+class DiredPreviewCommand(DiredSelect):
+    def run(self, edit):
+        self.index = self.get_all()
+        filenames = self.get_selected(full=True)
+
+        if not filenames:
+            return sublime.status_message(u'Nothing to preview')
+
+        fqn = filenames[0]
+
+        if isdir(fqn) or fqn == PARENT_SYM:
+            # XXX: should we call Select command here?
+            return sublime.status_message(u'No preview for directories')
+
+        if exists(fqn):
+            window = self.view.window()
+            dired_view = self.view
+            self.focus_other_group(window)
+            window.open_file(fqn, sublime.TRANSIENT)
+            window.focus_view(dired_view)
+        else:
+            sublime.status_message(u'File does not exist (%s)' % (basename(fqn.rstrip(os.sep)) or fqn))
 
 
 class DiredExpand(TextCommand, DiredBaseCommand):

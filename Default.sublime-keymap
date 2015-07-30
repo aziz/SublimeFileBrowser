@@ -9,7 +9,7 @@
   },
   {
       "keys": ["shift+enter"],
-      "command": "dired_select", "args": {"preview": true},
+      "command": "dired_preview",
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
