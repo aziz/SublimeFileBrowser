@@ -128,7 +128,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     self.index is a representation of view lines
                list contains full path of each item in a view, except
                header ['', ''] and parent_dir [PARENT_SYM]
-    self.index shall be updated according to view modifications (refresh, expand single folder, fold)
+    self.index shall be updated according to view modifications (refresh, expand single directory, fold)
                     and stored in view settings as 'dired_index'
 
     The main reason for index is access speed to item path because we can
@@ -428,7 +428,7 @@ class DiredExpand(TextCommand, DiredBaseCommand):
         filenames = self.get_marked(full=True) or self.get_selected(parent=False, full=True)
 
         if len(filenames) == 1 and filenames[0][~0] == os.sep:
-            return self.expand_single_folder(edit, filenames[0], toggle)
+            return self.expand_single_directory(edit, filenames[0], toggle)
         elif filenames:
             # working with several selections at once is very tricky, thus for reliability we should
             # recreate the entire tree, despite it is supposedly slower, but not really, because
@@ -438,7 +438,7 @@ class DiredExpand(TextCommand, DiredBaseCommand):
         else:
             return sublime.status_message('Item cannot be expanded')
 
-    def expand_single_folder(self, edit, filename, toggle):
+    def expand_single_directory(self, edit, filename, toggle):
         marked = self.get_marked()
         seled  = self.get_selected()
 
@@ -492,22 +492,33 @@ class DiredFold(TextCommand, DiredBaseCommand):
     This command used to fold/erase/shrink (whatever you like to call it) content
     of some [sub]directory (within current directory, see self.path).
     There are two cases when this command would be fired:
-        1. User mean to fold   (key ←)
-        2. User mean to unfold (key →)
-    In first case we just erase region and set dired_count; however, we need to
-    figure out which region to erase:
-        (a) if cursor placed on directory item and next line indented
-            (representing content of the directory) — erase indented line;
-        (b) next line is not indented, but the line of directory item is indented —
-            erase directory item itself;
-        (c) cursor placed on file item which is indented — erase file item.
+        1. User mean to collapse (key ←)
+        2. User mean to expand   (key →)
+    In first case we just erase region, however, we need to figure out which region to erase:
+        (a) if cursor placed on directory item and next line(s) indented (representing content of
+            the directory) — erase indented line(s);
+        (b) next line is not indented, but the line of directory item is indented — erase directory
+            item itself and all neighbours with the same indent;
+        (c) cursor placed on file item which is indented — same as prev. (erase item and neighbours)
     In second case we need to decide if erasing needed or not:
-        (a) if directory was unfolded (as in 1.a) — erase that region, so then
-            it’ll be filled (basically it is like update/refresh), also set dired_count;
-        (b) directory was folded (as in 1.b) — do nothing
+        (a) if directory was expanded — do erase (as in 1.a), so then it’ll be filled again,
+            basically it is like update/refresh;
+        (b) directory was collapsed — do nothing.
+
+    Very important, in case of actual modification of view, set valid dired_index setting
+                    see DiredRefreshCommand docs for details
     '''
     def run(self, edit, update=None, index=None):
+        '''
+        update
+            True when user mean to expand, i.e. no folding for collapsed directory even if indented
+        index
+            list returned by self.get_all(), kinda cache during DiredExpand.expand_single_directory
+
+        Call self.fold method on each line (multiple selections/marks), restore marks and selections
+        '''
         v = self.view
+        self.update = update
         self.index  = index or self.get_all()
         self.marked = None
         self.seled  = (self.get_selected(), list(self.view.sel()))
@@ -519,53 +530,82 @@ class DiredFold(TextCommand, DiredBaseCommand):
                 if 'directory' in self.view.scope_name(m.a):
                     virt_sels.append(Region(m.a, m.a))
             self.marked = self.get_marked()
-        sels = virt_sels
+        sels = virt_sels or list(v.sel())
 
-        lines = [v.line(s.a) for s in reversed(sels or list(v.sel()))]
+        lines = [v.line(s.a) for s in reversed(sels)]
         for line in lines:
-            self.fold(edit, v, line, update)
-        if self.marked:
-            self.restore_marks(self.marked)
-        if self.seled:
-            self.restore_sels(self.seled)
+            self.fold(edit, line)
 
-    def fold(self, edit, v, line, update):
+        self.restore_marks(self.marked)
+        self.restore_sels(self.seled)
+
+    def fold(self, edit, line):
+        '''line is a Region, on which folding is supposed to happen (or not)'''
+        line, indented_region = self.get_indented_region(line)
+        if not indented_region:
+            return  # folding is not supposed to happen, so we exit
+
+        self.apply_change_into_view(edit, line, indented_region)
+
+    def get_indented_region(self, line):
+        '''Return tuple:
+            line
+                Region which shall NOT be erased, can be equal to argument line or less if folding
+                was called on indented file item or indented collapsed directory
+            indented_region
+                Region which shall be erased
+        '''
+        v = self.view
+        eol = line.b - 1
+        if 'error' in v.scope_name(eol):  # remove inline error, e.g. <empty>
+            indented_region = v.extract_scope(eol)
+            return (line, indented_region)
+
         current_region = v.indented_region(line.b)
         next_region    = v.indented_region(line.b + 2)
-        is_folder      = 'directory' in v.scope_name(line.a)
-        folded_subfolder = update and (next_region.contains(line) or next_region.empty() or next_region.contains(current_region))
-        folded_folder    = update and current_region.empty() and next_region.empty()
-        file_item_in_root = not is_folder and current_region.empty()
 
-        if 'error' in v.scope_name(line.b - 1):
-            # remove inline errors, e.g. <empty>
-            indented_region = v.extract_scope(line.b - 1)
-        elif folded_subfolder or folded_folder or file_item_in_root:
-            return  # folding is not supposed to happen, so we exit
-        elif update or (is_folder and not next_region.empty() and not next_region.contains(line)):
+        is_dir     = 'directory' in v.scope_name(line.a)
+        next_empty = next_region.empty()
+        this_empty = current_region.empty()
+        line_in_next = next_region.contains(line)
+        this_in_next = next_region.contains(current_region)
+
+        def __should_exit():
+            collapsed_dir = self.update and (line_in_next or next_empty or this_in_next)
+            item_in_root  = (not is_dir or next_empty) and this_empty
+            return collapsed_dir or item_in_root
+
+        if __should_exit():
+            return (None, None)
+
+        elif self.update or (is_dir and not next_empty and not line_in_next):
             indented_region = next_region
-        elif not current_region.empty():
+
+        elif not this_empty:
             indented_region = current_region
             line = v.line(indented_region.a - 2)
-        else:
-            return  # this is not supposed to happen, but it does sometimes
-        name_point  = v.extract_scope(line.a).b
-        if 'name' in v.scope_name(name_point):
-            icon_region = Region(name_point - 2, name_point - 1)
-        else:
-            icon_region = Region(line.a, line.a + 1)
 
-        # do not set count & index on empty folder
+        else:
+            return (None, None)
+
+        return (line, indented_region)
+
+    def apply_change_into_view(self, edit, line, indented_region):
+        '''set count and index, track marks/selections, replace icon, erase indented_region'''
+        v = self.view
+
+        # do not set count & index on empty directory
         if not line.contains(indented_region):
+            removed_count = len(v.lines(indented_region))
             dired_count = v.settings().get('dired_count', 0)
-            v.settings().set('dired_count', int(dired_count) - len(v.lines(indented_region)))
+            v.settings().set('dired_count', int(dired_count) - removed_count)
             if indented_region.b == v.size():
                 # MUST avoid new line at eof
                 indented_region = Region(indented_region.a - 1, indented_region.b)
 
-            line_number = 1 + v.rowcol(line.a)[0]
-            removed_lines = line_number + len(v.lines(indented_region))
-            self.index = self.index[:line_number] + self.index[removed_lines:]
+            start_line = 1 + v.rowcol(line.a)[0]
+            end_line   = start_line + removed_count
+            self.index = self.index[:start_line] + self.index[end_line:]
             v.settings().set('dired_index', self.index)
 
         if self.marked or self.seled:
@@ -575,6 +615,9 @@ class DiredFold(TextCommand, DiredBaseCommand):
                 self.marked.append(folded_name)
             elif self.seled:
                 self.seled[0].append(folded_name)
+
+        name_point  = self._get_name_point(line)
+        icon_region = Region(name_point - 2, name_point - 1)
 
         v.set_read_only(False)
         v.replace(edit, icon_region, u'▸')
