@@ -210,21 +210,22 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
 
 class DiredRenameCommand(TextCommand, DiredBaseCommand):
     def run(self, edit):
-        if self.filecount():
-            # Store the original filenames so we can compare later.
-            path = self.path
-            self.view.settings().set('rename', [f for f in self.get_all_relative('' if path == 'ThisPC\\' else path) if f and f != PARENT_SYM])
-            self.view.settings().set('dired_rename_mode', True)
-            self.view.set_read_only(False)
+        if not self.filecount():
+            return sublime.status_message('Directory seems empty, nothing could be renamed')
 
-            self.set_ui_in_rename_mode(edit)
+        # Store the original filenames so we can compare later.
+        path = self.path
+        self.view.settings().set('rename', [f for f in self.get_all_relative('' if path == 'ThisPC\\' else path) if f and f != PARENT_SYM])
+        self.view.settings().set('dired_rename_mode', True)
+        self.view.set_read_only(False)
 
-            self.view.set_status("__FileBrowser__", u" 𝌆 [enter: Apply changes] [escape: Discard changes] %s" % (u'¡¡¡DO NOT RENAME DISKS!!! you can rename their children though ' if path == 'ThisPC\\' else ''))
+        self.set_ui_in_rename_mode(edit)
 
-            # Mark the original filename lines so we can make sure they are in the same
-            # place.
-            r = self.fileregion()
-            self.view.add_regions('rename', [r], '', '', MARK_OPTIONS)
+        self.view.set_status("__FileBrowser__", u" 𝌆 [enter: Apply changes] [escape: Discard changes] %s" % (u'¡¡¡DO NOT RENAME DISKS!!! you can rename their children though ' if path == 'ThisPC\\' else ''))
+
+        # Mark the original filename lines so we can make sure they are in the same place.
+        r = self.fileregion()
+        self.view.add_regions('rename', [r], '', '', MARK_OPTIONS)
 
 
 class DiredRenameCancelCommand(TextCommand, DiredBaseCommand):
@@ -243,75 +244,113 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
             return
 
         before = self.view.settings().get('rename')
-
         # We marked the set of files with a region.  Make sure the region still has the same
         # number of files.
-        after = []
-
-        self.index = self.get_all()
-        path = self.path
-        for region in self.view.get_regions('rename'):
-            for line in self.view.lines(region):
-                parent = dirname(self.get_parent(line, path).rstrip(os.sep))
-                name = self.view.substr(Region(self._get_name_point(line), line.b))
-                after.append(join(parent, name))
+        after  = self.get_after()
 
         if len(after) != len(before):
-            sublime.error_message('You cannot add or remove lines')
-            return
+            return sublime.error_message('You cannot add or remove lines')
 
         if len(set(after)) != len(after):
-            sublime.error_message('There are duplicate filenames (see details in console)')
-            self.view.window().run_command("show_panel", {"panel": "console"})
-            print(*(u'\n   Original name: {0}\nConflicting name: {1}'.format(b, a)
-                    for (b, a) in zip(before, after) if b != a and a in before),
-                  sep='\n', end='\n\n')
-            print('You can either resolve conflicts and apply changes or cancel renaming.\n')
-            return
+            return self.report_conflicts(before, after)
 
-        diffs = [(b, a) for (b, a) in zip(before, after) if b != a]
-        if diffs:
-            existing = set(before)
-            while diffs:
-                b, a = diffs.pop(0)
-
-                if a in existing:
-                    # There is already a file with this name.  Give it a temporary name (in
-                    # case of cycles like "x->z and z->x") and put it back on the list.
-                    tmp = tempfile.NamedTemporaryFile(delete=False, dir=self.path).name
-                    os.unlink(tmp)
-                    diffs.append((tmp, a))
-                    a = tmp
-
-                print(u'dired rename: {0} → {1}'.format(b, a))
-                orig = join(self.path, b)
-                if orig[~0] == '/' and os.path.islink(orig[:~0]):
-                    # last slash shall be omitted; file has no last slash,
-                    # thus it False and symlink to file shall be os.rename'd
-                    dest = os.readlink(orig[:~0])
-                    os.unlink(orig[:~0])
-                    os.symlink(dest, join(self.path, a)[:~0])
-                else:
-                    try:
-                        os.rename(orig, join(self.path, a))
-                    except OSError:
-                        msg = (u'FileBrowser:\n\nError is occured during renaming.\n'
-                               u'Please, fix it and apply changes or cancel renaming.\n\n'
-                               u'\t {0} → {1}\n\n'
-                               u'Don’t rename\n'
-                               u'  • parent and child at the same time\n'
-                               u'  • non-existed file (cancel renaming to refresh)\n'
-                               u'  • file if you’re not owner'
-                               u'  • disk letter on Windows\n'.format(b, a))
-                        sublime.error_message(msg)
-                        return
-                existing.remove(b)
-                existing.add(a)
+        self.apply_renames(before, after)
 
         self.view.erase_regions('rename')
         self.view.settings().erase('rename')
         self.view.settings().set('dired_rename_mode', False)
-        self.view.run_command('dired_refresh')
+        self.view.run_command('dired_refresh', {'to_expand': self.re_expand_new_names()})
+
+    def get_after(self):
+        '''Return list of all filenames in the view'''
+        self.index = self.get_all()
+        path = self.path
+        lines = self._get_lines(self.view.get_regions('rename'), self.fileregion())
+        return [self._new_name(line, path=path) for line in lines]
+
+    def _new_name(self, line, path=None, full=False):
+        '''Return new name for line
+        full
+            if True return full path, otherwise relative to path variable
+        path
+            root, returning value is relative to it
+        '''
+        if full:
+            parent = dirname(self.get_fullpath_for(line).rstrip(os.sep))
+        else:
+            parent = dirname(self.get_parent(line, path).rstrip(os.sep))
+        new_name = self.view.substr(Region(self._get_name_point(line), line.b))
+        if os.sep in new_name:  # ignore trailing errors, e.g. <empty>
+            new_name = new_name.split(os.sep)[0] + os.sep
+        return join(parent, new_name)
+
+    def report_conflicts(self, before, after):
+        '''
+        before  list of all filenames before enter rename mode
+        after   list of all filenames upon commit rename
+
+        Warn about conflicts and print original (before) and conflicting (after) names for
+        each item which cause conflict.
+        '''
+        sublime.error_message('There are duplicate filenames (see details in console)')
+        self.view.window().run_command("show_panel", {"panel": "console"})
+        print(*(u'\n   Original name: {0}\nConflicting name: {1}'.format(b, a)
+                for (b, a) in zip(before, after) if b != a and a in before),
+              sep='\n', end='\n\n')
+        print('You can either resolve conflicts and apply changes or cancel renaming.\n')
+
+    def apply_renames(self, before, after):
+        '''args are the same as in self.report_conflicts
+        If before and after differ, try to do actual rename for each pair
+        Take into account directory symlinks on Unix-like OSes (they cannot be just renamed)
+        In case of error, show message and exit skipping remain pairs
+        '''
+        # reverse order to allow renaming child and parent at the same time (tree view)
+        diffs = list(reversed([(b, a) for (b, a) in zip(before, after) if b != a]))
+        if not diffs:
+            return sublime.status_message('Exit rename mode, no changes')
+
+        path = self.path
+        existing = set(before)
+        while diffs:
+            b, a = diffs.pop(0)
+
+            if a in existing:
+                # There is already a file with this name.  Give it a temporary name (in
+                # case of cycles like "x->z and z->x") and put it back on the list.
+                tmp = tempfile.NamedTemporaryFile(delete=False, dir=path).name
+                os.unlink(tmp)
+                diffs.append((tmp, a))
+                a = tmp
+
+            print(u'FileBrowser rename: {0} → {1}'.format(b, a))
+            orig = join(path, b)
+            if orig[~0] == '/' and os.path.islink(orig[:~0]):
+                # last slash shall be omitted; file has no last slash,
+                # thus it False and symlink to file shall be os.rename'd
+                dest = os.readlink(orig[:~0])
+                os.unlink(orig[:~0])
+                os.symlink(dest, join(path, a)[:~0])
+            else:
+                try:
+                    os.rename(orig, join(path, a))
+                except OSError:
+                    msg = (u'FileBrowser:\n\nError is occurred during renaming.\n'
+                           u'Please, fix it and apply changes or cancel renaming.\n\n'
+                           u'\t {0} → {1}\n\n'
+                           u'Don’t rename\n'
+                           u'  • non-existed file (cancel renaming to refresh)\n'
+                           u'  • file if you’re not owner'
+                           u'  • disk letter on Windows\n'.format(b, a))
+                    sublime.error_message(msg)
+                    return
+            existing.remove(b)
+            existing.add(a)
+
+    def re_expand_new_names(self):
+        '''Make sure that expanded directories will keep state if were renamed'''
+        expanded = [self.view.line(r) for r in self.view.find_all(u'^\s*▾')]
+        return [self._new_name(line, full=True) for line in expanded]
 
 
 class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
