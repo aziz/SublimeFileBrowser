@@ -34,17 +34,11 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, which=None):
         assert which in ('file', 'directory'), "which: " + which
         self.index = self.get_all()
-        relative_path = self.get_selected(parent=False) or ""
-        if relative_path:
-            relative_path = relative_path[0]
-            if relative_path[~0] != os.sep:
-                relative_path = os.path.split(relative_path)[0] + os.sep
-            if relative_path == os.sep:
-                relative_path = ""
+        rel_path   = relative_path(self.get_selected(parent=False) or '')
 
         self.which = which
         self.refresh = True
-        pv = self.view.window().show_input_panel(which.capitalize() + ':', relative_path, self.on_done, None, None)
+        pv = self.view.window().show_input_panel(which.capitalize() + ':', rel_path, self.on_done, None, None)
         pv.run_command('move_to', {'to': 'eol', 'extend': False})
         pv.settings().set('dired_create', True)
         pv.settings().set('which', which)
@@ -104,33 +98,50 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, trash=False):
         self.index = self.get_all()
         files = self.get_marked() or self.get_selected(parent=False)
-        if files:
-            # Yes, I know this is English.  Not sure how Sublime is translating.
-            if len(files) == 1:
-                msg = u"Delete {0}?".format(files[0])
-            else:
-                msg = u"Delete {0} items?".format(len(files))
-            if trash:
-                need_confirm = self.view.settings().get('dired_confirm_send2trash')
-            if trash and not send2trash:
-                msg = u"Cannot delete to trash.\nPermanently " + msg.replace('D', 'd', 1)
-                trash = False
-            elif trash and need_confirm:
-                msg = msg.replace('Delete', 'Delete to trash', 1)
+        if not files:
+            return sublime.status_message('Nothing chosen')
 
-            if trash and send2trash:
-                if not need_confirm or (need_confirm and sublime.ok_cancel_dialog(msg)):
-                    self._to_trash(files)
-            elif not trash and sublime.ok_cancel_dialog(msg):
-                self._delete(files)
-            else:
-                print("Cancel delete or something wrong in DiredDeleteCommand")
+        msg, trash = self.setup_msg(files, trash)
+
+        if trash:
+            need_confirm = self.view.settings().get('dired_confirm_send2trash', True)
+            msg = msg.replace('Delete', 'Delete to trash', 1)
+            if not need_confirm or (need_confirm and sublime.ok_cancel_dialog(msg)):
+                self._to_trash(files)
+        elif not trash and sublime.ok_cancel_dialog(msg):
+            self._delete(files)
+        else:
+            print("Cancel delete or something wrong in DiredDeleteCommand")
+
+    def setup_msg(self, files, trash):
+        '''If user send to trash, but send2trash is unavailable, we suggest deleting permanently'''
+        # Yes, I know this is English.  Not sure how Sublime is translating.
+        if len(files) == 1:
+            msg = u"Delete {0}?".format(files[0])
+        else:
+            msg = u"Delete {0} items?".format(len(files))
+        if trash and not send2trash:
+            msg = u"Cannot delete to trash.\nPermanently " + msg.replace('D', 'd', 1)
+            trash = False
+        return (msg, trash)
 
     def _to_trash(self, files):
+        '''Sending to trash might be slow
+        So we start two threads which run _sender function in parallel and each of them waiting and
+        setting certain event:
+            1. remove one which signals that _sender need try to call send2trash for current file
+               and if it fails collect error message (always ascii, no bother with encoding)
+            2. report one which call _status function to display message on status-bar so user
+               can see what is going on
+        When loop in _sender is finished we refresh view and show errors if any.
+
+        On Windows we call API directly in call_SHFileOperationW class.
+        '''
         path = self.path
         if NT:  # use winapi directly, because better errors handling, plus GUI
             sources_move = [join(path, f) for f in files]
             return call_SHFileOperationW(self.view, sources_move, [], '$TRASH$')
+
         errors = []
 
         def _status(filename='', done=False):
@@ -167,6 +178,10 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
         report_event.set()
 
     def _delete(self, files):
+        '''Delete is fast, no need to bother with threads or even status message
+        But need to bother with encoding of error messages since they are vary,
+        depending on OS and/or version of Python
+        '''
         errors = []
         if ST3:
             fail = (PermissionError, FileNotFoundError)
