@@ -730,33 +730,26 @@ class DiredToggleHiddenFilesCommand(TextCommand):
 
 # MOUSE INTERATIONS #################################################
 
-def dired_mouse_arguments(sel):
-    if 'directory' in sel:
-        return ("dired_expand", {"toggle": True})
+def dired_mouse(view, args):
+    s = view.settings()
+    if s.get("dired_path") and not s.get("dired_rename_mode"):
+        if 'directory' in view.scope_name(view.sel()[0].a):
+            command = ("dired_expand", {"toggle": True})
+        else:
+            command = ("dired_select", {"other_group": True})
+        view.run_command(*command)
     else:
-        return ("dired_select", {"other_group": True})
+        system_command = args["command"] if "command" in args else None
+        if system_command:
+            system_args = dict({"event": args["event"]}.items())
+            system_args.update(dict(args["args"].items()))
+            view.run_command(system_command, system_args)
 
 if ST3:
     class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
         def run_(self, view, args):
-            s = self.view.settings()
-            if s.get("dired_path") and not s.get("dired_rename_mode"):
-                self.view.run_command(*dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
-            else:
-                system_command = args["command"] if "command" in args else None
-                if system_command:
-                    system_args = dict({"event": args["event"]}.items())
-                    system_args.update(dict(args["args"].items()))
-                    self.view.run_command(system_command, system_args)
+            dired_mouse(self.view, args)
 else:
     class DiredDoubleclickCommand(TextCommand, DiredBaseCommand):
         def run_(self, args):
-            s = self.view.settings()
-            if s.get("dired_path") and not s.get("dired_rename_mode"):
-                self.view.run_command(*dired_mouse_arguments(self.view.scope_name(self.view.sel()[0].a)))
-            else:
-                system_command = args["command"] if "command" in args else None
-                if system_command:
-                    system_args = dict({"event": args["event"]}.items())
-                    system_args.update(dict(args["args"].items()))
-                    self.view.run_command(system_command, system_args)
+            dired_mouse(self.view, args)
