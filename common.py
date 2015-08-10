@@ -95,18 +95,18 @@ def calc_width(view):
 
 
 def relative_path(rpath):
-        u'''rpath is either list or empty string (if list, we need only first item);
-        return either empty string or rpath[0] (or its parent), e.g.
-            foo/bar/ → foo/bar/
-            foo/bar  → foo/
-        '''
-        if rpath:
-            rpath = rpath[0]
-            if rpath[~0] != os.sep:
-                rpath = os.path.split(rpath)[0] + os.sep
-            if rpath == os.sep:
-                rpath = ''
-        return rpath
+    u'''rpath is either list or empty string (if list, we need only first item);
+    return either empty string or rpath[0] (or its parent), e.g.
+        foo/bar/ → foo/bar/
+        foo/bar  → foo/
+    '''
+    if rpath:
+        rpath = rpath[0]
+        if rpath[~0] != os.sep:
+            rpath = os.path.split(rpath)[0] + os.sep
+        if rpath == os.sep:
+            rpath = ''
+    return rpath
 
 
 def hijack_window():
@@ -239,6 +239,11 @@ class DiredBaseCommand:
 
     def get_selected(self, parent=True, full=False):
         """
+        parent
+            if False, returned list does not contain PARENT_SYM even if it is in view
+        full
+            if True, items in returned list are full paths, else relative
+
         Returns a list of selected filenames.
         self.index should be assigned before call it
         """

@@ -144,62 +144,19 @@ class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
 
 class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, project_folder=False):
-        self.index = self.get_all()
         if project_folder:
             files = project_folder
         else:
-            files = self.get_marked() or self.get_selected()
-        items = []
+            self.index = self.get_all()
+            files = self.get_marked(full=True) or self.get_selected(parent=False, full=True)
 
-        if ST3:  # sublime.executable_path() is not available in ST2
-            executable_path = sublime.executable_path()
-            if OSX:
-                app_path = executable_path[:executable_path.rfind(".app/")+5]
-                executable_path = app_path+"Contents/SharedSupport/bin/subl"
-            items.append(executable_path)
-            items.append("-n")
+        if not files:
+            return sublime.status_message('Nothing chosen')
 
-            for filename in files:
-                fqn = join(self.path, filename)
-                items.append(fqn)
-
-            if NT:
-                subprocess.Popen(items)
-            else:
-                subprocess.Popen(items, cwd=self.path)
-
-        else:  # ST2
-            items.append("-n")
-            for filename in files:
-                fqn = join(self.path or u'', filename)
-                items.append(fqn)
-
-            if OSX:
-                try:
-                    subprocess.Popen(['subl'] + items, cwd=self.path)
-                except:
-                    try:
-                        subprocess.Popen(['sublime'] + items, cwd=self.path)
-                    except:
-                        app_path = subprocess.Popen(["osascript", "-e" "tell application \"System Events\" to POSIX path of (file of process \"Sublime Text 2\" as alias)"], stdout=subprocess.PIPE).communicate()[0].rstrip()
-                        subl_path = "{0}/Contents/SharedSupport/bin/subl".format(app_path)
-                        subprocess.Popen([subl_path] + items, cwd=self.path)
-            elif NT:
-                # 9200 means win8
-                shell = True if sys.getwindowsversion()[2] < 9200 else False
-                items = [i.encode(locale.getpreferredencoding(False)) if sys.getwindowsversion()[2] == 9200 else i for i in items]
-                try:
-                    subprocess.Popen(['subl'] + items, shell=shell)
-                except:
-                    try:
-                        subprocess.Popen(['sublime'] + items, shell=shell)
-                    except:
-                        subprocess.Popen(['sublime_text.exe'] + items, shell=shell)
-            else:
-                try:
-                    subprocess.Popen(['subl'] + items, cwd=self.path)
-                except:
-                    subprocess.Popen(['sublime'] + items, cwd=self.path)
+        if ST3:
+            self.launch_ST3(files)
+        else:
+            self.launch_ST2(files)
 
         def run_on_new_window():
             settings = sublime.load_settings('dired.sublime-settings')
@@ -214,8 +171,45 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
                 sublime.active_window().run_command("dired", options)
 
         sublime.set_timeout(run_on_new_window, 200)
-        if not ST3:
+        if not ST3 and not NT:
             sublime.set_timeout(lambda: sublime.active_window().run_command("toggle_side_bar"), 200)
+
+    def launch_ST3(self, files):
+        executable_path = sublime.executable_path()
+        if OSX:
+            app_path = executable_path[:executable_path.rfind(".app/")+5]
+            executable_path = app_path+"Contents/SharedSupport/bin/subl"
+        items = [executable_path, "-n"] + files
+        subprocess.Popen(items, cwd=None if NT else self.path)
+
+    def launch_ST2(self, files):
+        items = ["-n"] + files
+        cwd = None if NT else self.path
+        shell = False
+        if NT:
+            # 9200 means win8
+            shell = True if sys.getwindowsversion()[2] < 9200 else False
+            items = [i.encode(locale.getpreferredencoding(False)) if sys.getwindowsversion()[2] == 9200 else i for i in items]
+
+        def app_path():
+            if OSX:
+                app_path = subprocess.Popen(["osascript", "-e" "tell application \"System Events\" to POSIX path of (file of process \"Sublime Text 2\" as alias)"], stdout=subprocess.PIPE).communicate()[0].rstrip()
+                subl_path = "{0}/Contents/SharedSupport/bin/subl".format(app_path)
+            else:
+                subl_path = 'sublime_text'
+            yield subl_path
+
+        fail = False
+        for c in ['subl', 'sublime', app_path()]:
+            try:
+                subprocess.Popen(list(c) + items, cwd=cwd, shell=shell)
+            except:
+                fail = True
+            else:
+                fail = False
+
+        if fail:
+            sublime.status_message('Cannot open a new window')
 
 
 # EVENT LISTENERS ###################################################
