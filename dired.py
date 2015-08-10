@@ -113,13 +113,6 @@ class DiredCommand(WindowCommand):
         # Use the user's home directory.
         return (os.path.expanduser('~'), None)
 
-    def display_path(self, folder):
-        display = folder
-        home = os.path.expanduser("~")
-        if folder.startswith(home):
-            display = folder.replace(home, "~", 1)
-        return display
-
 
 class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     """

@@ -488,3 +488,10 @@ class DiredBaseCommand:
             self.view.sel().add(s)
 
         self.view.show_at_center(s)
+
+    def display_path(self, folder):
+        display = folder
+        home = os.path.expanduser("~")
+        if folder.startswith(home):
+            display = folder.replace(home, "~", 1)
+        return display

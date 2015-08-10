@@ -60,13 +60,6 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
             self.display_jump_points.append(name)
         self.view.window().show_quick_panel(self.display_jump_points, self.on_pick_point, sublime.MONOSPACE_FONT)
 
-    def display_path(self, folder):
-        display = folder
-        home = os.path.expanduser("~")
-        if folder.startswith(home):
-            display = folder.replace(home, "~", 1)
-        return display
-
     def on_pick_point(self, index):
         if index == -1:
             return
