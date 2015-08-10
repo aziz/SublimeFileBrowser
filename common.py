@@ -159,23 +159,13 @@ class DiredBaseCommand:
         """
         assert forward in (True, False), 'forward must be set to True or False'
 
-        def __next_line(pt, files):
-            if files.contains(pt):
-                # Try moving by one line.
-                line = self.view.line(pt)
-                pt = forward and (line.b + 1) or (line.a - 1)
-            if not files.contains(pt):
-                # Not (or no longer) in the list of files, so move to the closest edge.
-                pt = (pt > files.b) and files.b or files.a
-            return self.view.line(pt)
-
         files = self.fileregion(with_parent_link=True)
         if not files:
             return
 
         new_sels = []
         for s in list(self.view.sel()):
-            new_sels.append(self._get_name_point(__next_line(s.a, files)))
+            new_sels.append(self._get_name_point(self.next_line(forward, s.a, files)))
 
         self.view.sel().clear()
         for n in new_sels:
@@ -183,6 +173,16 @@ class DiredBaseCommand:
         name_point = new_sels[~0] if forward else new_sels[0]
         surroundings = True if self.view.rowcol(name_point)[0] < 3 else False
         self.view.show(name_point, surroundings)
+
+    def next_line(self, forward, pt, filergn):
+        if filergn.contains(pt):
+            # Try moving by one line.
+            line = self.view.line(pt)
+            pt = forward and (line.b + 1) or (line.a - 1)
+        if not filergn.contains(pt):
+            # Not (or no longer) in the list of files, so move to the closest edge.
+            pt = (pt > filergn.b) and filergn.b or filergn.a
+        return self.view.line(pt)
 
     def _get_name_point(self, line):
         scope = self.view.scope_name(line.a)

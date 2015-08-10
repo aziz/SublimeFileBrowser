@@ -189,7 +189,7 @@ class DiredJumpListCommand(TextCommand):
         sublime.active_window().focus_view(view)
 
 
-class DiredProjectNextLineCommand(TextCommand):
+class DiredProjectNextLineCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, forward=None):
         assert forward in (True, False), 'forward must be set to True or False'
 
@@ -200,18 +200,8 @@ class DiredProjectNextLineCommand(TextCommand):
             return
 
         pt = self.view.sel()[0].a
+        line = self.next_line(forward, pt, files)
 
-        if files.contains(pt):
-            # Try moving by one line.
-            line = self.view.line(pt)
-            pt = forward and (line.b + 1) or (line.a - 1)
-
-        if not files.contains(pt):
-            # Not (or no longer) in the list of files, so move to the closest edge.
-            pt = (pt > files.b) and files.b or files.a
-
-        # print(pt)
-        line = self.view.line(pt)
         self.view.sel().clear()
         self.view.sel().add(Region(line.a, line.a))
 
