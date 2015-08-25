@@ -413,6 +413,12 @@ class DiredBaseCommand:
         finally:
             return items, error
 
+    def try_listing_only_dirs(self, path):
+        items, error = self.try_listing_directory(path)
+        if items:
+            items = [n for n in items if isdir(join(path, n))]
+        return (items, error)
+
     def restore_marks(self, marked=None):
         if marked:
             # Even if we have the same filenames, they may have moved so we have to manually

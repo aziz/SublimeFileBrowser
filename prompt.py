@@ -11,9 +11,9 @@ ST3 = int(sublime.version()) >= 3000
 NT  = sublime.platform() == 'windows'
 
 if ST3:
-    from .common import sort_nicely
+    from .common import DiredBaseCommand
 else:
-    from common import sort_nicely
+    from common import DiredBaseCommand
 
 map_window_to_ctx = {}
 
@@ -69,42 +69,36 @@ class DiredPromptCommand(WindowCommand):
         self.ctx.callback(value)
 
 
-class DiredCompleteCommand(TextCommand):
+class DiredCompleteCommand(TextCommand, DiredBaseCommand):
     """
     An internal command executed when the user has pressed Tab in our directory prompt.
     """
     def run(self, edit):
         self.edit = edit
         self.prompt_region = Region(0, self.view.size())
-        content = expanduser(self.view.substr(self.prompt_region))
-        path, prefix = os.path.split(content) if not isdir(content) else (content, '')
+        content, path, prefix = self.get_content()
         if not valid(path or content):
             return
 
-        completions = [n for n in os.listdir(path) if n.upper().startswith(prefix.upper()) and isdir(join(path, n))]
-        sort_nicely(completions)
-        common      = os.path.commonprefix([f.upper() for f in completions])
-        new_content = ''
-
+        completions, error = self.get_completions(path, prefix)
+        if error:
+            return  # content of path is unavailable (access, permission, etc.)
         if not completions:
             return sublime.status_message('No matches')
 
-        if len(completions) == 1:
-            new_content = join(path, completions[0]) + os.sep
-        elif common and common > prefix:
-            new_content = join(path, common)
+        new_content = self.get_new_content(path, prefix, completions)
 
         if new_content:
             self.fill_prompt(new_content)
         else:
             self.completions = completions
-            self.path = path
+            self._path = path
             self.w = self.view.window() or sublime.active_window()
             return self.w.show_quick_panel(completions, self.on_done)
 
     def on_done(self, i):
         if i < 0: return
-        content = join(self.path, self.completions[i]) + os.sep
+        content = join(self._path, self.completions[i]) + os.sep
         if ST3:
             ctx = map_window_to_ctx.get(self.w.id())
             ctx.path = content
@@ -120,3 +114,29 @@ class DiredCompleteCommand(TextCommand):
         self.view.sel().clear()
         self.view.sel().add(Region(eol, eol))
         return
+
+    def get_content(self):
+        content = expanduser(self.view.substr(self.prompt_region))
+        path, prefix = os.path.split(content) if not isdir(content) else (content, '')
+        return (content, path, prefix)
+
+    def get_completions(self, path, prefix):
+        '''return tuple (completion(list, may be empty), error(boolean))'''
+        # self.view is prompt, so get settings of active view in active window
+        self.show_hidden = sublime.active_window().active_view().settings().get('dired_show_hidden_files', True)
+        dirs, error = self.try_listing_only_dirs(path)
+        if error:
+            sublime.error_message(u'FileBrowser:\n\n Content is unavailable\n\n\t%s\n\n\t%s' % (path, error))
+            return ([], True)
+        completions = [n for n in dirs if n.upper().startswith(prefix.upper())]
+        return (completions, False)
+
+    def get_new_content(self, path, prefix, completions):
+        common = os.path.commonprefix([f.upper() for f in completions])
+        if len(completions) == 1:
+            new_content = join(path, completions[0]) + os.sep
+        elif common and common > prefix:
+            new_content = join(path, common)
+        else:
+            new_content = ''
+        return new_content
