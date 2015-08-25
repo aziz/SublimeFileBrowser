@@ -17,6 +17,11 @@ else:
     from show import set_proper_scheme
 
 
+def unicodify(name):
+    '''name is key from dict in settings, on ST2, is byte string encoded with utf8'''
+    return name if ST3 else name.decode('utf8')
+
+
 def load_jump_points():
     return load_settings('dired.sublime-settings').get('dired_jump_points', {})
 
@@ -38,7 +43,7 @@ def jump_targets():
 
 
 def jump_names():
-    return dict((t, n if ST3 else n.decode('utf8')) for n, t in load_jump_points().items())
+    return dict((t, unicodify(n)) for n, t in load_jump_points().items())
 
 
 class DiredJumpCommand(TextCommand, DiredBaseCommand):
@@ -64,16 +69,15 @@ class DiredJumpCommand(TextCommand, DiredBaseCommand):
         if index == -1:
             return
         name, target = self.jump_points[index]
-        if exists(target) and isdir(target) and target[-1] == os.sep:
+        if isdir(target):
             settings = load_settings('dired.sublime-settings')
             smart_jump = settings.get('dired_smart_jump', False)
             auto = self.new_window == 'auto'
-            if self.new_window == True or ((not smart_jump) and auto) or (smart_jump and auto and len(self.view.window().views()) > 0):
-                print(target)
+            if self.new_window is True or ((not smart_jump) and auto) or (smart_jump and auto and len(self.view.window().views()) > 0):
                 self.view.run_command("dired_open_in_new_window", {"project_folder": [target]})
             else:
                 show(self.view.window(), target, view_id=self.view.id())
-                status_message(u"Jumping to point '{0}' complete".format(name if ST3 else name.decode('utf8')))
+                status_message(u"Jumping to point '{0}' complete".format(unicodify(name)))
         else:
             # workaround ST3 bug https://github.com/SublimeText/Issues/issues/39
             self.view.window().run_command('hide_overlay')
@@ -156,7 +160,7 @@ class DiredJumpListRenderCommand(TextCommand):
         return content
 
     def display_name(self, name):
-        name = name if ST3 else name.decode('utf8')
+        name = unicodify(name)
         return name + " " * (self.max_len_names - len(name) + self.col_padding)
 
     def display_path(self, folder):
