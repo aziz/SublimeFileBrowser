@@ -10,12 +10,12 @@ from os.path import basename, dirname, isdir, exists, join
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import DiredBaseCommand, print, set_proper_scheme, calc_width, hijack_window, NT, PARENT_SYM
+    from .common import DiredBaseCommand, print, set_proper_scheme, calc_width, get_group, hijack_window, NT, PARENT_SYM
     from . import prompt
     from .show import show
     from .jumping import jump_names
 else:  # ST2 imports
-    from common import DiredBaseCommand, print, set_proper_scheme, calc_width, hijack_window, NT, PARENT_SYM
+    from common import DiredBaseCommand, print, set_proper_scheme, calc_width, get_group, hijack_window, NT, PARENT_SYM
     import prompt
     from show import show
     from jumping import jump_names
@@ -382,12 +382,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
         if groups == 1:
             width = calc_width(self.view)
             w.set_layout({"cols": [0.0, width, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
-        if groups <= 4 and nag < 2:
-            group = 1 if nag == 0 else 0
-        elif groups == 4 and nag >= 2:
-            group = 3 if nag == 2 else 2
-        else:
-            group = nag - 1
+        group = get_group(groups, nag)
         return group
 
 

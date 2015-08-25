@@ -94,6 +94,21 @@ def calc_width(view):
     return width or 0.1  # avoid 0.0
 
 
+def get_group(groups, nag):
+    '''
+    groups  amount of groups in window
+    nag     number of active group
+    return number of neighbour group
+    '''
+    if groups <= 4 and nag < 2:
+        group = 1 if nag == 0 else 0
+    elif groups == 4 and nag >= 2:
+        group = 3 if nag == 2 else 2
+    else:
+        group = nag - 1
+    return group
+
+
 def relative_path(rpath):
     u'''rpath is either list or empty string (if list, we need only first item);
     return either empty string or rpath[0] (or its parent), e.g.
