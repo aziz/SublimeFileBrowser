@@ -334,7 +334,7 @@ class CallVCS(DiredBaseCommand):
         return command
 
     def get_output(self, vcs, command):
-        args = {'git_status': ['status', '-z'],
+        args = {'git_status': ['status', '--untracked-files=all', '-z'],
                 'git_root':   ['rev-parse', '--show-toplevel'],
                 'hg_status':  ['status'],
                 'hg_root':    ['root']}
