@@ -62,7 +62,7 @@ def set_view(view_id, window, ignore_existing, path, single_pane):
     return (view, reset_sels)
 
 
-def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto=None, other_group=''):
+def show(window, path, view_id=None, ignore_existing=False, single_pane=False, goto='', other_group=''):
     """
     Determines the correct view to use, creating one if necessary, and prepares it.
     """

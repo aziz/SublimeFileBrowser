@@ -95,7 +95,11 @@ class DiredCommand(WindowCommand):
         # Use the current view's directory if it has one.
         view = self.window.active_view()
         path = view and view.file_name()
+        folders = self.window.folders()
         if path:
+            if path.startswith(tuple(folders)):
+                root = os.path.commonprefix([path] + folders)
+                return (root, path)
             return os.path.split(path)
 
         # Use the first project folder if there is one.
@@ -106,7 +110,6 @@ class DiredCommand(WindowCommand):
                 return (folders[0]['path'], None)
 
         # Use window folder if possible
-        folders = self.window.folders()
         if len(folders) > 0:
             return (folders[0], None)
 
@@ -129,7 +132,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
     to get full path, instead of grinding with substr thru entire view
     substr is slow: https://github.com/SublimeTextIssues/Core/issues/882
     """
-    def run(self, edit, goto=None, to_expand=None, toggle=None, reset_sels=None):
+    def run(self, edit, goto='', to_expand=None, toggle=None, reset_sels=None):
         """
         goto
             Optional filename to put the cursor on; used only from "dired_up"
@@ -149,23 +152,39 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(self.view))
 
         path = self.path
-        expanded = self.view.find_all(u'^\s*▾') if not goto else []
+        expanded = self.view.find_all(u'^\s*▾') if not reset_sels else []
         names = []
-        if reset_sels:
-            self.index, self.marked, self.sels = None, None, None
-        else:
-            self.index  = self.get_all()
-            self.marked = self.get_marked()
-            self.sels   = (self.get_selected(), list(self.view.sel()))
         self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-
+        self.goto = goto
         if path == 'ThisPC\\':
             path, names = '', self.get_disks()
-        if not reset_sels:
-            self.re_populate_view(edit, path, names, expanded, to_expand, toggle)
+        if os.sep in goto:
+            to_expand = self.expand_goto(to_expand)
+
+        self.number_line = 0
+        if reset_sels and not to_expand:
+            self.index, self.marked, self.sels = [], None, None
+            self.populate_view(edit, path, names)
         else:
-            self.index = []
-            self.populate_view(edit, path, names, goto)
+            if not reset_sels:
+                self.index  = self.get_all()
+                self.marked = self.get_marked()
+                self.sels   = (self.get_selected(), list(self.view.sel()))
+            else:
+                self.marked, self.sels = None, None
+            self.re_populate_view(edit, path, names, expanded, to_expand, toggle)
+
+    def expand_goto(self, to_expand):
+        '''e.g. self.goto = "a/b/c/d/", then to put cursor onto d, it should be
+        to_expand = ["a/", "a/b/", "a/b/c/"] (items order in list dont matter)
+        '''
+        to_expand = to_expand or []
+        goto = self.goto
+        while len(goto.split(os.sep)) > 2:
+            parent = dirname(goto) + os.sep
+            to_expand.append(parent)
+            goto = parent.rstrip(os.sep)
+        return to_expand
 
     def re_populate_view(self, edit, path, names, expanded, to_expand, toggle):
         root = path
@@ -182,17 +201,17 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
 
         tree = self.traverse_tree(root, root, '', names, expanded)
         if not tree:
-            return self.populate_view(edit, path, names, goto=None)
+            return self.populate_view(edit, path, names)
 
         self.set_status()
         items = self.correcting_index(path, tree)
         self.write(edit, items)
-        self.restore_selections()
+        self.restore_selections(path)
         self.view.run_command('dired_call_vcs', {'path': path})
 
-    def populate_view(self, edit, path, names, goto):
+    def populate_view(self, edit, path, names):
         if not path and names:  # open ThisPC
-            self.continue_populate(edit, path, names, goto)
+            self.continue_populate(edit, path, names)
             return
         items, error = self.try_listing_directory(path)
         if error:
@@ -202,15 +221,14 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
                              u'\t<%s>' % error)
             self.view.set_read_only(True)
         else:
-            self.continue_populate(edit, path, items, goto)
+            self.continue_populate(edit, path, items)
 
-    def continue_populate(self, edit, path, names, goto=None):
+    def continue_populate(self, edit, path, names):
         self.sel = None
-        self.number_line = 0
         self.set_status()
         items = self.correcting_index(path, self.prepare_filelist(names, path, '', ''))
         self.write(edit, items)
-        self.restore_selections(goto, path)
+        self.restore_selections(path)
         self.view.run_command('dired_call_vcs', {'path': path})
 
     def traverse_tree(self, root, path, indent, tree, expanded):
@@ -292,12 +310,12 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.number_line += 2
         return text + fileslist
 
-    def restore_selections(self, goto=None, path=None):
+    def restore_selections(self, path):
         self.restore_marks(self.marked)
-        if goto:
-            if goto[~0] != os.sep:
-                goto += (os.sep if isdir(join(path, goto)) else '')
-            self.sels = ([goto], None)
+        if self.goto:
+            if self.goto[~0] != os.sep:
+                self.goto += (os.sep if isdir(join(path, self.goto)) else '')
+            self.sels = ([self.goto.replace(path, '', 1)], None)
         self.restore_sels(self.sels)
 
     def get_disks(self):

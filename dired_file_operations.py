@@ -60,7 +60,7 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
             with open(fqn, 'wb'):
                 pass
         if self.refresh:  # user press enter
-            self.view.run_command('dired_refresh')
+            self.view.run_command('dired_refresh', {'goto': fqn})
 
         # user press ctrl+enter, no refresh
         return fqn
@@ -81,6 +81,8 @@ class DiredCreateAndOpenCommand(DiredCreateCommand):
         if not fqn:
             return sublime.status_message('oops, does not work!')
 
+        sublime.active_window().run_command('hide_panel', {'cancel': True})
+
         dired_view = sublime.active_window().active_view()
         if dired_view.settings().has('dired_path'):
             self.refresh = True
@@ -89,9 +91,7 @@ class DiredCreateAndOpenCommand(DiredCreateCommand):
         else:
             sublime.active_window().open_file(fqn)
         if self.refresh:
-            dired_view.run_command('dired_refresh')
-
-        sublime.active_window().run_command('hide_panel', {'cancel': True})
+            dired_view.run_command('dired_refresh', {'goto': fqn})
 
 
 class DiredDeleteCommand(TextCommand, DiredBaseCommand):
@@ -375,6 +375,7 @@ class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
         settings.set('dired_to_move', list(set(cut_list)))
         settings.set('dired_to_copy', list(set(copy_list)))
         sublime.save_settings('dired.sublime-settings')
+        self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
         self.set_status()
 
 
