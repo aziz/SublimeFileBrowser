@@ -1,5 +1,7 @@
 # coding: utf-8
 
+'''Main module; launch and navigation related stuff'''
+
 from __future__ import print_function
 import sublime
 from sublime import Region
@@ -107,14 +109,14 @@ class DiredCommand(WindowCommand):
         if data and 'folders' in data:
             folders = data['folders']
             if folders:
-                return (folders[0]['path'], None)
+                return (folders[0]['path'], '')
 
         # Use window folder if possible
         if len(folders) > 0:
-            return (folders[0], None)
+            return (folders[0], '')
 
         # Use the user's home directory.
-        return (os.path.expanduser('~'), None)
+        return (os.path.expanduser('~'), '')
 
 
 class DiredRefreshCommand(TextCommand, DiredBaseCommand):
@@ -187,6 +189,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         return to_expand
 
     def re_populate_view(self, edit, path, names, expanded, to_expand, toggle):
+        '''Called when we know that some directories were (or/and need to be) expanded'''
         root = path
         for i, r in enumerate(expanded):
             name = self.get_fullpath_for(r)
@@ -210,6 +213,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.run_command('dired_call_vcs', {'path': path})
 
     def populate_view(self, edit, path, names):
+        '''Called when no directories were (or/and need to be) expanded'''
         if not path and names:  # open ThisPC
             self.continue_populate(edit, path, names)
             return
@@ -224,6 +228,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             self.continue_populate(edit, path, items)
 
     def continue_populate(self, edit, path, names):
+        '''Called if there is no exception in self.populate_view'''
         self.sel = None
         self.set_status()
         items = self.correcting_index(path, self.prepare_filelist(names, path, '', ''))
@@ -232,6 +237,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.run_command('dired_call_vcs', {'path': path})
 
     def traverse_tree(self, root, path, indent, tree, expanded):
+        '''Recursively build list of filenames for self.re_populate_view'''
         if not path:  # special case for ThisPC, path is empty string
             items = [u'%s\\' % d for d in tree]
             tree  = []
@@ -271,6 +277,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         return tree
 
     def set_title(self, path):
+        '''Update name of tab and return tuple of two elements
+            text    list of two unicode obj (will be inserted before filenames in view) or empty list
+            header  boolean, value of dired_header setting
+            '''
         header  = self.view.settings().get('dired_header', False)
         name    = jump_names().get(path or self.path)
         caption = u"{0} → {1}".format(name, path) if name else path or self.path
@@ -300,6 +310,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.settings().set('dired_index', self.index)
 
     def correcting_index(self, path, fileslist):
+        '''Add leading elements to self.index (if any), we need conformity of
+        elements in self.index and line numbers in view
+        Return list of unicode objects that ready to be inserted in view
+        '''
         text, header = self.set_title(path)
         if path and (not fileslist or self.show_parent()):
             text.append(PARENT_SYM)
@@ -311,6 +325,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         return text + fileslist
 
     def restore_selections(self, path):
+        '''Set cursor(s) and mark(s)'''
         self.restore_marks(self.marked)
         if self.goto:
             if self.goto[~0] != os.sep:
@@ -319,6 +334,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.restore_sels(self.sels)
 
     def get_disks(self):
+        '''create list of disks on Windows for ThisPC folder'''
         names = []
         for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
             disk = '%s:' % s
@@ -340,13 +356,18 @@ class DiredMoveCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredSelect(TextCommand, DiredBaseCommand):
+    '''Common command for opening file/directory in existing view'''
     def run(self, edit, new_view=0, other_group=0, and_close=0):
+        '''
+        new_view     if True, open directory in new view, rather than existing one
+        other_group  if True, create a new group (if need) and open file in this group
+        and_close    if True, close FileBrowser view after file was open
+        '''
         self.index = self.get_all()
         filenames = (self.get_selected(full=True) if not new_view else
                      self.get_marked(full=True) or self.get_selected(full=True))
 
         window = self.view.window()
-        # If reuse view is turned on and the only item is a directory, refresh the existing view.
         if self.goto_directory(filenames, window, new_view):
             return
 
@@ -365,6 +386,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
                 window.focus_view(self.last_created_view)
 
     def goto_directory(self, filenames, window, new_view):
+        '''If reuse view is turned on and the only item is a directory, refresh the existing view'''
         if new_view and reuse_view():
             return False
         fqn = filenames[0]
@@ -405,6 +427,7 @@ class DiredSelect(TextCommand, DiredBaseCommand):
 
 
 class DiredPreviewCommand(DiredSelect):
+    '''Open file as a preview, so focus remains in FileBrowser view'''
     def run(self, edit):
         self.index = self.get_all()
         filenames = self.get_selected(full=True)
@@ -429,7 +452,11 @@ class DiredPreviewCommand(DiredSelect):
 
 
 class DiredExpand(TextCommand, DiredBaseCommand):
+    '''Open directory(s) inline, aka treeview'''
     def run(self, edit, toggle=False):
+        '''
+        toggle  if True, state of directory(s) will be toggled (i.e. expand/collapse)
+        '''
         self.index = self.get_all()
         filenames = self.get_marked(full=True) or self.get_selected(parent=False, full=True)
 
@@ -445,6 +472,8 @@ class DiredExpand(TextCommand, DiredBaseCommand):
             return sublime.status_message('Item cannot be expanded')
 
     def expand_single_directory(self, edit, filename, toggle):
+        '''Expand one directory is save and fast, thus we do it here,
+        but for many directories calling refresh command'''
         marked = self.get_marked()
         seled  = self.get_selected()
 

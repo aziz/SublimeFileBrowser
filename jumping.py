@@ -3,7 +3,7 @@ import sublime
 from sublime import status_message, ok_cancel_dialog, load_settings, save_settings, Region
 from sublime_plugin import TextCommand
 import os
-from os.path import isdir, basename, exists
+from os.path import isdir, basename
 
 ST3 = int(sublime.version()) >= 3000
 

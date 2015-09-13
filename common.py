@@ -1,5 +1,7 @@
 # coding: utf-8
 
+'''Common stuff, used in other modules'''
+
 from __future__ import print_function
 import re, os, fnmatch, sys, itertools
 import sublime
@@ -125,6 +127,9 @@ def relative_path(rpath):
 
 
 def hijack_window():
+    '''Execute on loading plugin or on new window open;
+    allow to open FB automatically in ST3
+    '''
     settings = sublime.load_settings('dired.sublime-settings')
     command = settings.get("dired_hijack_new_window")
     if command:
@@ -190,6 +195,7 @@ class DiredBaseCommand:
         self.view.show(name_point, surroundings)
 
     def next_line(self, forward, pt, filergn):
+        '''Return Region of line for pt within filergn'''
         if filergn.contains(pt):
             # Try moving by one line.
             line = self.view.line(pt)
@@ -200,6 +206,7 @@ class DiredBaseCommand:
         return self.view.line(pt)
 
     def _get_name_point(self, line):
+        '''Return point at which filename starts (i.e. after icon & whitspace)'''
         scope = self.view.scope_name(line.a)
         if 'indent' in scope:
             name_point = self.view.extract_scope(line.a).b
@@ -350,6 +357,8 @@ class DiredBaseCommand:
         self.view.insert(edit, start, new_text)
 
     def set_status(self):
+        '''Update status-bar;
+        self.show_hidden must be assigned before call it'''
         # if view isnot focused, view.window() may be None
         window          = self.view.window() or sublime.active_window()
         path_in_project = any(folder == self.path[:-1] for folder in window.folders())
@@ -411,6 +420,10 @@ class DiredBaseCommand:
         return result
 
     def try_listing_directory(self, path):
+        '''Return tuple of two element
+            items  sorted list of filenames in path, or empty list
+            error  exception message, or empty string
+        '''
         items, error = [], ''
         try:
             if not self.show_hidden:
@@ -429,6 +442,8 @@ class DiredBaseCommand:
             return items, error
 
     def try_listing_only_dirs(self, path):
+        '''Same as self.try_listing_directory, but items contains only directories.
+        Used for prompt completion'''
         items, error = self.try_listing_directory(path)
         if items:
             items = [n for n in items if isdir(join(path, n))]
@@ -483,6 +498,7 @@ class DiredBaseCommand:
         return self._add_sels()
 
     def _find_in_view(self, item):
+        '''item is Unicode'''
         fname = re.escape(basename(os.path.abspath(item)) or item.rstrip(os.sep))
         if item[~0] == os.sep:
             pattern = u'^\s*[▸▾] '

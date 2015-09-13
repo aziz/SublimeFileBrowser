@@ -354,6 +354,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
+    '''Store filename(s) in settings, when user copy or cut'''
     def run(self, edit, cut=False):
         self.index = self.get_all()
         path      = self.path if self.path != 'ThisPC\\' else ''
@@ -380,6 +381,7 @@ class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
 
 
 class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
+    '''Init file operation(s) for stored names in settings, when user paste'''
     def run(self, edit):
         s = self.view.settings()
         sources_move = s.get('dired_to_move', [])

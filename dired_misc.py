@@ -279,15 +279,13 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
 # TOOLS #############################################################
 
 class DiredCallVcs(TextCommand):
+    '''Command allows to call it from other module(s)'''
     def run(self, edit, path):
         CallVCS(self.view, path)
 
 
 class CallVCS(DiredBaseCommand):
-    '''
-    this should be placed in common.py probably, but for some reason
-    it doesnt work this way, so place it in main file for now
-    '''
+    '''Magic'''
     def __init__(self, view, path):
         self.view = view
         self.vcs_state = dict(path=path)
@@ -298,6 +296,7 @@ class CallVCS(DiredBaseCommand):
         self.watch_threads()
 
     def watch_threads(self):
+        '''wait while all checks are done'''
         if not all(vcs in self.vcs_state for vcs in ['git', 'hg']):
             sublime.set_timeout(self.watch_threads, 100)
             return
@@ -305,6 +304,7 @@ class CallVCS(DiredBaseCommand):
             self.vcs_colorized(self.vcs_state['changed_items'])
 
     def start(self, vcs):
+        '''launch threads'''
         command = self.view.settings().get('%s_path' % vcs, '')
         if command:  # user can set empty string to disable integration with vcs
             vars(self)['%s_thread' % vcs] = threading.Thread(target=self.check, args=(vcs, command))
@@ -313,6 +313,7 @@ class CallVCS(DiredBaseCommand):
             self.vcs_state.update({vcs: False})
 
     def check(self, vcs, command):
+        '''target function for a thread; worker'''
         status, root = self.get_output(vcs, self.expand_command(vcs, command))
         if status and root:
             changed_items = self.vcs_state.get('changed_items', {})
@@ -322,6 +323,7 @@ class CallVCS(DiredBaseCommand):
             self.vcs_state.update({vcs: False})
 
     def expand_command(self, vcs, command):
+        '''check if user got wildcards or envvars in custom command'''
         if any(c for c in '~*?[]$%' if c in command) and not isfile(command):
             match = glob.glob(os.path.expandvars(os.path.expanduser(command)))
             if match:
@@ -334,6 +336,7 @@ class CallVCS(DiredBaseCommand):
         return command
 
     def get_output(self, vcs, command):
+        '''call a vsc, getting its output if any'''
         args = {'git_status': ['status', '--untracked-files=all', '-z'],
                 'git_root':   ['rev-parse', '--show-toplevel'],
                 'hg_status':  ['status'],
@@ -359,6 +362,7 @@ class CallVCS(DiredBaseCommand):
         return (join(root, filename), item[0])
 
     def vcs_colorized(self, changed_items):
+        '''called on main thread'''
         modified, untracked = [], []
         files_regions = dict((f, r) for f, r in zip(self.get_all(), self.view.split_by_newlines(Region(0, self.view.size()))))
         colorblind = self.view.settings().get('vcs_color_blind', False)
