@@ -526,8 +526,7 @@ class DiredBaseCommand:
 
         self.view.show_at_center(s)
 
-    @staticmethod
-    def display_path(folder):
+    def display_path(self, folder):
         display = folder
         home = os.path.expanduser("~")
         if folder.startswith(home):

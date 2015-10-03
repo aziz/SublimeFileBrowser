@@ -57,7 +57,7 @@ if not ST3:
     plugin_loaded()
 
 
-class DiredCommand(WindowCommand):
+class DiredCommand(WindowCommand, DiredBaseCommand):
     """
     Prompt for a directory to display and display it.
     """
@@ -73,7 +73,7 @@ class DiredCommand(WindowCommand):
                 for i, f in enumerate(folders):
                     name     = names[i]
                     offset   = ' ' * (longest_name - len(name) + 1)
-                    names[i] = u'%s%s%s' % (name, offset, DiredBaseCommand.display_path(f))
+                    names[i] = u'%s%s%s' % (name, offset, self.display_path(f))
                 self.window.show_quick_panel(names, lambda i: self._show_folder(i, path, goto, single_pane, other_group), sublime.MONOSPACE_FONT)
                 return
         if immediate:
