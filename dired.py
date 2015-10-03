@@ -57,7 +57,7 @@ if not ST3:
     plugin_loaded()
 
 
-class DiredCommand(WindowCommand):
+class DiredCommand(WindowCommand, DiredBaseCommand):
     """
     Prompt for a directory to display and display it.
     """
