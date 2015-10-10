@@ -99,9 +99,10 @@ class DiredCommand(WindowCommand, DiredBaseCommand):
         path = view and view.file_name()
         folders = self.window.folders()
         if path:
-            if path.startswith(tuple(folders)):
-                root = os.path.commonprefix([path] + folders)
-                return (root, path)
+            for f in folders:
+                # e.g. ['/a', '/aa'], to open '/aa/f' we need '/aa/'
+                if path.startswith(u''.join([f, os.sep])):
+                    return (f, path)
             return os.path.split(path)
 
         # Use the first project folder if there is one.
