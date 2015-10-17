@@ -60,7 +60,7 @@
 
       <dict>
           <key>match</key>
-          <string>^\s*(\|)\s*(.+?)\s*(\|)\s*(?:(\S+?)(?:\sor\s)?(\S+?)?)?\s*(\|)\s*$</string>
+          <string>^\s*(\|)\s*(.+?)\s*(\|)\s*(?:([^,]+?)(?:\sor\s|,\s)?(\S+?)?)?\s*(\|)\s*$</string>
           <key>name</key>
           <string>dired.table.tr</string>
           <key>captures</key>
