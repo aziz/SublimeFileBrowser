@@ -169,17 +169,54 @@
 			</dict>
 		</dict>
 
+		<!-- HELP ----------------------------- -->
 		<dict>
 			<key>name</key>
-			<string>Help: Header</string>
+			<string>Help: Table Name</string>
 			<key>scope</key>
 			<string>dired.help.header</string>
 			<key>settings</key>
 			<dict>
+				<key>foreground</key>
+				<string>#707E8B</string>
 				<key>fontStyle</key>
 				<string>bold</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help: Table Header</string>
+			<key>scope</key>
+			<string>dired.table.th</string>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#4B96D6</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help: Table Header > Title</string>
+			<key>scope</key>
+			<string>dired.table.th title</string>
+			<key>settings</key>
+			<dict>
 				<key>foreground</key>
-				<string>#707e8b</string>
+				<string>#FFFFFF</string>
+			</dict>
+		</dict>
+
+		<dict>
+			<key>name</key>
+			<string>Help: Table Header</string>
+			<key>scope</key>
+			<string>dired.table.tr</string>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#FFFFFF</string>
 			</dict>
 		</dict>
 
@@ -191,19 +228,9 @@
 			<key>settings</key>
 			<dict>
 				<key>foreground</key>
-				<string>#6f798766</string>
-			</dict>
-		</dict>
-
-		<dict>
-			<key>name</key>
-			<string>Help: Table header</string>
-			<key>scope</key>
-			<string>dired.table.th title</string>
-			<key>settings</key>
-			<dict>
-				<key>foreground</key>
-				<string>#707e8b</string>
+				<string>#d9dee5</string>
+				<key>background</key>
+				<string>#d9dee5</string>
 			</dict>
 		</dict>
 
@@ -215,7 +242,7 @@
 			<key>settings</key>
 			<dict>
 				<key>foreground</key>
-				<string>#2A7793</string>
+				<string>#D6774B</string>
 				<key>fontStyle</key>
 				<string>bold</string>
 			</dict>
@@ -232,6 +259,7 @@
 				<string>#000000</string>
 			</dict>
 		</dict>
+		<!-- /HELP ---------------------------- -->
 
 		<dict>
 			<key>name</key>
