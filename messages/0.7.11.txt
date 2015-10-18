@@ -1,0 +1,3 @@
+0.7.11
+
+• Improved help page UI
