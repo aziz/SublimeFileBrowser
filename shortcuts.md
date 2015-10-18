@@ -1,15 +1,10 @@
-General Shortcuts:
-+-------------------------------+---------------------------+
-|            Command            |          Shortcut         |
-+-------------------------------+---------------------------+
+ General Shortcuts:
+:            Command            :          Shortcut         :
 | Shortcuts page                | ?                         |
 | Refresh view                  | r                         |
-+-------------------------------+---------------------------+
 
-Navigation Shortcuts:
-+-------------------------------+---------------------------+
-|            Command            |          Shortcut         |
-+-------------------------------+---------------------------+
+ Navigation Shortcuts:
+:            Command            :          Shortcut         :
 | Move to previous              | k or up                   |
 | Move to next                  | j or down                 |
 | Expand directory              | l or right                |
@@ -28,12 +23,9 @@ Navigation Shortcuts:
 | Toggle all marks              | t                         |
 | Unmark all                    | u                         |
 | Mark by extension             | *                         |
-+-------------------------------+---------------------------+
 
-Action Shortcuts:
-+-------------------------------+---------------------------+
-|            Command            |          Shortcut         |
-+-------------------------------+---------------------------+
+ Action Shortcuts:
+:            Command            :          Shortcut         :
 | Rename                        | R                         |
 | Delete to trash               | D                         |
 | Delete (permanently)          | alt+shift+d               |
@@ -54,12 +46,8 @@ Action Shortcuts:
 | only one for the project      |                           |
 | Quicklook for Mac or open in  | space                     |
 | default app on other OSs      |                           |
-+-------------------------------+---------------------------+
 
-In Rename Mode:
-+-------------------------------+---------------------------+
-|            Command            |          Shortcut         |
-+-------------------------------+---------------------------+
+ In Rename Mode:
+:            Command            :          Shortcut         :
 | Apply changes                 | enter                     |
 | Discard changes               | escape                    |
-+-------------------------------+---------------------------+

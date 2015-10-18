@@ -11,22 +11,17 @@
 
       <dict>
           <key>match</key>
-          <string>^.+:$</string>
+          <string>^\s.+:$</string>
           <key>name</key>
           <string>dired.help.header</string>
       </dict>
 
       <dict>
           <key>match</key>
-          <string>^[\+-]+$</string>
+          <string>^(:)(.+?)(:)(.+?)(:)$</string>
           <key>name</key>
-          <string>dired.table.punctuations</string>
-      </dict>
-
-      <dict>
-          <key>match</key>
-          <string>^\s*(\|)\s*(Command)\s*(\|)\s*(Shortcut)\s*(\|)\s*$</string>
-          <key>name</key>
+          <string>dired.table.th</string>
+          <key>scope</key>
           <string>dired.table.th</string>
           <key>captures</key>
           <dict>
@@ -60,8 +55,10 @@
 
       <dict>
           <key>match</key>
-          <string>^\s*(\|)\s*(.+?)\s*(\|)\s*(?:(\S+?)(?:\sor\s)?(\S+?)?)?\s*(\|)\s*$</string>
+          <string>^(\|)(.+?)(\|)\s*(?:([^,]+?)(?:\sor\s|,\s)?(\S+?)?)?\s*(\|)$</string>
           <key>name</key>
+          <string>dired.table.tr</string>
+          <key>scope</key>
           <string>dired.table.tr</string>
           <key>captures</key>
           <dict>
