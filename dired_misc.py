@@ -370,6 +370,8 @@ class CallVCS(DiredBaseCommand):
 
     def vcs_colorized(self, changed_items):
         '''called on main thread'''
+        if not self.view.settings().has('dired_index'):
+            return  # view was closed
         modified, untracked = [], []
         files_regions = dict((f, r) for f, r in zip(self.get_all(), self.view.split_by_newlines(Region(0, self.view.size()))))
         colorblind = self.view.settings().get('vcs_color_blind', False)
