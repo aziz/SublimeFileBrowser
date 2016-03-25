@@ -18,14 +18,14 @@ else:
 map_window_to_ctx = {}
 
 
-def start(msg, window, path, callback):
+def start(msg, window, path, callback, *args):
     """
     Starts the prompting process.
     """
     if not(path.endswith(os.sep) or path == os.sep):
         path += os.sep
     path = expanduser(path)
-    map_window_to_ctx[window.id()] = PromptContext(msg, path, callback)
+    map_window_to_ctx[window.id()] = PromptContext(msg, path, callback, *args)
     window.run_command('dired_prompt')
 
 
@@ -46,10 +46,11 @@ def valid(value):
 
 
 class PromptContext:
-    def __init__(self, msg, path, callback):
+    def __init__(self, msg, path, callback, *args):
         self.msg = msg
         self.path = path  # The path we are completing. This is updated as the user types, so it will be an invalid path at times.
         self.callback = callback
+        self.args = args
 
 
 class DiredPromptCommand(WindowCommand):
@@ -66,7 +67,7 @@ class DiredPromptCommand(WindowCommand):
     def on_done(self, value):
         if not valid(value):
             return self.window.run_command('dired_prompt')
-        self.ctx.callback(value)
+        self.ctx.callback(value, *self.ctx.args)
 
 
 class DiredCompleteCommand(TextCommand, DiredBaseCommand):

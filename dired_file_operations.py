@@ -16,6 +16,7 @@ ST3 = int(sublime.version()) >= 3000
 if ST3:
     from .common import DiredBaseCommand, print, relative_path, NT, PARENT_SYM
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
+    from . import prompt
     try:
         import Default.send2trash as send2trash
     except ImportError:
@@ -24,6 +25,7 @@ else:  # ST2 imports
     import locale
     from common import DiredBaseCommand, print, relative_path, NT, PARENT_SYM
     MARK_OPTIONS = 0
+    import prompt
     try:
         import send2trash
     except ImportError:
@@ -358,7 +360,7 @@ class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, cut=False):
         self.index = self.get_all()
         path      = self.path if self.path != 'ThisPC\\' else ''
-        filenames = self.get_marked() or self.get_selected(parent=False)
+        filenames = self.get_marked(full=True) or self.get_selected(parent=False, full=True)
         if not filenames:
             return sublime.status_message('Nothing chosen')
         settings  = sublime.load_settings('dired.sublime-settings')
@@ -366,13 +368,12 @@ class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
         cut_list  = settings.get('dired_to_move', [])
         # copied item shall not be added into cut list, and vice versa
         for f in filenames:
-            full_fn = join(path, f)
             if cut:
-                if not full_fn in copy_list:
-                    cut_list.append(full_fn)
+                if not f in copy_list:
+                    cut_list.append(f)
             else:
-                if not full_fn in cut_list:
-                    copy_list.append(full_fn)
+                if not f in cut_list:
+                    copy_list.append(f)
         settings.set('dired_to_move', list(set(cut_list)))
         settings.set('dired_to_copy', list(set(copy_list)))
         sublime.save_settings('dired.sublime-settings')
@@ -390,13 +391,40 @@ class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
             return sublime.status_message('Nothing to paste')
 
         self.index  = self.get_all()
-        path        = self.path if self.path != 'ThisPC\\' else ''
+        path        = self.get_path()
         rel_path    = relative_path(self.get_selected(parent=False) or '')
         destination = join(path, rel_path) or path
         if NT:
             return call_SHFileOperationW(self.view, sources_move, sources_copy, destination)
         else:
             return call_SystemAgnosticFileOperation(self.view, sources_move, sources_copy, destination)
+
+
+class DiredPasteFilesToCommand(TextCommand, DiredBaseCommand):
+    '''Init prompt for path where to paste, then init file ops.'''
+    def run(self, edit):
+        s = self.view.settings()
+        self.index   = self.get_all()
+        sources_move = s.get('dired_to_move', [])
+        sources_copy = s.get('dired_to_copy', self.get_marked(full=True) or self.get_selected(parent=False, full=True))
+
+        mitems = len(sources_move)
+        citems = len(sources_copy)
+        if not (mitems or citems):
+            return sublime.status_message('Nothing to paste')
+
+        both = mitems and citems
+        msg = '%s%s to:' % (('Move %d' % mitems) if mitems else '',
+                            ('%sopy %d' % (' and c' if both else 'C', citems)) if citems else '')
+        path = self.get_path()
+        window = self.view.window() or sublime.active_window()
+        prompt.start(msg, window, path, self.initfo, sources_move, sources_copy)
+
+    def initfo(self, destination, move, copy):
+        if NT:
+            return call_SHFileOperationW(self.view, move, copy, destination)
+        else:
+            return call_SystemAgnosticFileOperation(self.view, move, copy, destination)
 
 
 class DiredClearCopyCutList(TextCommand):

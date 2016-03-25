@@ -159,8 +159,13 @@ You can move and copy files/folders. Shortcuts are quite standard: <kbd>x</kbd>,
 You can copy and/or cut as many items and from many locations as you like — status-bar will show 
 amounts of copied and cut items.  
 If you change your mind — <kbd>⌘+z</kbd> or <kbd>ctrl+z</kbd> will clear both lists. _Note_, those
-lists are stored in FileBrowser settings file, so you can edit it by hand if need.  
-As soon as you paste, each item will be either copied or moved into folder under cursor.
+lists are stored in FileBrowser settings file, so you can edit it by hand if need.
+
+As soon as you paste, each item will be either copied or moved into folder under cursor.  
+If you want to alter the destination path without moving cursor, you may do so with 
+<kbd>⌘+shift+v</kbd> or <kbd>ctrl+shift+v</kbd> to open prompt; you may use prompt without copy/cut 
+before, i.e. if those lists in settings file are empty then prompt will take marked or selected 
+item(s) and suggest copying them.
 
 On Windows all operations will be done via system API with all its features (renaming semantics, 
 interactive overwrite, progress-bar, pause/cancel, and so on).
