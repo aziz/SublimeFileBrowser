@@ -480,7 +480,11 @@ class call_SHFileOperationW(object):
         SHFileOperationW.argtypes = [ctypes.POINTER(SHFILEOPSTRUCTW)]
         pFrom = u'\x00'.join(sources) + u'\x00'
         pTo   = (u'%s\x00' % destination) if destination else None
-        args  = SHFILEOPSTRUCTW(wFunc  = ctypes.wintypes.UINT(mode),
+        wf = ctypes.WINFUNCTYPE(ctypes.wintypes.HWND)
+        get_hwnd = wf(ctypes.windll.user32.GetForegroundWindow)
+        args  = SHFILEOPSTRUCTW(
+                                hwnd   = get_hwnd(),
+                                wFunc  = ctypes.wintypes.UINT(mode),
                                 pFrom  = ctypes.wintypes.LPCWSTR(pFrom),
                                 pTo    = ctypes.wintypes.LPCWSTR(pTo),
                                 fFlags = fFlags,
