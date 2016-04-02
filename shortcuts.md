@@ -26,6 +26,9 @@
 
  Action Shortcuts:
 :            Command            :          Shortcut         :
+| Copy                          | super+c or ctrl+c         |
+| Cut                           | super+x or ctrl+x         |
+| Paste                         | super+v or ctrl+v         |
 | Rename                        | R                         |
 | Delete to trash               | D                         |
 | Delete (permanently)          | alt+shift+d               |
