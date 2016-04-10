@@ -105,20 +105,22 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
     """
     quick look current file in mac or open in default app on other OSs
     """
-    def run(self, edit):
+    def run(self, edit, preview=True):
         self.index = self.get_all()
         files = self.get_marked() or self.get_selected(parent=False)
         if not files:
             return sublime.status_message('Nothing chosen')
-        if OSX:
+        if OSX and preview:
             cmd = ["qlmanage", "-p"]
             for filename in files:
                 fqn = join(self.path, filename)
                 cmd.append(fqn)
             subprocess.call(cmd)
         else:
-            if NT:
-                launch = lambda f: os.startfile(f)
+            if OSX:
+                launch = lambda f: subprocess.call(['open', f])
+            elif NT:
+                launch = lambda f: subprocess.call(['start', f], shell=True)
             else:
                 launch = lambda f: subprocess.call(['xdg-open', f])
             for filename in files:

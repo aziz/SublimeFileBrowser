@@ -114,6 +114,20 @@ e.g. to completely mimic sidebar, it would be:
 | Set current directory as the only one for the project | <kbd>F</kbd>                               |
 | Quicklook for Mac or open in default app on other OSs | <kbd>space</kbd>                           |
 
+If you prefer to open file(s) on Mac in default app instead of Quicklook, add the following code in 
+your user key bindings file:
+
+```js
+{
+  "keys": [" "],
+  "command": "dired_quick_look", "args": { "preview": false},
+  "context": [
+    { "key": "selector", "operator": "equal", "operand": "text.dired" },
+    { "key": "setting.dired_rename_mode", "operand": false }
+  ]
+}
+```
+
 ##### *Rename Mode* Shortcuts
 | Command          | Shortcut           |
 | :--------------- | :----------------- |
