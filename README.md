@@ -381,6 +381,36 @@ The amount of indentation for nested directories is controlled by `tab_size`. By
 is using a tab_size of 3 but you can customize it in your user settings file (`Preferences` →
 `Package Settings` → `FileBrowser` → `Settings — User`).
 
+#### Other settings
+##### Disable confirmation dialog for sending items to trash (does not affect system one):
+```js
+{ "dired_confirm_send2trash": false }
+```
+
+##### Change initial width of FileBrowser column (as sidebar):
+The value can be either `float` as fraction of window width which is `1.0` — so default value `0.3` 
+means that FileBrowser will take slightly less than a third part of window width;  
+or `int` as the exact amount of pixels, however, if value will be more than current window width 
+(e.g. `1920`) then it will fallback to `0.9`.
+
+```js
+{ "dired_width": 250 }  // approximately 250 pixels
+```
+
+or
+
+```js
+{ "dired_width": 0.2 }  // fifth part of window
+```
+
+##### Keep Vintageous enabled in FileBrowser view (beware of keybindings incompatibilities)
+note it is Vintageous setting, if it does not work you should report into appropriate 
+[repository](https://github.com/guillermooo/Vintageous/issues)
+
+```js
+{ "__vi_external_disable": false }
+```
+
 ## General tip for Windows users
 DirectWrite rendering gives better Unicode support and better font appearance overall, to enable it
 add following setting into `Preferences` → `Settings — User`:
