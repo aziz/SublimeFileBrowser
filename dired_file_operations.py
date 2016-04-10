@@ -406,7 +406,7 @@ class DiredPasteFilesToCommand(TextCommand, DiredBaseCommand):
         s = self.view.settings()
         self.index   = self.get_all()
         sources_move = s.get('dired_to_move', [])
-        sources_copy = s.get('dired_to_copy', self.get_marked(full=True) or self.get_selected(parent=False, full=True))
+        sources_copy = s.get('dired_to_copy') or self.get_marked(full=True) or self.get_selected(parent=False, full=True)
 
         mitems = len(sources_move)
         citems = len(sources_copy)
