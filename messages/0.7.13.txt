@@ -1,0 +1,17 @@
+0.7.13
+
+• NEW: Paste files and directories without changing cursor position;
+       hit ⌘+shift+v or ctrl+shift+v, type any valid path, and hit enter.
+       If you did not copy and/or cut beforehand, still you can use this keys to
+       copy marked or selected items to any directory.
+
+• NEW: Argument to open file(s) in default app instead of QuickLook on Mac.
+       Add custom keybinding to user file, if you need it:
+       {
+         "keys": [" "],
+         "command": "dired_quick_look", "args": { "preview": false},
+         "context": [
+           { "key": "selector", "operator": "equal", "operand": "text.dired" },
+           { "key": "setting.dired_rename_mode", "operand": false }
+         ]
+       }
