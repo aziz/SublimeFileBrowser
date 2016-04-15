@@ -120,7 +120,8 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
             if OSX:
                 launch = lambda f: subprocess.call(['open', f])
             elif NT:
-                launch = lambda f: subprocess.call(['start', f], shell=True)
+                # the "" before filename is a trick for batch files and such
+                launch = lambda f: subprocess.call('start "" "%s"' % f, shell=True)
             else:
                 launch = lambda f: subprocess.call(['xdg-open', f])
             for filename in files:
