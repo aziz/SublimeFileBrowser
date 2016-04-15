@@ -96,5 +96,9 @@ def show(window, path, view_id=None, ignore_existing=False, single_pane=False, g
     view.set_name(name)
     view.settings().set('dired_path', path)
     view.settings().set('dired_rename_mode', False)
-    window.focus_view(view)
+
+    # forcibly shoot on_activated, because when view was created it didnot have any settings
+    window.show_quick_panel(['a', 'b'], None)
     view.run_command('dired_refresh', {'goto': goto, 'reset_sels': reset_sels})
+    window.run_command('hide_overlay')
+    window.focus_view(view)
