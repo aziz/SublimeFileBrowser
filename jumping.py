@@ -11,10 +11,12 @@ if ST3:
     from .common import DiredBaseCommand
     from .show import show
     from .show import set_proper_scheme
+    SYNTAX_EXTENSION = '.sublime-syntax'
 else:
     from common import DiredBaseCommand
     from show import show
     from show import set_proper_scheme
+    SYNTAX_EXTENSION = '.hidden-tmLanguage'
 
 
 def unicodify(name):
@@ -186,7 +188,7 @@ class DiredJumpListCommand(TextCommand):
 
         view.set_name("FileBrowser: Jump List")
         view.set_scratch(True)
-        view.set_syntax_file('Packages/FileBrowser/dired_jumplist.hidden-tmLanguage')
+        view.set_syntax_file('Packages/FileBrowser/dired_jumplist' + SYNTAX_EXTENSION)
         view.settings().set('line_numbers', False)
         view.settings().set('draw_centered', True)
         view.run_command('dired_jump_list_render')

@@ -9,8 +9,10 @@ ST3 = int(sublime.version()) >= 3000
 
 if ST3:
     from .common import first, set_proper_scheme, calc_width, get_group
+    SYNTAX_EXTENSION = '.sublime-syntax'
 else:
     from common import first, set_proper_scheme, calc_width, get_group
+    SYNTAX_EXTENSION = '.hidden-tmLanguage'
 
 
 def set_active_group(window, view, other_group):
@@ -53,7 +55,7 @@ def set_view(view_id, window, ignore_existing, path, single_pane):
     if not view:
         view = window.new_file()
         view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(view))
-        view.set_syntax_file('Packages/FileBrowser/dired.hidden-tmLanguage')
+        view.set_syntax_file('Packages/FileBrowser/dired' + SYNTAX_EXTENSION)
         view.set_scratch(True)
         reset_sels = True
     else:

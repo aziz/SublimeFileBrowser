@@ -1,0 +1,23 @@
+%YAML 1.2
+---
+name: dired jump list
+hidden: true
+scope: text.dired_jump_list
+contexts:
+  main:
+    - match: ^(★ )(\S.*)(→\s*)(.+)$
+      scope: dired.item.projects
+      captures:
+        1: punctuation.definition.projects.star.symbol.dired
+        2: string.name.project.dired
+        3: punctuation.definition.projects.chevron.symbol.dired
+        4: string.name.project_path.dired
+    - match: (\S(.+)?$)
+      push:
+        - meta_scope: header.dired
+        - match: '^(—+)(\[RENAME MODE\]){0,1}(—*)\n'
+          captures:
+            1: punctuation.definition.separator.dired
+            2: punctuation.definition.rename_mode.dired
+            3: punctuation.definition.separator.dired
+          pop: true

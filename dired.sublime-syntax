@@ -1,0 +1,37 @@
+%YAML 1.2
+---
+name: dired
+hidden: true
+file_extensions:
+  - dired
+scope: text.dired
+contexts:
+  main:
+    - match: '^(\s*)([▸▾] )([^\\/]*)(\\|/)?(.*)?$'
+      scope: dired.item.directory
+      captures:
+        1: indent
+        2: punctuation.definition.directory.symbol.dired
+        3: string.name.directory.dired
+        4: punctuation.definition.directory.slash.dired
+        5: string.error.dired
+    - match: '^(\s*)(≡ )(\S.*?(\.[^\.\n]+)?)$'
+      scope: dired.item.file
+      captures:
+        1: indent
+        2: punctuation.definition.file.symbol.dired
+        3: string.name.file.dired
+        4: string.name.file.extension.dired
+    - match: '^⠤(\s*\[.+\]){0,1}$'
+      scope: dired.item.parent_dir
+      captures:
+        1: punctuation.definition.rename_mode.dired
+    - match: (\S(.+)?$)
+      push:
+        - meta_scope: header.dired
+        - match: '^(—+)(\[RENAME MODE\]){0,1}(—*)\n'
+          captures:
+            1: punctuation.definition.separator.dired
+            2: punctuation.definition.rename_mode.dired
+            3: punctuation.definition.separator.dired
+          pop: true

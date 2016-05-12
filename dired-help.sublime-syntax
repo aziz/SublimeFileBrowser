@@ -1,0 +1,26 @@
+%YAML 1.2
+---
+name: dired help
+hidden: true
+scope: text.dired_help
+contexts:
+  main:
+    - match: ^\s.+:$
+      scope: dired.help.header
+    - match: ^(:)(.+?)(:)(.+?)(:)$
+      scope: dired.table.th
+      captures:
+        1: dired.table.punctuations
+        2: title
+        3: dired.table.punctuations
+        4: title
+        5: dired.table.punctuations
+    - match: '^(\|)(.+?)(\|)\s*(?:([^,]+?)(?:\sor\s|,\s)?(\S+?)?)?\s*(\|)$'
+      scope: dired.table.tr
+      captures:
+        1: dired.table.punctuations
+        2: command_desc
+        3: dired.table.punctuations
+        4: command_shortcut
+        5: command_shortcut
+        6: dired.table.punctuations

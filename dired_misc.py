@@ -16,10 +16,12 @@ ST3 = int(sublime.version()) >= 3000
 if ST3:
     from .common import DiredBaseCommand, set_proper_scheme, hijack_window, NT, OSX
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
+    SYNTAX_EXTENSION = '.sublime-syntax'
 else:  # ST2 imports
     import locale
     from common import DiredBaseCommand, set_proper_scheme, hijack_window, NT, OSX
     MARK_OPTIONS = 0
+    SYNTAX_EXTENSION = '.hidden-tmLanguage'
 
 
 class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
@@ -45,7 +47,7 @@ class DiredHelpCommand(TextCommand):
         view.set_name("Browse: shortcuts")
         view.set_scratch(True)
         view.settings().set('rulers', [])
-        view.settings().set('syntax', 'Packages/FileBrowser/dired-help.hidden-tmLanguage')
+        view.settings().set('syntax', 'Packages/FileBrowser/dired-help' + SYNTAX_EXTENSION)
         view.settings().set('margin', 16)
         view.settings().set('line_numbers', False)
         view.settings().set('gutter', False)
