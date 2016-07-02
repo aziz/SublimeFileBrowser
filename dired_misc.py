@@ -117,15 +117,15 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
             for filename in files:
                 fqn = join(self.path, filename)
                 cmd.append(fqn)
-            subprocess.call(cmd)
+            subprocess.call(cmd, cwd=dirname(f))
         else:
             if OSX:
-                launch = lambda f: subprocess.call(['open', f])
+                launch = lambda f: subprocess.call(['open', f], cwd=dirname(f))
             elif NT:
                 # the "" before filename is a trick for batch files and such
-                launch = lambda f: subprocess.call('start "" "%s"' % f, shell=True)
+                launch = lambda f: subprocess.call('start "" "%s"' % f, shell=True, cwd=dirname(f))
             else:
-                launch = lambda f: subprocess.call(['xdg-open', f])
+                launch = lambda f: subprocess.call(['xdg-open', f], cwd=dirname(f))
             for filename in files:
                 fqn = join(self.path, filename)
                 launch(fqn)
