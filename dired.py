@@ -12,12 +12,12 @@ from os.path import basename, dirname, isdir, exists, join
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import DiredBaseCommand, print, set_proper_scheme, calc_width, get_group, hijack_window, NT, PARENT_SYM
+    from .common import DiredBaseCommand, print, set_proper_scheme, calc_width, get_group, hijack_window, emit_event, NT, PARENT_SYM
     from . import prompt
     from .show import show
     from .jumping import jump_names
 else:  # ST2 imports
-    from common import DiredBaseCommand, print, set_proper_scheme, calc_width, get_group, hijack_window, NT, PARENT_SYM
+    from common import DiredBaseCommand, print, set_proper_scheme, calc_width, get_group, hijack_window, emit_event, NT, PARENT_SYM
     import prompt
     from show import show
     from jumping import jump_names
@@ -45,14 +45,35 @@ def plugin_loaded():
                 print('\ndired.plugin_loaded run recursively %d time(s); and failed to refresh\n' % recursive_plugin_loaded)
                 return
 
-    for v in window.views():
-        if v.settings() and v.settings().get("dired_path"):
-            # reset sels because dired_index not exists yet, so we cant restore sels
-            v.run_command("dired_refresh", {"reset_sels": True})
+    for w in sublime.windows():
+        for v in w.views():
+            if v.settings() and v.settings().get("dired_path"):
+                # reset sels because dired_index not exists yet, so we cant restore sels
+                v.run_command("dired_refresh", {"reset_sels": True})
+
+    import sys
+    dfsobserver = '%s0_dired_fs_observer' % ('FileBrowser.' if ST3 else '')
+    if dfsobserver not in sys.modules or sys.modules[dfsobserver].Observer is None:
+        return sublime.error_message(
+            u'FileBrowser:\n\n'
+            u'watchdog module is not importable, hence we cannot know about '
+            u'changes on file system, and auto-refresh will not work.\n\n'
+            u'Despite that, FileBrowser is fully usable without auto-refresh, '
+            u'you can just ignore this message and manually refresh view with r key.\n\n'
+            u'But if you want working auto-refresh:\n'
+            u' • if you install manually, then look at Readme how to install it,\n'
+            u' • if you install via Package Control, report an issue.')
+
+    sublime.load_settings('dired.sublime-settings').add_on_change('dired_autorefresh', lambda: emit_event(u'toggle_watch_all', sublime.load_settings('dired.sublime-settings').get('dired_autorefresh', None)))
     # if not ST3:
     #     print('\ndired.plugin_loaded run recursively %d time(s); and call refresh command\n'%recursive_plugin_loaded)
 
+
+def plugin_unloaded():
+    sublime.load_settings('dired.sublime-settings').clear_on_change('dired_autorefresh')
+
 if not ST3:
+    unload_handler = plugin_unloaded
     recursive_plugin_loaded = 1
     plugin_loaded()
 
@@ -155,12 +176,19 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
         self.view.settings().add_on_change('color_scheme', lambda: set_proper_scheme(self.view))
 
         path = self.path
-        expanded = self.view.find_all(u'^\s*▾') if not reset_sels else []
         names = []
-        self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
-        self.goto = goto
         if path == 'ThisPC\\':
             path, names = '', self.get_disks()
+        if path and not exists(path):
+            if sublime.ok_cancel_dialog(u'FileBrowser:\n\nDirectory does not exist:\n\n\t%s\n\nTry to go up?' % path, u'Go'):
+                self.view.run_command('dired_up')
+            return
+
+        emit_event(u'start_refresh', (self.view.id(), path), view=self.view)
+
+        self.expanded = expanded = self.view.find_all(u'^\s*▾') if not reset_sels else []
+        self.show_hidden = self.view.settings().get('dired_show_hidden_files', True)
+        self.goto = goto
         if os.sep in goto:
             to_expand = self.expand_goto(to_expand)
 
@@ -176,6 +204,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             else:
                 self.marked, self.sels = None, None
             self.re_populate_view(edit, path, names, expanded, to_expand, toggle)
+        emit_event(u'finish_refresh', (self.view.id(), self.expanded + ([path] if path else [])), view=self.view)
 
     def expand_goto(self, to_expand):
         '''e.g. self.goto = "a/b/c/d/", then to put cursor onto d, it should be
@@ -200,6 +229,7 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             expanded = [e for e in merged if not (e in expanded and e in to_expand)]
         else:
             expanded.extend(to_expand or [])
+        self.expanded = expanded
         # we need prev index to setup expanded list — done, so reset index
         self.index = []
 
@@ -254,7 +284,10 @@ class DiredRefreshCommand(TextCommand, DiredBaseCommand):
             if error:
                 tree[~0] += u'\t<%s>' % error
                 return
-            if not items:  # expanding empty folder, so notify that it is empty
+            if not items:
+                if path == root:
+                    return []
+                # expanding empty folder, so notify that it is empty
                 tree[~0] += '\t<empty>'
                 return
 
@@ -511,6 +544,7 @@ class DiredExpand(TextCommand, DiredBaseCommand):
         self.restore_marks(marked)
         self.restore_sels((seled, [self.sel]))
         self.view.run_command('dired_call_vcs', {'path': self.path})
+        emit_event(u'finish_refresh', (self.view.id(), [filename]), view=self.view)
 
     def try_to_fold(self, marked):
         line = self.view.line(self.view.get_regions('marked')[0] if marked else
@@ -659,6 +693,7 @@ class DiredFold(TextCommand, DiredBaseCommand):
         v.replace(edit, icon_region, u'▸')
         v.erase(edit, indented_region)
         v.set_read_only(True)
+        emit_event(u'fold', (self.view.id(), self.index[start_line - 1]), view=self.view)
 
 
 class DiredUpCommand(TextCommand, DiredBaseCommand):

@@ -14,7 +14,7 @@ from os.path import basename, dirname, isdir, isfile, exists, join
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import DiredBaseCommand, print, relative_path, NT, PARENT_SYM
+    from .common import DiredBaseCommand, print, relative_path, emit_event, NT, PARENT_SYM
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
     from . import prompt
     try:
@@ -23,7 +23,7 @@ if ST3:
         send2trash = None
 else:  # ST2 imports
     import locale
-    from common import DiredBaseCommand, print, relative_path, NT, PARENT_SYM
+    from common import DiredBaseCommand, print, relative_path, emit_event, NT, PARENT_SYM
     MARK_OPTIONS = 0
     import prompt
     try:
@@ -35,6 +35,7 @@ else:  # ST2 imports
 class DiredCreateCommand(TextCommand, DiredBaseCommand):
     def run(self, edit, which=None):
         assert which in ('file', 'directory'), "which: " + which
+        emit_event(u'ignore_view', self.view.id(), plugin=u'FileBrowserWFS')
         self.index = self.get_all()
         rel_path   = relative_path(self.get_selected(parent=False) or '')
 
@@ -62,6 +63,7 @@ class DiredCreateCommand(TextCommand, DiredBaseCommand):
             with open(fqn, 'wb'):
                 pass
         if self.refresh:  # user press enter
+            emit_event(u'watch_view', self.view.id(), plugin=u'FileBrowserWFS')
             self.view.run_command('dired_refresh', {'goto': fqn})
 
         # user press ctrl+enter, no refresh
@@ -93,6 +95,7 @@ class DiredCreateAndOpenCommand(DiredCreateCommand):
         else:
             sublime.active_window().open_file(fqn)
         if self.refresh:
+            emit_event(u'watch_view', dired_view.id(), plugin=u'FileBrowserWFS')
             dired_view.run_command('dired_refresh', {'goto': fqn})
 
 
@@ -105,6 +108,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
 
         msg, trash = self.setup_msg(files, trash)
 
+        emit_event(u'ignore_view', self.view.id(), plugin=u'FileBrowserWFS')
         if trash:
             need_confirm = self.view.settings().get('dired_confirm_send2trash', True)
             msg = msg.replace('Delete', 'Delete to trash', 1)
@@ -114,6 +118,7 @@ class DiredDeleteCommand(TextCommand, DiredBaseCommand):
             self._delete(files)
         else:
             print("Cancel delete or something wrong in DiredDeleteCommand")
+        emit_event(u'watch_view', self.view.id(), plugin=u'FileBrowserWFS')
 
     def setup_msg(self, files, trash):
         '''If user send to trash, but send2trash is unavailable, we suggest deleting permanently'''
@@ -215,6 +220,7 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
         if not self.filecount():
             return sublime.status_message('Directory seems empty, nothing could be renamed')
 
+        emit_event(u'ignore_view', self.view.id(), plugin=u'FileBrowserWFS')
         # Store the original filenames so we can compare later.
         path = self.path
         self.view.settings().set('rename', [f for f in self.get_all_relative('' if path == 'ThisPC\\' else path) if f and f != PARENT_SYM])
@@ -233,6 +239,7 @@ class DiredRenameCommand(TextCommand, DiredBaseCommand):
 class DiredRenameCancelCommand(TextCommand, DiredBaseCommand):
     """Cancel rename mode"""
     def run(self, edit):
+        emit_event(u'watch_view', self.view.id(), plugin=u'FileBrowserWFS')
         self.view.settings().erase('rename')
         self.view.settings().set('dired_rename_mode', False)
         self.view.run_command('dired_refresh')
@@ -261,6 +268,7 @@ class DiredRenameCommitCommand(TextCommand, DiredBaseCommand):
         self.view.erase_regions('rename')
         self.view.settings().erase('rename')
         self.view.settings().set('dired_rename_mode', False)
+        emit_event(u'watch_view', self.view.id(), plugin=u'FileBrowserWFS')
         self.view.run_command('dired_refresh', {'to_expand': self.re_expand_new_names()})
 
     def get_after(self):
@@ -359,7 +367,6 @@ class DiredCopyFilesCommand(TextCommand, DiredBaseCommand):
     '''Store filename(s) in settings, when user copy or cut'''
     def run(self, edit, cut=False):
         self.index = self.get_all()
-        path      = self.path if self.path != 'ThisPC\\' else ''
         filenames = self.get_marked(full=True) or self.get_selected(parent=False, full=True)
         if not filenames:
             return sublime.status_message('Nothing chosen')
@@ -394,6 +401,7 @@ class DiredPasteFilesCommand(TextCommand, DiredBaseCommand):
         path        = self.get_path()
         rel_path    = relative_path(self.get_selected(parent=False) or '')
         destination = join(path, rel_path) or path
+        emit_event(u'ignore_view', self.view.id(), plugin=u'FileBrowserWFS')
         if NT:
             return call_SHFileOperationW(self.view, sources_move, sources_copy, destination)
         else:
@@ -418,6 +426,7 @@ class DiredPasteFilesToCommand(TextCommand, DiredBaseCommand):
                             ('%sopy %d' % (' and c' if both else 'C', citems)) if citems else '')
         path = self.get_path()
         window = self.view.window() or sublime.active_window()
+        emit_event(u'ignore_view', self.view.id(), plugin=u'FileBrowserWFS')
         prompt.start(msg, window, path, self.initfo, sources_move, sources_copy)
 
     def initfo(self, destination, move, copy):
@@ -491,6 +500,7 @@ class call_SHFileOperationW(object):
                                 fAnyOperationsAborted = ctypes.wintypes.BOOL())
         out = SHFileOperationW(ctypes.byref(args))
 
+        sublime.set_timeout(lambda: emit_event(u'watch_view', self.view.id(), plugin=u'FileBrowserWFS'), 1)
         if not out and destination:  # 0 == success
             sublime.set_timeout(lambda: self.view.run_command('dired_clear_copy_cut_list'), 1)
         else:  # probably user cancel op., or sth went wrong; keep settings
@@ -626,6 +636,7 @@ class call_SystemAgnosticFileOperation(object):
             sublime.set_timeout(lambda: self.progress_bar(threads, i, dir), 100)
             return
         else:
+            emit_event(u'watch_view', self.view.id(), plugin=u'FileBrowserWFS')
             self.view.run_command('dired_clear_copy_cut_list')
 
     def generic_nn(self, new_name):

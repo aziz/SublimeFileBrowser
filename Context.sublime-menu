@@ -1,0 +1,4 @@
+[
+    { "caption": "-", "id": "end" },
+    { "command": "dired_toggle_auto_refresh" }
+]

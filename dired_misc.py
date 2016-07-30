@@ -14,12 +14,12 @@ from os.path import dirname, isfile, exists, join, normpath
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import DiredBaseCommand, set_proper_scheme, hijack_window, NT, OSX
+    from .common import DiredBaseCommand, set_proper_scheme, hijack_window, emit_event, NT, OSX
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
     SYNTAX_EXTENSION = '.sublime-syntax'
 else:  # ST2 imports
     import locale
-    from common import DiredBaseCommand, set_proper_scheme, hijack_window, NT, OSX
+    from common import DiredBaseCommand, set_proper_scheme, hijack_window, emit_event, NT, OSX
     MARK_OPTIONS = 0
     SYNTAX_EXTENSION = '.hidden-tmLanguage'
 
@@ -224,6 +224,27 @@ class DiredOpenInNewWindowCommand(TextCommand, DiredBaseCommand):
             sublime.status_message('Cannot open a new window')
 
 
+class DiredToggleAutoRefresh(TextCommand):
+    def is_enabled(self):
+        return self.view.score_selector(0, "text.dired") > 0
+
+    def is_visible(self):
+        return self.is_enabled()
+
+    def description(self):
+        msg = u'auto-refresh for this view'
+        if self.view.settings().get('dired_autorefresh', True):
+            return u'Disable ' + msg
+        else:
+            return u'Enable ' + msg
+
+    def run(self, edit):
+        s = self.view.settings()
+        ar = s.get('dired_autorefresh', True)
+        s.set('dired_autorefresh', not ar)
+        self.view.run_command('dired_refresh')
+
+
 # EVENT LISTENERS ###################################################
 
 class DiredHijackNewWindow(EventListener):
@@ -237,6 +258,7 @@ class DiredHideEmptyGroup(EventListener):
     def on_close(self, view):
         if not 'dired' in view.scope_name(0):
             return
+        emit_event(u'view_closed', view.id())
 
         w = sublime.active_window()
         # check if closed view was a single one in group

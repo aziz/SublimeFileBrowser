@@ -61,6 +61,9 @@
   //                  then value will be treated as 0.9
   "dired_width": 0.3,
 
+  // Automatically refresh view(s) in case of any changes in open directories
+  "dired_autorefresh": true,
+
   // Automatically disable Vintageous to avoid keybindings incompatibilities;
   // note it is Vintageous setting, if it does not work you should report into
   // appropriate repository https://github.com/guillermooo/Vintageous/issues

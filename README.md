@@ -12,7 +12,22 @@ You can also use it as a sidebar that you can put on right or left side
 ## Installation
 
 You can install via [Sublime Package Control](http://wbond.net/sublime_packages/package_control)
-Or you can clone this repo into your SublimeText Packages directory and rename it to `FileBrowser`
+
+Or clone this repo into your SublimeText Packages directory and rename it to `FileBrowser`, in this 
+case, if you want to make auto-refresh work (note it is an optional feature you may ignore it) then 
+some extra steps might be required:
+
+1. Satisfy dependencies
+    * If you have Package Control installed, bring up command palette and run *Package Control: Satisfy Dependencies* command
+    * If you have *no* Package Control, then manually install dependencies (every cloning should be into Packages directory):
+        1. Clone https://github.com/codexns/package_events
+        2. Clone https://github.com/vovkkk/sublime-pathtools and rename to `pathtools`
+        3. Clone https://github.com/vovkkk/sublime-watchdog and rename to `watchdog`
+        4. Write your own plugin which would handle loading order: `pathtools` must be loaded before 
+            `watchdog`, and `watchdog` and `package_events` must be loaded before `FileBrowser`, 
+            that is why we recommend to use Package Control, but there is option for workaround
+2. Restart Sublime Text
+ 
 
 ## Commands and Keybindings
 
@@ -333,6 +348,25 @@ click on a file is easier or you might be in transition to becoming a keyboard n
 prefer the mouse by habit.
 For these situations, you can just double click a file or directory to open them.
 Although we stand firm with our belief, we're *liberals*! :)
+
+
+### Auto-refresh
+This feature is supposed to automatically refresh a corresponding view(s) whenever something happen 
+within open and/or expanded directories (i.e. a file was created/removed/modified).
+
+Auto-refresh of a corresponding view shall be happen not more than once per second (for performance 
+reason), however, the longest delay is not restricted, which means in some rare cases auto-refresh 
+may not happen for long unrestricted time, but of course you can always refresh a view manually with 
+<kbd>r</kbd>.
+
+Auto-refresh can be disabled globally in user settings file
+
+``` json
+{ "dired_autorefresh": false }
+```
+
+And, regardless of global setting, can be toggled per view via context menu.
+
 
 ## Tweaking Look and Feel
 
