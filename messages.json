@@ -10,8 +10,6 @@
     "0.4.2": "messages/0.4.2.txt",
     "0.4.3": "messages/0.4.3.txt",
     "0.4.6": "messages/0.4.6.txt",
-    "0.5.0": "messages/0.5.0.txt",
-    "0.5.1": "messages/0.5.0.txt",
     "0.5.2": "messages/0.5.0.txt",
     "0.5.3": "messages/0.5.3.txt",
     "0.5.6": "messages/0.5.6.txt",
@@ -20,5 +18,9 @@
     "0.7.1": "messages/0.7.1.txt",
     "0.7.2": "messages/0.7.2.txt",
     "0.7.4": "messages/0.7.4.txt",
-    "0.7.7": "messages/0.7.7.txt"
+    "0.7.7": "messages/0.7.7.txt",
+    "0.7.11": "messages/0.7.11.txt",
+    "0.7.13": "messages/0.7.13.txt",
+    "0.7.14": "messages/0.7.14.txt",
+    "0.8.0": "messages/0.8.0.txt"
 }

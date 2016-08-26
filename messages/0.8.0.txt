@@ -1,0 +1,13 @@
+0.7.14
+
+• NEW: automatically refresh a corresponding view(s) whenever something happen
+       within open and/or expanded directories (i.e. a file was created, or
+       removed, or modified).
+       Auto-refresh can be disabled globally in user settings file
+           { "dired_autorefresh": false }
+       Regardless of global setting, can be toggled per view via context menu.
+
+       Manual refresh can be done as always with r key.
+
+• CHANGED: move OS-specific keybindings to separate files, i.e. by default keys
+           with super will work only on OSX, with ctrl — only Linux & Windows.
