@@ -1,3 +1,4 @@
+// some bindings are in OS-specific files
 [
   {
       "keys": ["enter"],
@@ -10,24 +11,6 @@
   {
       "keys": ["shift+enter"],
       "command": "dired_preview",
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-      ]
-  },
-  {
-      "keys": ["super+enter"],
-      "command": "dired_select",
-      "args": { "new_view": true },
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-      ]
-  },
-  {
-      "keys": ["ctrl+enter"],
-      "command": "dired_select",
-      "args": { "new_view": true },
       "context": [
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
@@ -91,16 +74,6 @@
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
-  },
-  {
-      "keys": ["ctrl+enter"],
-      "command": "dired_create_and_open",
-      "context": [{ "key": "setting.dired_create", "operand": true }]
-  },
-  {
-      "keys": ["super+enter"],
-      "command": "dired_create_and_open",
-      "context": [{ "key": "setting.dired_create", "operand": true }]
   },
   {
       "keys": ["r"],
@@ -178,88 +151,6 @@
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false }
       ]
-  },
-  {
-    "keys": ["ctrl+c"],
-    "command": "dired_copy_files",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["super+c"],
-    "command": "dired_copy_files",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["ctrl+x"],
-    "command": "dired_copy_files",
-    "args":{"cut": true},
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["super+x"],
-    "command": "dired_copy_files",
-    "args":{"cut": true},
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["ctrl+v"],
-    "command": "dired_paste_files",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["super+v"],
-    "command": "dired_paste_files",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["ctrl+shift+v"],
-    "command": "dired_paste_files_to",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["super+shift+v"],
-    "command": "dired_paste_files_to",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["ctrl+z"],
-    "command": "dired_clear_copy_cut_list",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
-  },
-  {
-    "keys": ["super+z"],
-    "command": "dired_clear_copy_cut_list",
-    "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" },
-        { "key": "setting.dired_rename_mode", "operand": false }
-    ]
   },
   {
       "keys": ["*"],
@@ -415,38 +306,6 @@
         { "key": "selector", "operator": "equal", "operand": "text.dired" },
         { "key": "setting.dired_rename_mode", "operand": false },
         { "key": "setting.command_mode", "operand": false }
-      ]
-  },
-  {
-      "keys": ["super+up"],
-      "command": "dired_move",
-      "args": {"to": "bof"},
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" }
-      ]
-  },
-  {
-      "keys": ["ctrl+home"],
-      "command": "dired_move",
-      "args": {"to": "bof"},
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" }
-      ]
-  },
-  {
-      "keys": ["super+down"],
-      "command": "dired_move",
-      "args": {"to": "eof"},
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" }
-      ]
-  },
-  {
-      "keys": ["ctrl+end"],
-      "command": "dired_move",
-      "args": {"to": "eof"},
-      "context": [
-        { "key": "selector", "operator": "equal", "operand": "text.dired" }
       ]
   },
   {

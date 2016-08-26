@@ -1,0 +1,74 @@
+[
+  {
+      "keys": ["ctrl+enter"],
+      "command": "dired_select",
+      "args": { "new_view": true },
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+      ]
+  },
+  {
+      "keys": ["ctrl+enter"],
+      "command": "dired_create_and_open",
+      "context": [{ "key": "setting.dired_create", "operand": true }]
+  },
+  {
+    "keys": ["ctrl+c"],
+    "command": "dired_copy_files",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["ctrl+x"],
+    "command": "dired_copy_files",
+    "args":{"cut": true},
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["ctrl+v"],
+    "command": "dired_paste_files",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["ctrl+shift+v"],
+    "command": "dired_paste_files_to",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+  {
+    "keys": ["ctrl+z"],
+    "command": "dired_clear_copy_cut_list",
+    "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" },
+        { "key": "setting.dired_rename_mode", "operand": false }
+    ]
+  },
+// custom movement in buffer
+  {
+      "keys": ["ctrl+home"],
+      "command": "dired_move",
+      "args": {"to": "bof"},
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" }
+      ]
+  },
+  {
+      "keys": ["ctrl+end"],
+      "command": "dired_move",
+      "args": {"to": "eof"},
+      "context": [
+        { "key": "selector", "operator": "equal", "operand": "text.dired" }
+      ]
+  }
+]

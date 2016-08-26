@@ -29,8 +29,33 @@
                             {
                                 "command": "open_file",
                                 "args": {"file": "${packages}/FileBrowser/Default.sublime-keymap"},
-                                "caption": "Key Bindings – Default"
+                                "caption": "Key Bindings – Default (Common)"
                             },
+                            {
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/FileBrowser/Default (OSX).sublime-keymap",
+                                    "platform": "OSX"
+                                },
+                                "caption": "Key Bindings – Default (OSX)"
+                            },
+                            {
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/FileBrowser/Default (Linux).sublime-keymap",
+                                    "platform": "Linux"
+                                },
+                                "caption": "Key Bindings – Default (Linux)"
+                            },
+                            {
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/FileBrowser/Default (Windows).sublime-keymap",
+                                    "platform": "Windows"
+                                },
+                                "caption": "Key Bindings – Default (Windows)"
+                            },
+
                             {
                                 "command": "open_file",
                                 "args": {
