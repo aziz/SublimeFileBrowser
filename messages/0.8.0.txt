@@ -1,4 +1,4 @@
-0.7.14
+0.8.0
 
 • NEW: automatically refresh a corresponding view(s) whenever something happen
        within open and/or expanded directories (i.e. a file was created, or
