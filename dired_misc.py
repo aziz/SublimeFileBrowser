@@ -117,7 +117,7 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
             for filename in files:
                 fqn = join(self.path, filename)
                 cmd.append(fqn)
-            subprocess.call(cmd, cwd=dirname(f))
+            subprocess.call(cmd)
         else:
             if OSX:
                 launch = lambda f: subprocess.call(['open', f], cwd=dirname(f))
