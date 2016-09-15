@@ -100,7 +100,7 @@ class ObservePaths(object):
         package_events.listen(u'FileBrowser', self.dired_event_handler)
 
     def dired_event_handler(self, package, event, payload):
-        '''receiving args from common.emmit_event'''
+        '''receiving args from common.emit_event'''
         def view_closed(view): self.paths.pop(view, None)
 
         def start_refresh(view, path):
