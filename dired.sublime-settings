@@ -64,6 +64,12 @@
   // Automatically refresh view(s) in case of any changes in open directories
   "dired_autorefresh": true,
 
+  // String to place between file name and generic number in case of conflicting
+  // filenames (i.e. duplicate, copy, move), e.g.
+  //   file.ext → file — 2.ext
+  // Only for OSX and Linux.
+  "dired_dup_separator": " — ",
+
   // Automatically disable Vintageous to avoid keybindings incompatibilities;
   // note it is Vintageous setting, if it does not work you should report into
   // appropriate repository https://github.com/guillermooo/Vintageous/issues

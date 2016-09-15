@@ -639,20 +639,22 @@ class call_SystemAgnosticFileOperation(object):
             emit_event(u'watch_view', self.view.id(), plugin=u'FileBrowserWFS')
             self.view.run_command('dired_clear_copy_cut_list')
 
-    def generic_nn(self, new_name):
+    def generic_nn(self, old_name):
+        path, name = os.path.split(old_name)
+        split_name = name.split('.')
+        no_extension = len(split_name) == 1 or isdir(old_name)
+        separator = self.view.settings().get('dired_dup_separator', u' — ')
         for i in itertools.count(2):
-            path, name = os.path.split(new_name)
-            split_name = name.split('.')
-            if len(split_name) == 1 or isdir(new_name):
-                cfp = u"{1} — {0}".format(i, new_name)
+            if no_extension:
+                cfp = u"{1}{2}{0}".format(i, old_name, separator)
             else:
                 # leading space may cause problems, e.g.
                 # good: 'name — 2.ext'
                 # good: '— 2.ext'
                 # bad:  ' — 2.ext'
-                fn  = '.'.join(split_name[:~0])
-                new = (u'%s ' % fn) if fn else ''
-                cfp = u"{1}— {0}.{2}".format(i, join(path, new), split_name[~0])
+                fn, ext  = '.'.join(split_name[:~0]), split_name[~0]
+                nn = u'{0}{1}{2}.{3}'.format(fn, separator, i, ext)
+                cfp = join(path, nn.lstrip())
             if not os.path.exists(cfp):
                 break
         return cfp

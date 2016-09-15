@@ -201,7 +201,18 @@ interactive overwrite, progress-bar, pause/cancel, and so on).
 
 On other OSes all operations will be done via Python API, which is not that cool, but you will see 
 a vague progress in status-bar and can choose what to do in case of conflicts (overwrite, duplicate, 
-skip), however, there are some restrictions, e.g. folders cannot be overwritten or merged.
+skip), however, there are some restrictions, e.g. folders cannot be overwritten or merged.  
+Duplication adds separator and generic number to old name, e.g. duplicate of `file.ext` would be 
+`file — 2.ext`, you can change separator to any string (beware [illegal path characters](http://stackoverflow.com/questions/1976007/what-characters-are-forbidden-in-windows-and-linux-directory-names)), 
+e.g. 
+
+```json
+{
+  "dired_dup_separator": "_"
+}
+```
+
+so new filename would be `file_2.ext`
 
 ### Open in new window
 Selecting a couple of files and/or directories (either by marking them or using the normal multiple
