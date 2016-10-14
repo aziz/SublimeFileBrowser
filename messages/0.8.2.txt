@@ -1,0 +1,6 @@
+0.8.2
+
+• Mac users may need to restart Sublime Text
+
+  watchdog dependency was updated with _watchdog_fsevents.so file which should
+  make auto-refresh more reliable.
