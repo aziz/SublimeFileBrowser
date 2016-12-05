@@ -1,0 +1,15 @@
+0.8.3
+
+• Preview directory in Sublime 3: shift+enter opens pop-up with properties,
+  it may (or not) contain amount of items, common size, dates, errors,
+  and direct children of previewed directory.
+
+  Clicking a link will open the corresponding item.
+
+  Beware, previewing large directory will cause Sublime consume a lot of RAM,
+  approx. 200 000 files will take 400 MB of RAM (ymmv).
+  When pop-up is closed scanning will be stopped.
+  Pop-up can be closed in many ways: press Escape, move cursor, click a link,
+  switch a tab/window, open command palette... and so on and so forth.
+
+  Only one item can be previewed at a time

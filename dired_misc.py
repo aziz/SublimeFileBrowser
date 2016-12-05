@@ -8,20 +8,36 @@ from __future__ import print_function
 import sublime
 from sublime import Region
 from sublime_plugin import TextCommand, EventListener
-import os, subprocess, sys, threading, glob
-from os.path import dirname, isfile, exists, join, normpath
+import glob
+import math
+import os
+import subprocess
+import sys
+import threading
+from os.path import dirname, isfile, isdir, exists, join, normpath, getsize, getctime, getatime, getmtime
+from datetime import datetime
 
 ST3 = int(sublime.version()) >= 3000
 
 if ST3:
-    from .common import DiredBaseCommand, set_proper_scheme, hijack_window, emit_event, NT, OSX
+    from .common import DiredBaseCommand, set_proper_scheme, hijack_window, emit_event, NT, OSX, PARENT_SYM, sort_nicely
     MARK_OPTIONS = sublime.DRAW_NO_OUTLINE
     SYNTAX_EXTENSION = '.sublime-syntax'
 else:  # ST2 imports
     import locale
-    from common import DiredBaseCommand, set_proper_scheme, hijack_window, emit_event, NT, OSX
+    from common import DiredBaseCommand, set_proper_scheme, hijack_window, emit_event, NT, OSX, PARENT_SYM, sort_nicely
     MARK_OPTIONS = 0
     SYNTAX_EXTENSION = '.hidden-tmLanguage'
+
+
+def convert_size(size):
+    if not size:
+        return '0 B'
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size, 1024)))
+    p = math.pow(1024, i)
+    s = round(size / p, 2)
+    return '%s %s' % (s, size_name[i])
 
 
 class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
@@ -243,6 +259,120 @@ class DiredToggleAutoRefresh(TextCommand):
         ar = s.get('dired_autorefresh', True)
         s.set('dired_autorefresh', not ar)
         self.view.run_command('dired_refresh')
+
+
+class DiredPreviewDirectoryCommand(TextCommand, DiredBaseCommand):
+    '''Show properties and content of directory in popup; ST3 only'''
+    def run(self, edit, fqn=None):
+        if not fqn:
+            self.index = self.get_all()
+            filenames = self.get_selected(full=True)
+            if not filenames:
+                return sublime.status_message(u'Nothing to preview')
+            fqn = filenames[0]
+            if not (isdir(fqn) or fqn == PARENT_SYM):
+                return sublime.status_message(u'Something wrong')
+
+        self.preview_thread = threading.Thread(target=self.worker, args=(fqn if fqn != PARENT_SYM else self.get_path(),))
+        self.preview_thread.start()
+        width, height = self.view.viewport_extent()
+        self.view.show_popup('Loading...', 0, self.view.sel()[0].begin(), width, height / 2, self.open_from_preview)
+
+    def worker(self, path):
+        self.preview_path = '📁 <a href="dir\v{0}">{0}</a>'.format(path)
+        self.subdirs = self.files = self.size = 0
+        self.errors = []
+        self.open_dirs = []
+        self.open_files = []
+        try:
+            self._created = datetime.fromtimestamp(getctime(path)).strftime('%d %b %Y, %H:%M:%S')
+        except OSError as e:
+            self._created = e
+        try:
+            self._accessed = datetime.fromtimestamp(getatime(path)).strftime('%d %b %Y, %H:%M:%S')
+        except OSError as e:
+            self._accessed = e
+        try:
+            self._modified = datetime.fromtimestamp(getmtime(path)).strftime('%d %b %Y, %H:%M:%S')
+        except OSError as e:
+            self._modified = e
+
+        def add_err(err): self.errors.append(str(err))
+
+        for index, (root, dirs, files) in enumerate(os.walk(path, onerror=add_err)):
+            self.subdirs += len(dirs)
+            self.files += len(files)
+
+            if not index:
+                sort_nicely(dirs)
+                sort_nicely(files)
+                self.open_dirs = ['📁 <a href="dir\v%s%s">%s</a>' % (join(root, d), os.sep, d) for d in dirs]
+                self.open_files = []
+
+            for f in files:
+                fpath = join(root, f)
+                if not index:
+                    self.open_files.append('≡ <a href="file\v%s">%s</a>' % (fpath, f))
+                try:
+                    self.size += getsize(fpath)
+                except OSError as e:
+                    add_err(e)
+
+            if not self.view.is_popup_visible():
+                return
+            sublime.set_timeout_async(self.update_preview(), 1)
+        sublime.set_timeout_async(self.update_preview(loading=False), 1)
+
+    def update_preview(self, loading=True):
+        le = len(self.errors)
+        if le > 5:
+            if loading:
+                errors = '<br>%d errors<br><br>' % le
+            else:
+                errors = '<br><a href="errors\v">%s errors</a> (click to view)<br><br>' % le
+        else:
+            errors = '<br>Errors:<br> %s<br><br>' % '<br> '.join(self.errors) if self.errors else '<br>'
+        items = self.open_dirs + self.open_files
+        self.view.update_popup(
+            '<br>{0}{1}<br><br>'
+            'Files: {2}; directories: {3}<br>'
+            'Size: {4} ({5} bytes)<br><br>'
+            'Created:  {6}<br>'
+            'Accessed: {7}<br>'
+            'Modified: {8}<br>{9}{10}'.format(
+                'Loading... ' if loading else '', self.preview_path,
+                self.files, self.subdirs,
+                convert_size(self.size), self.size,
+                self._created, self._accessed, self._modified,
+                errors,
+                ' %s<br><br>' % '<br> '.join(items) if items else '')
+        )
+
+    def open_from_preview(self, payload):
+        msg, path = payload.split('\v')
+
+        def show_errors(_):
+            self.view.update_popup(
+                '<br><a href="back\v">←<br><br>'
+                '</a>Errors:<br> %s<br>' % '<br> '.join(self.errors))
+
+        def go_back(_):
+            self.update_preview(loading=False)
+
+        def open_dir(path):
+            self.view.settings().set('dired_path', path)
+            self.view.run_command('dired_refresh')
+
+        def open_file(path):
+            (self.view.window() or sublime.active_window()).open_file(path)
+
+        case = {
+            'dir': open_dir,
+            'file': open_file,
+            'errors': show_errors,
+            'back': go_back
+        }
+        case[msg](path)
 
 
 # EVENT LISTENERS ###################################################

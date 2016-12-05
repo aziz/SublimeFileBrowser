@@ -472,8 +472,10 @@ class DiredPreviewCommand(DiredSelect):
         fqn = filenames[0]
 
         if isdir(fqn) or fqn == PARENT_SYM:
-            # XXX: should we call Select command here?
-            return sublime.status_message(u'No preview for directories')
+            if not ST3:
+                return sublime.status_message(u'No preview for directories')
+            self.view.run_command('dired_preview_directory')
+            return
 
         if exists(fqn):
             window = self.view.window()
