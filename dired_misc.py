@@ -5,7 +5,7 @@
 '''
 
 from __future__ import print_function
-import sublime
+import sublime, sublime_plugin
 from sublime import Region
 from sublime_plugin import TextCommand, EventListener
 import glob
@@ -28,6 +28,7 @@ else:  # ST2 imports
     from common import DiredBaseCommand, set_proper_scheme, hijack_window, emit_event, NT, OSX, PARENT_SYM, sort_nicely
     MARK_OPTIONS = 0
     SYNTAX_EXTENSION = '.hidden-tmLanguage'
+    sublime_plugin.ViewEventListener = object
 
 
 def convert_size(size):
@@ -38,6 +39,22 @@ def convert_size(size):
     p = math.pow(1024, i)
     s = round(size / p, 2)
     return '%s %s' % (s, size_name[i])
+
+
+def get_dates(path):
+    try:
+        created = datetime.fromtimestamp(getctime(path)).strftime('%d %b %Y, %H:%M:%S')
+    except OSError as e:
+        created = e
+    try:
+        accessed = datetime.fromtimestamp(getatime(path)).strftime('%d %b %Y, %H:%M:%S')
+    except OSError as e:
+        accessed = e
+    try:
+        modified = datetime.fromtimestamp(getmtime(path)).strftime('%d %b %Y, %H:%M:%S')
+    except OSError as e:
+        modified = e
+    return created, accessed, modified
 
 
 class DiredFindInFilesCommand(TextCommand, DiredBaseCommand):
@@ -123,9 +140,9 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
     """
     quick look current file in mac or open in default app on other OSs
     """
-    def run(self, edit, preview=True):
+    def run(self, edit, preview=True, files=None):
         self.index = self.get_all()
-        files = self.get_marked() or self.get_selected(parent=False)
+        files = files or self.get_marked() or self.get_selected(parent=False)
         if not files:
             return sublime.status_message('Nothing chosen')
         if OSX and preview:
@@ -149,11 +166,14 @@ class DiredQuickLookCommand(TextCommand, DiredBaseCommand):
 
 class DiredOpenExternalCommand(TextCommand, DiredBaseCommand):
     """open dir/file in external file explorer"""
-    def run(self, edit):
+    def run(self, edit, fname=None):
         path = self.path
-        self.index = self.get_all()
-        files = self.get_selected(parent=False)
-        fname = join(path, files[0] if files else '')
+        if not fname:
+            self.index = self.get_all()
+            files = self.get_selected(parent=False)
+            fname = join(path, files[0] if files else '')
+        else:
+            files = True
         p, f  = os.path.split(fname.rstrip(os.sep))
 
         if not exists(fname):
@@ -263,7 +283,7 @@ class DiredToggleAutoRefresh(TextCommand):
 
 class DiredPreviewDirectoryCommand(TextCommand, DiredBaseCommand):
     '''Show properties and content of directory in popup; ST3 only'''
-    def run(self, edit, fqn=None):
+    def run(self, edit, fqn=None, point=0):
         if not fqn:
             self.index = self.get_all()
             filenames = self.get_selected(full=True)
@@ -273,10 +293,11 @@ class DiredPreviewDirectoryCommand(TextCommand, DiredBaseCommand):
             if not (isdir(fqn) or fqn == PARENT_SYM):
                 return sublime.status_message(u'Something wrong')
 
+        self.view.settings().set('dired_stop_preview_thread', False)
         self.preview_thread = threading.Thread(target=self.worker, args=(fqn if fqn != PARENT_SYM else self.get_path(),))
         self.preview_thread.start()
         width, height = self.view.viewport_extent()
-        self.view.show_popup('Loading...', 0, self.view.sel()[0].begin(), width, height / 2, self.open_from_preview)
+        self.view.show_popup('Loading...', 0, point or self.view.sel()[0].begin(), width, height / 2, self.open_from_preview)
 
     def worker(self, path):
         self.preview_path = '📁 <a href="dir\v{0}">{0}</a>'.format(path)
@@ -284,18 +305,7 @@ class DiredPreviewDirectoryCommand(TextCommand, DiredBaseCommand):
         self.errors = []
         self.open_dirs = []
         self.open_files = []
-        try:
-            self._created = datetime.fromtimestamp(getctime(path)).strftime('%d %b %Y, %H:%M:%S')
-        except OSError as e:
-            self._created = e
-        try:
-            self._accessed = datetime.fromtimestamp(getatime(path)).strftime('%d %b %Y, %H:%M:%S')
-        except OSError as e:
-            self._accessed = e
-        try:
-            self._modified = datetime.fromtimestamp(getmtime(path)).strftime('%d %b %Y, %H:%M:%S')
-        except OSError as e:
-            self._modified = e
+        self._created, self._accessed, self._modified = get_dates(path)
 
         def add_err(err): self.errors.append(str(err))
 
@@ -318,7 +328,7 @@ class DiredPreviewDirectoryCommand(TextCommand, DiredBaseCommand):
                 except OSError as e:
                     add_err(e)
 
-            if not self.view.is_popup_visible():
+            if not self.view.is_popup_visible() or self.view.settings().get('dired_stop_preview_thread'):
                 return
             sublime.set_timeout_async(self.update_preview(), 1)
         sublime.set_timeout_async(self.update_preview(loading=False), 1)
@@ -375,7 +385,106 @@ class DiredPreviewDirectoryCommand(TextCommand, DiredBaseCommand):
         case[msg](path)
 
 
+class DiredFilePropertiesCommand(TextCommand, DiredBaseCommand):
+    '''Show properties of file in popup; ST3 only'''
+    def run(self, edit, fqn=None, point=0):
+        if not fqn:
+            self.index = self.get_all()
+            filenames = self.get_selected(full=True)
+            if not filenames:
+                return sublime.status_message(u'Nothing to preview')
+
+        width, height = self.view.viewport_extent()
+        self.view.show_popup('Loading...', 0, point or self.view.sel()[0].begin(), width, height / 2, self.open_from_preview)
+        self.get_info(fqn)
+
+    def get_info(self, path):
+        self.preview_path = path
+        self.parent = dirname(path)
+        self.size = 0
+        self.errors = []
+        self._created, self._accessed, self._modified = get_dates(path)
+        try:
+            self.size += getsize(path)
+        except OSError as e:
+            self.errors.append(str(e))
+        if not self.view.is_popup_visible():
+            return
+        sublime.set_timeout_async(self.update_preview, 1)
+
+    def update_preview(self):
+        self.view.update_popup(
+            '<br>≡ <a href="file\v{0}">{0}</a><br><br>'
+            'Size: {1} ({2} bytes)<br><br>'
+            'Created:  {3}<br>'
+            'Accessed: {4}<br>'
+            'Modified: {5}<br>'
+            '{6}'
+            '{7}'
+            '<a href="app\v{0}">Open in default app</a><br>'
+            '<a href="external\v{0}">Open parent in Finder/Explorer</a><br><br>'.format(
+                self.preview_path,
+                convert_size(self.size), self.size,
+                self._created, self._accessed, self._modified,
+                '<br>Errors:<br> %s<br><br>' % '<br> '.join(self.errors) if self.errors else '<br>',
+                ('<a href="ql\v%s">Open in Quick Look</a><br>' % self.preview_path) if OSX else '')
+        )
+
+    def open_from_preview(self, payload):
+        msg, path = payload.split('\v')
+
+        def open_file(path):
+            (self.view.window() or sublime.active_window()).open_file(path)
+
+        def app(path):
+            self.view.update_popup('Please, wait…')
+            sublime.set_timeout_async(
+                self.view.run_command('dired_quick_look', {'preview': False, 'files': [path]}), 1)
+
+        def external(path):
+            self.view.update_popup('Please, wait…')
+            sublime.set_timeout_async(
+                self.view.run_command('dired_open_external', {'fname': path}), 1)
+
+        def ql(path):
+            self.view.update_popup('Please, wait…')
+            sublime.set_timeout_async(
+                self.view.run_command('dired_quick_look', {'files': [path]}), 1)
+
+        case = {
+            'file': open_file,
+            'app': app,
+            'external': external,
+            'ql': ql
+        }
+        case[msg](path)
+
+
 # EVENT LISTENERS ###################################################
+
+class DiredHoverProperties(sublime_plugin.ViewEventListener, DiredBaseCommand):
+    @classmethod
+    def is_applicable(cls, settings):
+        return settings.get('syntax') == 'Packages/FileBrowser/dired.sublime-syntax'
+
+    def on_hover(self, point, hover_zone):
+        self.view.hide_popup()
+        self.view.settings().set('dired_stop_preview_thread', True)
+        if hover_zone != sublime.HOVER_GUTTER:
+            return
+        self.index = self.get_all()
+        line = self.view.line(point)
+        path = self.get_fullpath_for(line)
+        self.name_point = self._get_name_point(line)
+        if 'file' in self.view.scope_name(line.a):
+            self.view.run_command('dired_file_properties', {'fqn': path, 'point': self.name_point})
+        else:
+            width, height = self.view.viewport_extent()
+            self.view.show_popup('<a href="{0}">Click here to preview directory<br> {0}</a>'.format(path), 0, point or self.view.sel()[0].begin(), width, height / 2, self.open_from_preview)
+
+    def open_from_preview(self, path):
+            self.view.run_command('dired_preview_directory', {'fqn': path, 'point': self.name_point})
+
 
 class DiredHijackNewWindow(EventListener):
     def on_window_command(self, window, command_name, args):

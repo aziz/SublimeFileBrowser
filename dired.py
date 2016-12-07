@@ -474,10 +474,12 @@ class DiredPreviewCommand(DiredSelect):
         if isdir(fqn) or fqn == PARENT_SYM:
             if not ST3:
                 return sublime.status_message(u'No preview for directories')
-            self.view.run_command('dired_preview_directory')
+            self.view.run_command('dired_preview_directory', {'fqn': fqn})
             return
 
         if exists(fqn):
+            if ST3:
+                self.view.run_command('dired_file_properties', {'fqn': fqn})
             window = self.view.window()
             dired_view = self.view
             self.focus_other_group(window)
