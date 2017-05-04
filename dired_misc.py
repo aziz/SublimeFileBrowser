@@ -511,6 +511,11 @@ class DiredHideEmptyGroup(EventListener):
             sublime.set_timeout(lambda: w.set_layout({"cols": [0.0, 1.0], "rows": [0.0, 1.0], "cells": [[0, 0, 1, 1]]}), 300)
 
 
+def is_any_dired_in_group(window, group):
+    syntax = 'Packages/FileBrowser/dired%s' % SYNTAX_EXTENSION
+    return any(v.settings().get('syntax') == syntax for v in window.views_in_group(group))
+
+
 class DiredMoveOpenOrNewFileToRightGroup(EventListener):
     def on_activated(self, view):
         '''
@@ -519,12 +524,11 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
         Reason why the whole logic shall not be run on_activated, is
         user should be able to explicitly put any view in left group
         no matter what, e.g. using keybinding or drag&drop
+
+        self.MOVE is boolean
         '''
         w = sublime.active_window()
-        if w and any(v for v in w.views_in_group(0) if 'dired' in v.scope_name(0)):
-            self.MOVE = True
-        else:
-            self.MOVE = False
+        self.MOVE = w and is_any_dired_in_group(w, 0)
 
     def on_new(self, view):
         if not self.MOVE:
@@ -532,7 +536,7 @@ class DiredMoveOpenOrNewFileToRightGroup(EventListener):
         w = sublime.active_window()
         if w.num_groups() < 2:
             return
-        if any(v for v in w.views_in_group(0) if 'dired' in v.scope_name(0)):
+        if is_any_dired_in_group(w, 0):
             if w.active_group() == 0:
                 # at this point views are exist, so we cannot avoid the use of
                 # set_view_index, but ST2 return None if group has no views
