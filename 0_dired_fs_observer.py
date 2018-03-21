@@ -168,8 +168,7 @@ class ReportEvent(FileSystemEventHandler):
         dir(event) = ['event_type', 'is_directory', 'key', 'src_path']
         '''
         src_path = event.src_path
-        path = src_path if event.is_directory else os.path.dirname(src_path)
-
+        path = os.path.dirname(src_path)
         for v, p in self.paths.items():
             if any(i in p for i in (src_path, path)) and v not in self.ignore_views:
                 if not self.scheduled_views:
