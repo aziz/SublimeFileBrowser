@@ -24,7 +24,7 @@ import sublime, os, datetime
 try:  # unavailable dependencies shall not break basic functionality
     import package_events
     from watchdog.observers import Observer
-    from watchdog.events import FileSystemEventHandler
+    from watchdog.events import FileSystemEventHandler, DirModifiedEvent
 except ImportError:
     Observer = None
     FileSystemEventHandler = object
@@ -167,6 +167,19 @@ class ReportEvent(FileSystemEventHandler):
         not to be confused with package_events which we use for internal communication
         dir(event) = ['event_type', 'is_directory', 'key', 'src_path']
         '''
+        if isinstance(event, DirModifiedEvent):
+            # change of access time may cause modified event, which can be safely ignored
+            # actual changes will fire the corresponding event types:
+            # FileMovedEvent
+            # DirMovedEvent
+            # FileModifiedEvent
+            # FileCreatedEvent
+            # DirCreatedEvent
+            # FileDeletedEvent
+            # DirDeletedEvent
+            print('Ignore DirModified:', event.key)
+            return
+
         src_path = event.src_path
         path = os.path.dirname(src_path)
         for v, p in self.paths.items():
